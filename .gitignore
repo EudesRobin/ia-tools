@@ -1,0 +1,24 @@
+# Config / secrets locaux — ne jamais versionner
+settings.json
+settings.local.json
+# Exception : la config Claude du dépôt est versionnée — elle ne contient que
+# l'enregistrement du hook local (voir hooks/validate-tool/HOOK.md), aucun
+# secret ni permission. `settings.local.json` reste ignoré.
+!.claude/settings.json
+.credentials.json
+*.credentials.json
+.env
+*.key
+*.pem
+
+# Config d'IDE / éditeur
+.idea/
+.vscode/
+
+# Artefacts / temporaires
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
