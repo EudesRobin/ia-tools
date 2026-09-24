@@ -12,7 +12,7 @@ Enregistré dans la table de routage : [DOC_MAP.md](../docs/DOC_MAP.md).
 | [`validate-tool`](./validate-tool/HOOK.md) | **Local au dépôt.** Lance `scripts/validate.py` en fin de tour et empêche Claude de rendre la main tant qu'il est au rouge. |
 
 `validate-tool` est enregistré dans le `.claude/settings.json` versionné du
-dépôt et **n'est pas distribué** vers `~/.claude/` : rien à installer : il
+dépôt et **n'est pas distribué** vers `~/.claude/` : rien à installer, il
 s'active à l'ouverture d'une session dans ce dépôt. La procédure de
 [SETUP.md](../docs/SETUP.md) §5 ne s'applique donc pas à lui.
 
@@ -20,7 +20,8 @@ s'active à l'ouverture d'une session dans ce dépôt. La procédure de
 
 Un hook destiné à `~/.claude/` se compose de deux parties : un **script** et son
 `HOOK.md`, dans un sous-dossier de `hooks/`, puis un **enregistrement** dans
-`~/.claude/settings.json`, clé `hooks`.
+`~/.claude/settings.json`, clé `hooks`. **Ne jamais écraser ce fichier en
+bloc** : fusionner seulement les entrées du hook concerné.
 
 Structure du `HOOK.md` et comportement du script :
 [docs/CONVENTIONS.md](../docs/CONVENTIONS.md) §3. Installation et prudence sur

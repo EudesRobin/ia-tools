@@ -24,9 +24,9 @@ Sous Windows, `~/.claude/` = `C:\Users\<user>\.claude\`.
 | Hook        | `hooks/<nom>/`          | `~/.claude/hooks/<nom>/` + entrée dans `settings.json` |
 
 **Non distribué.** `docs/`, `README.md`, `scripts/`, `.claude/` et
-`hooks/valide-outils/` régissent le dépôt lui-même et ne partent jamais vers
-`~/.claude/`. Le hook `valide-outils` est délibérément **local au dépôt** — voir
-[hooks/valide-outils/HOOK.md](../hooks/valide-outils/HOOK.md).
+`hooks/validate-tool/` régissent le dépôt lui-même et ne partent jamais vers
+`~/.claude/`. Le hook `validate-tool` est délibérément **local au dépôt** — voir
+[hooks/validate-tool/HOOK.md](../hooks/validate-tool/HOOK.md).
 
 ### Variables substituées à l'installation
 
@@ -126,7 +126,7 @@ Un hook s'installe en deux temps : la copie du script, puis son enregistrement.
   jamais** `settings.json` : il affiche l'entrée à fusionner ; la fusion reste
   manuelle.
 
-Aucun hook de ce dépôt n'est distribué aujourd'hui : `valide-outils` est local
+Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
 (§1). `--scope hooks` le constate et ne touche à rien.
 
 ## 6. Après installation

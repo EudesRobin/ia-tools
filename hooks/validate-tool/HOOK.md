@@ -33,7 +33,7 @@ oublier à celui de contrôle qui s'impose.
 
 **Ce hook est local au dépôt et n'est pas distribué vers `~/.claude/`.** Il est
 déjà enregistré dans le `.claude/settings.json` versionné du dépôt : rien à
-installer : il s'active à l'ouverture d'une session dans ce répertoire.
+installer, il s'active à l'ouverture d'une session dans ce répertoire.
 
 Ce choix est délibéré. Un enregistrement dans le `~/.claude/settings.json`
 global déclencherait ce hook dans **tous** les projets et y exécuterait le
