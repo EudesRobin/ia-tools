@@ -1,5 +1,7 @@
 # ia-tools
 
+[![validate](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml)
+
 Outils pour agents de code — **skills**, **agents** et **hooks** — rédigés en
 français et publiés sous licence MIT. Le dépôt les versionne ; un script les
 installe ou les met à jour pour **Claude Code** (`~/.claude/`) et pour
