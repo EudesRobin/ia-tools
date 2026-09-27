@@ -1,0 +1,12 @@
+#!/bin/sh
+# Refuse le commit tant que le validateur est rouge (AGENTS.md, Definition of Done).
+# Code 2 du validateur : anomalie d'environnement, signalee sans bloquer.
+# Activation, une fois par clone : git config core.hooksPath .githooks
+PY=python; command -v "$PY" >/dev/null 2>&1 || PY=python3
+"$PY" scripts/validate.py
+code=$?
+if [ "$code" -eq 2 ]; then
+    echo "pre-commit : validation impossible (environnement), commit laisse passer" >&2
+    exit 0
+fi
+exit "$code"
