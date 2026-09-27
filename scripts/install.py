@@ -14,7 +14,8 @@ seuls conflits :
   identique   rendu == cible                           -> rien
   obsolete    cible == rendu d'une revision anterieure  -> ecrire le rendu
   conflit     ni l'un ni l'autre : edition locale       -> arbitrage humain
-  local-seul  present seulement en local                -> liste, jamais supprime
+  local-seul  present seulement en local, dans le dossier
+              d'un outil du depot                     -> liste, jamais supprime
 
 Un outil (une skill, un agent et ses documents) s'installe d'un bloc chez un
 agent hote : si l'un de ses fichiers y est en conflit, aucun de ses fichiers n'y
@@ -202,7 +203,13 @@ def pairs(agent: str, scopes: list[str], target_root: Path) -> list[tuple[str, P
 
 
 def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
-    """Fichiers presents seulement en local. Listes, jamais supprimes."""
+    """Fichiers presents seulement en local, dans le dossier d'un outil du depot.
+    Listes, jamais supprimes.
+
+    Les outils etrangers au depot (outils de l'utilisateur, skills synchronisees
+    par l'agent hote) ne sont pas examines : ils ne relevent pas de ce merge.
+    """
+    outils = {tool_of(rel) for rel, _, _ in pairs(agent, scopes, target_root)}
     out = []
     for scope in scopes:
         for src_rel, dst_rel in SCOPES[scope]:
@@ -213,7 +220,7 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
                 if not path.is_file():
                     continue
                 rel = path.relative_to(dst)
-                if excluded(rel):
+                if excluded(rel) or tool_of(f"{dst_rel}/{rel.as_posix()}") not in outils:
                     continue
                 origine = source_rel(agent, src_rel, rel)
                 if origine is not None and (src / origine).is_file():
@@ -415,6 +422,9 @@ def main() -> int:
             return 1
 
     if args.diff:
+        # Le diff cite le contenu des fichiers, accents et symboles compris :
+        # l'encodage par defaut de la console (cp1252) ferait echouer l'ecriture.
+        sys.stdout.reconfigure(encoding="utf-8")
         vise = args.diff.replace("\\", "/")
         trouve = False
         for agent in agents:

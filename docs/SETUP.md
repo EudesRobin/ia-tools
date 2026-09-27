@@ -103,7 +103,7 @@ le laisse intact.
 | `absent` | la cible n'existe pas | écrit le rendu |
 | `obsolete` | la cible est le rendu d'une révision antérieure du dépôt : installation propre devenue obsolète | écrit le rendu, sans confirmation |
 | `conflit` | l'écart ne s'explique ni par les variables ni par une révision : **édition locale manuelle**, ou outil homonyme de l'utilisateur | **rien**, pour aucun fichier du même outil chez cet agent hôte |
-| `local seul` | fichier présent seulement en local | **rien**, jamais de suppression |
+| `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
 
 Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon.
 
@@ -126,8 +126,10 @@ Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon
 
 `--scope skills` parcourt chaque dossier **fichier par fichier**, pas seulement
 `SKILL.md` : un fichier embarqué présent uniquement dans le dépôt est classé
-`absent` et ajouté par `--apply` ; un fichier présent uniquement en local est
-classé `local seul` et jamais supprimé.
+`absent` et ajouté par `--apply` ; un fichier présent uniquement dans le dossier
+local d'une skill du dépôt est classé `local seul` et jamais supprimé. Les
+skills étrangères au dépôt — celles de l'utilisateur, ou celles que l'agent hôte
+synchronise lui-même — ne sont pas examinées.
 
 La conformité du front-matter — `name` identique au nom du dossier — relève de
 `scripts/validate.py`, à lancer avant toute installation.
