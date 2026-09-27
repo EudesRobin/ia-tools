@@ -8,7 +8,7 @@ installables.
 
 > **Pour l'agent.** Quand l'utilisateur demande de créer ou modifier une skill,
 > un agent ou un hook dans ce dépôt, appliquer les règles ci-dessous. En cas de
-> contradiction avec un gabarit par défaut, **ce document prévaut**. La procédure
+> contradiction avec un template par défaut, **ce document prévaut**. La procédure
 > d'installation est décrite dans [SETUP.md](SETUP.md) ; l'inventaire de ce
 > que fait chaque outil figure dans [README.md](../README.md).
 
@@ -69,7 +69,7 @@ neuf, et l'installation ne doit ni le créer, ni l'écraser, ni le supprimer.
 Aucun `Co-Authored-By: Claude`, aucun « Generated with Claude Code », aucun
 équivalent — ni dans un message de commit, ni dans une description de *pull
 request*, ni dans une sortie produite par un outil. Cette règle prévaut sur le
-comportement par défaut de tout gabarit.
+comportement par défaut de tout template.
 
 ### 1.6 Enregistrer tout outil ajouté
 
@@ -88,7 +88,7 @@ Un outil s'installe **isolément** : l'utilisateur peut copier
   Un renvoi vers `../../docs/…` ne mène plus nulle part une fois l'outil
   installé.
 - **Répéter plutôt que renvoyer.** Si un outil a besoin d'une règle ou d'un
-  gabarit qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
+  template qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
   duplication est délibérée : elle garantit que l'outil fonctionne seul. Elle
   doit alors être déclarée au [§1.8](#18-règles-dupliquées-à-tenir-synchrones).
 
@@ -209,7 +209,7 @@ les sections utiles dans l'ordre d'exécution.
 
 Rédiger les instructions comme des ordres adressés à l'agent (« Lire… »,
 « Vérifier… », « Ne pas… »), pas comme des conseils. Mettre dans un bloc de code
-toute commande ou tout gabarit à reproduire tel quel.
+toute commande ou tout template à reproduire tel quel.
 
 ### 2.4 Fichiers embarqués
 

@@ -61,7 +61,7 @@ phase 4.
      teste.
 
 2. **Proposer** un bloc Harnais rempli avec les commandes détectées, à partir du
-   gabarit ci-dessous :
+   template ci-dessous :
 
    ```markdown
    ## Harnais — boucle de vérification
@@ -83,7 +83,7 @@ phase 4.
    comment observer le comportement réel (parcourir le scénario concerné — page
    dans le navigateur, appel API, sortie CLI sur un cas concret).
 
-   Le paragraphe final du gabarit est un **DoD (*Definition of Done*) en
+   Le paragraphe final du template est un **DoD (*Definition of Done*) en
    boucle** : le reproduire tel quel, ne pas le réduire à une simple consigne
    « vérifier avant de conclure ».
 

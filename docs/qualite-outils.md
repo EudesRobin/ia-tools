@@ -90,7 +90,7 @@ Ajuster la précision de l'instruction à la fragilité de la tâche.
 | Latitude | Forme | Quand |
 |---|---|---|
 | Large | Prose, points d'attention | Plusieurs approches valables ; la décision dépend du contexte |
-| Moyenne | Gabarit, ou script paramétré | Un motif est préférable, une part de variation est acceptable |
+| Moyenne | Template, ou script paramétré | Un motif est préférable, une part de variation est acceptable |
 | Étroite | Une commande exacte, sans paramètre | L'opération est fragile, la constance est critique, la séquence est fixe |
 
 Une opération fragile appelle « lancer exactement cette commande, sans ajouter
@@ -203,9 +203,9 @@ qu'une fois le contrôle au vert ») et le point de retour en cas d'échec
 - **Ne pas offrir de catalogue d'options.** Donner une valeur par défaut, puis
   nommer l'exception qui la remplace (« employer X ; pour un document scanné,
   employer Y »), plutôt que cinq bibliothèques interchangeables.
-- **Gabarits.** Fournir le format de sortie explicitement, et le marquer
-  **impératif** (« reproduire ce gabarit tel quel ») ou **indicatif** (« une
-  valeur par défaut raisonnable, à adapter »). Un gabarit non marqué est ambigu.
+- **Templates.** Fournir le format de sortie explicitement, et le marquer
+  **impératif** (« reproduire ce template tel quel ») ou **indicatif** (« une
+  valeur par défaut raisonnable, à adapter »). Un template non marqué est ambigu.
 - **Exemples.** Quand la qualité de la sortie dépend de la forme, donner des
   couples entrée/sortie concrets. Un exemple transmet la forme visée plus
   fidèlement qu'une description de cette forme.

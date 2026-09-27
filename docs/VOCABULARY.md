@@ -60,6 +60,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **document de fond** | Un document de `docs/` qui explique le *pourquoi* des règles, enregistré dans la table. Ce n'est pas un outil. | « document compagnon » — calque de *companion document* ; « doc annexe » |
 | **lien de retour** | La ligne qui, depuis un document de fond, renvoie vers la table. | « lien retour » — composé sans préposition ; « backlink » |
 | **registre** | Le niveau de langue imposé par [CONVENTIONS.md §1.9](CONVENTIONS.md#19-registre-de-rédaction) : français formel, factuel, impersonnel. | « ton », « style » |
+| **template** (masculin) | Un texte ou un format à reproduire, tel quel ou en l'adaptant, selon qu'il est impératif ou indicatif ([qualite-outils.md §6](qualite-outils.md#6-règles-de-contenu)). Terme anglais courant en français technique (§1). | « gabarit » — correct, mais moins employé en français technique ; « modèle », ambigu avec le modèle de langage |
 | **lot de modifications** | Un ensemble de changements proposés fichier par fichier, que l'appelant applique. | « changeset », « patch » |
 
 ## 4. Outils
