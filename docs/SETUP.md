@@ -119,7 +119,11 @@ Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon
 3. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
-4. **Récapituler**, par agent hôte : installé / mis à jour (automatiquement) /
+4. **Relancer l'audit** après `--apply` et les arbitrages : chaque fichier écrit
+   doit être classé `identique`, preuve que l'écriture a eu lieu. Le code de
+   sortie vaut `0`, sauf si un fichier en conflit a été gardé en version locale
+   ou fusionné écart par écart : il reste alors classé `conflit`.
+5. **Récapituler**, par agent hôte : installé / mis à jour (automatiquement) /
    inchangé / arbitré.
 
 ## 3. Skills

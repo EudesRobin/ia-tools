@@ -27,11 +27,11 @@ oublier à celui de contrôle qui s'impose.
   ce qui le rend inoffensif si son enregistrement venait à se retrouver dans une
   configuration globale.
 - **Il ne boucle pas.** Il bloque au plus trois fois de suite dans un même
-  tour (`$MaxBlocages`), puis rend la main avec un avertissement si le
-  validateur reste rouge. Le compteur est propre à la session (`session_id`) et
+  tour (`$MaxBlocages`), puis laisse l'agent rendre la main, avec un
+  avertissement, si le validateur reste au rouge. Le compteur est propre à la session (`session_id`) et
   repart de zéro au premier arrêt de chaque tour (`stop_hook_active` faux).
   Copilot CLI limite en outre à huit le nombre de blocages consécutifs.
-- **Il ne bloque pas sur une anomalie d'environnement.** Si `python` est
+- **Il ne bloque pas en cas d'anomalie d'environnement.** Si `python` est
   introuvable dans le PATH, ou si le validateur se termine avec le code 2
   (dépendance absente, comme `pyyaml`), il le signale et se termine avec un
   code non bloquant : c'est un problème de poste, pas un défaut du travail
@@ -63,19 +63,18 @@ La procédure générale d'installation des outils est décrite dans
 ## Configuration
 
 Un seul paramètre, en tête de script : `$MaxBlocages`, nombre de blocages
-consécutifs admis dans un tour (3 par défaut). Le hook déduit la racine du
-projet du payload, avec repli sur `CLAUDE_PROJECT_DIR`, fourni par Claude Code,
+consécutifs admis dans un tour (3 par défaut). Le hook déduit du payload la
+racine du projet, avec repli sur `CLAUDE_PROJECT_DIR`, fourni par Claude Code,
 puis sur le répertoire courant.
 
 ## Limites
 
 - **PowerShell 7 requis** (`pwsh`). Le script le déclare en tête ; sous
   PowerShell 5 il refusera de s'exécuter.
-- **Il ne couvre que ce que `validate.py` sait contrôler** — front-matter, liens
-  relatifs, cohérence de `docs/`, chemins locaux en dur, renvois des fichiers
-  d'entrée vers `AGENTS.md`, et présence de la règle de suivi des tâches dans un
-  outil multi-étapes. Le registre de rédaction et l'absence d'attribution d'IA
-  restent des règles en prose, non vérifiables mécaniquement.
+- **Il ne couvre que ce que `validate.py` sait contrôler**, dont la liste fait
+  autorité dans [AGENTS.md](../../AGENTS.md), section « Ce qui n'est pas vérifié
+  mécaniquement ». Le registre de rédaction reste une règle en prose, non
+  vérifiable mécaniquement.
 - **Le suivi des tâches n'est contrôlé que sur le texte de l'outil.** Le
   validateur vérifie qu'un outil *porte* la règle — en-tête et marqueurs —
   jamais qu'une session s'y tient. Il repère les outils par leur déroulé
