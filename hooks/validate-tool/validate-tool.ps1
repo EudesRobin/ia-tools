@@ -8,13 +8,17 @@
     localement au depot, jamais dans la configuration globale d'un agent hote.
 
     Contrat commun a Claude Code et a Copilot CLI (CONVENTIONS.md section 3.2) :
-      - payload JSON sur stdin (cwd, stop_hook_active) ;
+      - payload JSON sur stdin (cwd, session_id, stop_hook_active) ;
       - code 0 sans sortie : rien a signaler, le tour se termine ;
       - code 0 et {"decision":"block","reason":...} sur stdout : bloquant, la
         raison est renvoyee a l'agent pour correction ;
       - autre code : erreur non bloquante.
     Le code 2 n'est pas employe : bloquant pour Claude Code, il n'est qu'un
     avertissement pour Copilot CLI.
+
+    Anti-boucle : au plus $MaxBlocages blocages consecutifs dans un tour, puis la
+    main est rendue avec un avertissement. Le code 2 du validateur signale une
+    anomalie d'environnement et ne bloque pas.
 
     Messages sans accents : ils transitent par la console.
 #>
@@ -40,11 +44,10 @@ function Get-PayloadField([string] $nom) {
     return $null
 }
 
-# --- 2. Anti-boucle ----------------------------------------------------------
-# Si ce hook a deja bloque la fin du tour en cours, ne pas rebloquer : l'agent a
-# repris la main pour corriger, on le laisse aller au bout. Copilot CLI plafonne
-# en outre a 8 blocages consecutifs.
-if (Get-PayloadField 'stop_hook_active') { exit 0 }
+# --- 2. Parametres ----------------------------------------------------------
+# Blocages consecutifs admis avant de rendre la main au rouge (anti-boucle).
+# Copilot CLI plafonne de son cote a 8.
+$MaxBlocages = 3
 
 # --- 3. Racine du projet -----------------------------------------------------
 # Champ cwd du payload, fourni par les deux agents hotes ; a defaut,
@@ -66,11 +69,43 @@ if (-not $python) {
     exit 1  # non bloquant : c'est un defaut d'environnement, pas du travail produit
 }
 
+# Compteur de blocages consecutifs, propre a la session (a defaut, au depot).
+$cle = Get-PayloadField 'session_id'
+if ([string]::IsNullOrWhiteSpace($cle)) { $cle = Get-PayloadField 'sessionId' }
+if ([string]::IsNullOrWhiteSpace($cle)) { $cle = $root }
+$hash = [Convert]::ToHexString(
+    [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($cle))).Substring(0, 16)
+$compteur = Join-Path ([IO.Path]::GetTempPath()) "validate-tool-$hash.count"
+
+# Premier arret du tour (stop_hook_active faux ou absent) : le compteur repart de
+# zero, pour qu'un tour interrompu n'entame pas le quota du suivant.
+if (-not (Get-PayloadField 'stop_hook_active')) {
+    Remove-Item -LiteralPath $compteur -ErrorAction SilentlyContinue
+}
+
 # --- 5. Lancer le validateur -------------------------------------------------
 $sortie = & $python.Source $validateur 2>&1
 $code = $LASTEXITCODE
 
-if ($code -eq 0) { exit 0 }
+if ($code -eq 0) {
+    Remove-Item -LiteralPath $compteur -ErrorAction SilentlyContinue
+    exit 0
+}
+if ($code -eq 2) {
+    # Anomalie d'environnement signalee par le validateur : pas du travail produit.
+    [Console]::Error.WriteLine("validate-tool : " + ($sortie | Out-String).Trim())
+    exit 1
+}
+
+$n = 0
+if (Test-Path -LiteralPath $compteur) { $n = [int](Get-Content -LiteralPath $compteur -Raw) }
+if ($n -ge $MaxBlocages) {
+    Remove-Item -LiteralPath $compteur -ErrorAction SilentlyContinue
+    [Console]::Error.WriteLine(
+        "validate-tool : validateur toujours rouge apres $MaxBlocages blocages, main rendue.")
+    exit 1
+}
+Set-Content -LiteralPath $compteur -Value ($n + 1) -NoNewline
 
 # --- 6. Bloquer et remonter les ecarts --------------------------------------
 $texte = ($sortie | Out-String).Trim()

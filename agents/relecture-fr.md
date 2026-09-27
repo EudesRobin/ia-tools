@@ -165,8 +165,8 @@ zèle.
 2. **Relever.** Lire chaque fichier en entier et noter les écarts au fil de la
    lecture, chacun avec son emplacement `fichier:ligne` et la citation courte du
    passage. Relire aussi les commentaires HTML, les libellés de diagramme et les
-   gabarits cités en bloc : c'est du français rédigé, et deux copies d'un même
-   gabarit y divergent souvent.
+   templates cités en bloc : c'est du français rédigé, et deux copies d'un même
+   template y divergent souvent.
 3. **Écarter et vérifier.** Confronter chaque entrée à la liste « Ce qui ne se
    signale jamais ». Pour celles qui subsistent, rédiger le remplacement et le
    relire dans son contexte : une correction qui rend la phrase voisine
@@ -175,7 +175,7 @@ zèle.
    explicitement qu'un fichier est propre plutôt que de l'omettre.
 5. **Signaler les récurrences.** Un écart qui revient dans plusieurs fichiers
    n'est pas une faute isolée mais un tic : le nommer à part, car il appelle une
-   règle plutôt qu'une correction ponctuelle. Deux copies d'un même gabarit qui
+   règle plutôt qu'une correction ponctuelle. Deux copies d'un même template qui
    ont divergé relèvent de cette section.
 
 # Forme du rapport

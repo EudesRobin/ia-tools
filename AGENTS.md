@@ -103,30 +103,54 @@ pas ignorer l'erreur.
 jamais vu en rouge n'est pas un contrôle : après avoir ajouté ou modifié une
 vérification, la voir échouer au moins une fois sur un cas volontairement cassé.
 
+Pour `validate.py` et `check_commit_msg.py`, ce cas cassé s'inscrit dans leurs
+tests, qui le rejouent à chaque exécution : pas terminé tant que
+**`python scripts/test_validate.py`** et
+**`python scripts/test_check_commit_msg.py`** ne sont pas au vert.
+
 ### Ce qui n'est pas vérifié mécaniquement
 
-`validate.py` et le hook `validate-tool` couvrent le front-matter et ses
-contraintes de chargement (longueur de `name` et de `description`, jeu de
-caractères, absence de balise XML), la taille du corps d'un outil, les liens
-relatifs, la cohérence de `docs/`, les chemins locaux en dur et la présence des
-renvois de `CLAUDE.md` et de `.github/copilot-instructions.md` vers ce fichier.
-Ils vérifient en outre qu'un outil multi-étapes **porte** la règle de suivi des
-tâches — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]` `[-]` — sans rien
-pouvoir dire de la façon dont une session s'y tient réellement.
+`validate.py` couvre le front-matter — clés admises, contraintes de chargement
+(longueur de `name` et de `description`, jeu de caractères, absence de balise
+XML), champ `tools` des agents —, la taille du corps d'un outil, les liens
+relatifs et les ancres, la cohérence de `docs/`, l'inventaire des outils dans
+`README.md` et `docs/SETUP.md`, les placeholders non déclarés, les chemins
+locaux en dur, la syntaxe des scripts et de l'enregistrement du hook, et la
+présence des renvois de `CLAUDE.md` et de `.github/copilot-instructions.md` vers
+ce fichier. Il vérifie en outre qu'un outil multi-étapes **porte** la règle de
+suivi des tâches — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]` `[-]` —
+sans rien pouvoir dire de la façon dont une session s'y tient réellement.
+
+Trois mécanismes le lancent : le hook `validate-tool` en fin de tour, le hook
+git `pre-commit` à chaque commit, et l'intégration continue, qui lance aussi les
+tests, à chaque push sur `main` et à chaque *pull request*. Le hook git
+`commit-msg` contrôle le message de commit : préfixe, longueur, absence
+d'attribution d'IA. Les hooks git ne s'appliquent qu'une fois activés dans le
+clone (section [Git](#git)).
 
 Restent des règles en prose, que rien ne contrôle et qu'il faut donc appliquer
 délibérément : le **registre de rédaction**, le **vocabulaire**, l'**absence
-d'attribution d'IA**, la **qualité d'écriture d'un outil** (concision, latitude
-laissée à l'agent, pertinence de la liste de phases fournie par un outil
-multi-étapes), la **cohérence sémantique entre documents** (une affirmation d'un
-document contredite par un autre échappe au validateur), et le **DoD des
-scripts** ci-dessus — rien ne vérifie qu'un script modifié a été lancé, ni
-qu'une vérification ajoutée a été vue en rouge.
+d'attribution d'IA dans une description de *pull request***, la **qualité
+d'écriture d'un outil** (concision, latitude laissée à l'agent, pertinence de la
+liste de phases fournie par un outil multi-étapes), la **cohérence sémantique
+entre documents** (une affirmation d'un document contredite par un autre
+échappe au validateur), et le **DoD des scripts** ci-dessus — rien ne vérifie
+qu'un script modifié a été lancé, ni qu'une vérification ajoutée a reçu son cas
+cassé dans les tests.
 
 ## Git
 
 Aucune attribution d'outil d'IA dans les commits ni les descriptions de *pull
 request* : voir [CONVENTIONS.md](./docs/CONVENTIONS.md) §1.5, qui fait autorité.
+
+La branche `main` est protégée : tout changement passe par une branche et une
+*pull request*. Avant le premier commit dans un clone, vérifier que les hooks
+git sont activés (`git config core.hooksPath` doit renvoyer `.githooks`), et à
+défaut les activer :
+
+```powershell
+git config core.hooksPath .githooks
+```
 
 ## Registre
 

@@ -39,12 +39,16 @@ ia-tools/
 ├── skills/              une skill par sous-dossier
 ├── agents/              un agent par fichier ; agents/docs/<nom>/ pour ses références
 ├── hooks/               un hook par sous-dossier ; hooks/README.md en donne l'état
-├── scripts/             outillage du dépôt (développement seul, non installé)
+├── scripts/             outillage du dépôt (réservé au développement, non installé)
 │   ├── validate.py      validateur des sources
-│   └── install.py       merge intelligent vers chaque agent hôte
+│   ├── install.py       merge intelligent vers chaque agent hôte
+│   ├── check_commit_msg.py  contrôle des messages de commit
+│   └── test_*.py        tests du validateur et du contrôle des messages
+├── .githooks/           hooks git pre-commit et commit-msg (à activer dans chaque clone)
 ├── .claude/             config Claude Code du dépôt (enregistrement du hook local)
-└── .github/             renvoi pour Copilot (copilot-instructions.md) et
-                         enregistrement du hook local (hooks/)
+└── .github/             renvoi pour Copilot (copilot-instructions.md),
+                         enregistrement du hook local (hooks/) et intégration
+                         continue (workflows/)
 ```
 
 ## Prérequis
@@ -106,11 +110,22 @@ l'agent dresse la liste de ce qui manque et n'installe rien sans accord.
 Les instructions du dépôt sont dans [AGENTS.md](./AGENTS.md). Les règles
 d'écriture des outils sont dans [CONVENTIONS.md](./docs/CONVENTIONS.md) ;
 [DOC_MAP.md](./docs/DOC_MAP.md) rattache chaque tâche au document qui la régit.
-Toute modification doit passer le validateur, que le hook `validate-tool` lance
-automatiquement en fin de tour :
+La branche `main` est protégée : toute modification passe par une *pull
+request*, dont l'intégration continue lance le validateur et les tests. Activer
+une fois par clone les hooks git, qui refusent un commit tant que le validateur
+est au rouge ou que le message de commit est non conforme :
+
+```powershell
+git config core.hooksPath .githooks
+```
+
+Le hook `validate-tool` lance aussi le validateur en fin de tour d'une session
+ouverte dans le dépôt. Lancement manuel :
 
 ```powershell
 python scripts/validate.py
+python scripts/test_validate.py
+python scripts/test_check_commit_msg.py
 ```
 
 ## Licence

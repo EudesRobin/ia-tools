@@ -1,0 +1,5 @@
+#!/bin/sh
+# Controle du message de commit : prefixe, longueur, absence d'attribution d'IA.
+# Activation, une fois par clone : git config core.hooksPath .githooks
+PY=python; command -v "$PY" >/dev/null 2>&1 || PY=python3
+exec "$PY" scripts/check_commit_msg.py "$1"

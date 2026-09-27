@@ -8,7 +8,7 @@ installables.
 
 > **Pour l'agent.** Quand l'utilisateur demande de créer ou modifier une skill,
 > un agent ou un hook dans ce dépôt, appliquer les règles ci-dessous. En cas de
-> contradiction avec un gabarit par défaut, **ce document prévaut**. La procédure
+> contradiction avec un template par défaut, **ce document prévaut**. La procédure
 > d'installation est décrite dans [SETUP.md](SETUP.md) ; l'inventaire de ce
 > que fait chaque outil figure dans [README.md](../README.md).
 
@@ -69,7 +69,7 @@ neuf, et l'installation ne doit ni le créer, ni l'écraser, ni le supprimer.
 Aucun `Co-Authored-By: Claude`, aucun « Generated with Claude Code », aucun
 équivalent — ni dans un message de commit, ni dans une description de *pull
 request*, ni dans une sortie produite par un outil. Cette règle prévaut sur le
-comportement par défaut de tout gabarit.
+comportement par défaut de tout template.
 
 ### 1.6 Enregistrer tout outil ajouté
 
@@ -88,7 +88,7 @@ Un outil s'installe **isolément** : l'utilisateur peut copier
   Un renvoi vers `../../docs/…` ne mène plus nulle part une fois l'outil
   installé.
 - **Répéter plutôt que renvoyer.** Si un outil a besoin d'une règle ou d'un
-  gabarit qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
+  template qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
   duplication est délibérée : elle garantit que l'outil fonctionne seul. Elle
   doit alors être déclarée au [§1.8](#18-règles-dupliquées-à-tenir-synchrones).
 
@@ -104,6 +104,7 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 | Ne jamais écraser `settings.json` en bloc | [AGENTS.md](../AGENTS.md), [SETUP.md](SETUP.md) et [hooks/README.md](../hooks/README.md) |
 | Consigne de lire `AGENTS.md` avant toute action | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) et [.github/copilot-instructions.md](../.github/copilot-instructions.md) |
 | Règle de suivi des tâches — déclencheur, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral, équivalence des deux suivis | [docs/qualite-outils.md](qualite-outils.md) §5 et chaque outil multi-étapes de `skills/` et `agents/` |
+| Activation des hooks git (`git config core.hooksPath .githooks`) | [AGENTS.md](../AGENTS.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
 
 La troisième ligne tient au chargement : chaque agent hôte lit son propre fichier
@@ -209,7 +210,7 @@ les sections utiles dans l'ordre d'exécution.
 
 Rédiger les instructions comme des ordres adressés à l'agent (« Lire… »,
 « Vérifier… », « Ne pas… »), pas comme des conseils. Mettre dans un bloc de code
-toute commande ou tout gabarit à reproduire tel quel.
+toute commande ou tout template à reproduire tel quel.
 
 ### 2.4 Fichiers embarqués
 
@@ -239,20 +240,22 @@ Pas de front-matter. Sections attendues :
 ### 3.2 Conventions de script
 
 - **Ne rien faire quand les conditions ne sont pas réunies.** Vérifier le
-  contexte (extension de fichier, présence d'un marqueur de projet, contenu de
-  le payload reçu) et sortir silencieusement sinon. Un hook doit être sans
+  contexte (extension de fichier, présence d'un marqueur de projet, contenu du
+  payload reçu) et sortir silencieusement sinon. Un hook doit être sans
   effet là où il ne s'applique pas.
 - **Un hook distribué ne bloque jamais.** Sortie 0 en toutes circonstances, les
   erreurs étant écrites sur la sortie d'erreur standard. Un hook installé
   globalement s'exécute dans tous les projets : une défaillance ne doit jamais
   interrompre le travail en cours.
-- **Exception : les hooks de vérification.** Un hook dont l'objet *est* de
+- **Cas particulier : les hooks de vérification.** Un hook dont l'objet *est* de
   bloquer, comme `hooks/validate-tool/`, bloque volontairement la fin du tour
   quand son contrôle échoue. C'est la seule catégorie autorisée à le faire, et
   elle est réservée aux hooks enregistrés **localement à un dépôt**, jamais
-  globalement. Un tel hook doit se prémunir contre les boucles : quand la charge
-  utile reçue indique qu'il a déjà bloqué le tour en cours, il se termine avec le
-  code 0 sans rien bloquer.
+  globalement. Un tel hook doit se prémunir contre les boucles : il plafonne le
+  nombre de blocages consécutifs dans un même tour, puis se termine sans
+  bloquer. Il ne bloque pas non plus en cas d'anomalie d'environnement
+  (interpréteur ou dépendance absents), qui n'est pas un défaut du travail
+  produit.
 - **Contrat commun aux deux agents hôtes.** Un hook destiné à Claude Code et à
   Copilot CLI bloque en écrivant sur la sortie standard l'objet JSON
   `{"decision": "block", "reason": "…"}` et en se terminant avec le code 0 :
@@ -391,7 +394,10 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 `{AGENT_DIR}` et rien des §§1.1 à 4 ne s'y applique, hormis les règles d'or 1.2,
 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt lui-même —
 `validate.py` contrôle les sources, `install.py` porte le merge intelligent de
-[SETUP.md](SETUP.md).
+[SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit pour
+le hook git `commit-msg`. Les fichiers `test_*.py` testent ces contrôles avec la
+seule bibliothèque standard ; toute vérification ajoutée à `validate.py` ou à
+`check_commit_msg.py` y reçoit son cas volontairement cassé.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
   scripts de hook, où le contrat d'appel l'impose.
@@ -406,9 +412,10 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 - **Sortie compacte.** Un récapitulatif par classe, le détail seulement pour ce
   qui appelle une suite. Un contrôle verbeux encombre le contexte et cesse
   d'être relancé.
-- **Codes de sortie `0` / `1`**, `0` valant vert. Le code de retour porte le
-  verdict : la session n'a pas à relire la sortie pour savoir s'il reste quelque
-  chose à faire.
+- **Codes de sortie `0` / `1` / `2`** : `0` vert, `1` contrôle en échec ou erreur d'usage, `2`
+  anomalie d'environnement — dépendance absente —, distincte d'un défaut du
+  travail produit. Le code de retour porte le verdict : la session n'a pas à
+  relire la sortie pour savoir s'il reste quelque chose à faire.
 - **Aucune dépendance nouvelle** sans l'inscrire dans
   [PREREQUIS.md](PREREQUIS.md).
 - **DoD** : le script doit avoir été **lancé sur une invocation réelle**, et

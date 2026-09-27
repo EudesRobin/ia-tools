@@ -12,8 +12,9 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     caracteres, aucune balise XML dans l'un ni l'autre ;
   - le corps de chaque SKILL.md et de chaque fichier d'agent compte moins de
     500 lignes ;
-  - tout lien Markdown relatif mene a un fichier existant, et vers une
-    ancre de section existante quand le lien en porte une ;
+  - tout lien Markdown relatif, en ligne ou de reference, mene a un fichier
+    existant, et vers une ancre de section existante quand le lien en porte
+    une ; une ancre seule (#section) doit exister dans le fichier lui-meme ;
   - tout document de docs/ (recursif) est enregistre dans docs/DOC_MAP.md
     et porte son lien de retour ; toute entree de la table pointe vers un
     fichier existant ;
@@ -21,8 +22,18 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     relatif depuis un autre fichier Markdown du depot (hors points d'entree et
     fichiers embarques exemptes) ;
   - aucun fichier suivi par git ne contient de chemin local en dur
-    (C:\\Users\\<user reel>, /home/<user>) — seuls les placeholders {...} et
-    les valeurs a renseigner <...> sont admis ;
+    (C:\\Users\\<user reel>, C:/Users/<user>, /home/<user>, /Users/<user>) —
+    seuls les placeholders {...} et les valeurs a renseigner <...> sont
+    admis ; un fichier texte illisible en UTF-8 est signale, non ignore ;
+  - le front-matter ne porte que les cles prevues (CONVENTIONS.md 2.1 et 4.1),
+    et tout agent declare 'tools' par des noms simples ;
+  - tout outil figure dans l'inventaire de README.md et, hors hooks, dans les
+    tables de docs/SETUP.md (CONVENTIONS.md section 5) ;
+  - tout placeholder {NOM} d'un outil distribue est declare dans
+    scripts/install.py, faute de quoi il serait installe tel quel ;
+  - les scripts Python compilent, les enregistrements du hook sont du JSON
+    valide et designent un script existant, les scripts PowerShell sont
+    syntaxiquement corrects (controle saute si pwsh est absent) ;
   - les fichiers d'entree propres a chaque agent hote (CLAUDE.md,
     .github/copilot-instructions.md) existent et renvoient vers AGENTS.md.
 
@@ -31,10 +42,13 @@ console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 (voir docs/PREREQUIS.md, section « Encodage de la console »).
 
 Usage : python scripts/validate.py
-Code de sortie : 0 si tout passe, 1 sinon.
+Code de sortie : 0 si tout passe, 1 si un controle echoue, 2 sur anomalie
+d'environnement (dependance absente), que le hook validate-tool ne bloque pas.
 """
 
+import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -48,7 +62,7 @@ except ImportError:
         "    pip install pyyaml",
         file=sys.stderr,
     )
-    sys.exit(1)
+    sys.exit(2)
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -72,18 +86,34 @@ XML_TAG_RE = re.compile(r"</?[a-z][a-z0-9]*(\s[^>]*)?/?>")
 # Liens Markdown [texte](cible). Les images, prefixees par '!', sont ignorees.
 LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 
+# Definition de lien de reference : "[etiquette]: cible".
+REF_DEF_RE = re.compile(r"^ {0,3}\[[^\]]+\]:\s*<?([^>\s]+)>?", re.MULTILINE)
+
 # Protocoles et formes de cibles qui ne designent pas un fichier du depot.
 EXTERNAL_LINK_RE = re.compile(r"^(https?:|mailto:|tel:|#|<)", re.IGNORECASE)
 
 # Chemins locaux en dur a bannir (hors placeholders {...} et valeurs <...>).
 LOCAL_PATH_PATTERNS = [
-    re.compile(r"C:\\Users\\(?![<{])[^\\\s]+"),
-    re.compile(r"/home/(?![<{])[^/\s]+"),
+    re.compile(r"[A-Za-z]:[\\/]Users[\\/](?![<{])[^\\/\s]+"),
+    re.compile(r"(?<![\w.~])/(?:home|Users)/(?![<{])[^/\s]+"),
 ]
+
+# Placeholder {NOM_VARIABLE} dans un outil distribue.
+PLACEHOLDER_RE = re.compile(r"\{[A-Z][A-Z0-9_]*\}")
+DISTRIBUTED_DIRS = ("skills", "agents", "hooks")
+
+# Cles de front-matter admises (CONVENTIONS.md sections 2.1 et 4.1).
+SKILL_KEYS = {"name", "description", "allowed-tools"}
+AGENT_KEYS = {"name", "description", "tools", "model"}
+TOOL_NAME_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*")
+
+# Enregistrements du hook local ; extensions devant etre lisibles en UTF-8.
+HOOK_REGISTRATIONS = (".claude/settings.json", ".github/hooks")
+UTF8_REQUIRED = {".md", ".py", ".ps1", ".json"}
 
 # Fichiers exemptes du controle "chemin en dur" (ils documentent le motif lui-meme).
 # Chemins relatifs a la racine, pas des noms de base.
-PATH_SCAN_EXCLUDE = {"scripts/validate.py"}
+PATH_SCAN_EXCLUDE = {"scripts/validate.py", "scripts/test_validate.py"}
 
 # Titre Markdown : "#{1,6} texte".
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
@@ -235,6 +265,7 @@ def check_skills(errors: list[str]) -> None:
             errors.append(f"{label} : {err}")
             continue
         check_frontmatter_fields(label, fm, skill_dir.name, errors)
+        check_keys(label, fm, SKILL_KEYS, errors)
 
 
 def check_agents(errors: list[str]) -> None:
@@ -252,6 +283,94 @@ def check_agents(errors: list[str]) -> None:
             errors.append(f"{label} : {err}")
             continue
         check_frontmatter_fields(label, fm, agent_md.stem, errors)
+        check_keys(label, fm, AGENT_KEYS, errors)
+        tools = fm.get("tools")
+        noms = tools.split(",") if isinstance(tools, str) else tools
+        if not isinstance(noms, list) or not noms:
+            errors.append(f"{label} : champ 'tools' manquant ou vide (obligatoire)")
+        elif not all(isinstance(n, str) and TOOL_NAME_RE.fullmatch(n.strip()) for n in noms):
+            errors.append(f"{label} : 'tools' attend des noms simples (Read, Grep...)")
+
+
+def check_keys(label: str, fm: dict, admises: set[str], errors: list[str]) -> None:
+    for cle in sorted(set(fm) - admises):
+        errors.append(f"{label} : cle de front-matter non prevue '{cle}'")
+
+
+def check_inventory(errors: list[str]) -> None:
+    """CONVENTIONS.md section 5 : tout outil figure au README et a SETUP.md."""
+    readme = read(ROOT / "README.md") or ""
+    setup = read(ROOT / "docs" / "SETUP.md") or ""
+    outils = [("agents", p.stem) for p in sorted((ROOT / "agents").glob("*.md"))]
+    for kind in ("skills", "hooks"):
+        outils += [(kind, p.name) for p in sorted((ROOT / kind).glob("*/")) if p.is_dir()]
+    for kind, nom in outils:
+        if f"[`{nom}`]" not in readme:
+            errors.append(f"{kind}/{nom} : absent de l'inventaire de README.md")
+        ligne = re.compile(rf"^\|\s*`{re.escape(nom)}`", re.MULTILINE)
+        if kind != "hooks" and not ligne.search(setup):
+            errors.append(f"{kind}/{nom} : absent des tables de docs/SETUP.md")
+
+
+def check_placeholders(errors: list[str]) -> None:
+    """Un placeholder non declare dans install.py serait installe tel quel."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        import install
+        declares = set(install.variables("claude", Path("."), False))
+    except Exception as exc:
+        errors.append(f"scripts/install.py : variables() inutilisable ({exc})")
+        return
+    for path in tracked_files():
+        rel = path.relative_to(ROOT).as_posix()
+        if rel.split("/", 1)[0] not in DISTRIBUTED_DIRS:
+            continue
+        found = set(PLACEHOLDER_RE.findall(read(path) or ""))
+        for ph in sorted(found - declares):
+            errors.append(f"{rel} : placeholder non declare dans install.py '{ph}'")
+
+
+def check_scripts_and_config(errors: list[str]) -> None:
+    """Syntaxe des scripts, JSON des enregistrements, scripts references."""
+    for path in sorted((ROOT / "scripts").glob("*.py")):
+        try:
+            compile(path.read_text(encoding="utf-8"), str(path), "exec")
+        except SyntaxError as exc:
+            errors.append(f"scripts/{path.name}:{exc.lineno} : erreur de syntaxe ({exc.msg})")
+    regs: list[Path] = []
+    for rel in HOOK_REGISTRATIONS:
+        p = ROOT / rel
+        if p.is_dir():
+            regs += sorted(p.glob("*.json"))
+        elif p.is_file():
+            regs.append(p)
+    for p in regs:
+        rel = p.relative_to(ROOT).as_posix()
+        try:
+            texte = json.dumps(json.loads(p.read_text(encoding="utf-8")))
+        except (ValueError, UnicodeDecodeError) as exc:
+            errors.append(f"{rel} : JSON invalide ({exc}) ; le hook est inactif")
+            continue
+        for script in sorted(set(re.findall(r"hooks/[\w./-]+\.ps1", texte))):
+            if not (ROOT / script).is_file():
+                errors.append(f"{rel} : script de hook introuvable '{script}'")
+    pwsh = shutil.which("pwsh")
+    ps1 = sorted((ROOT / "hooks").rglob("*.ps1"))
+    if pwsh and ps1:
+        fichiers = ",".join("'" + str(f).replace("'", "''") + "'" for f in ps1)
+        cmd = (
+            f"foreach($f in @({fichiers})){{$t=$null;$x=$null;"
+            "[void][System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$t,[ref]$x);"
+            "foreach($r in $x){Write-Output ($f+':'+$r.Extent.StartLineNumber+' : '+$r.ErrorId)}}"
+        )
+        out = subprocess.run(
+            [pwsh, "-NoProfile", "-NonInteractive", "-Command", cmd],
+            capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60,
+        )
+        for ligne in out.stdout.splitlines():
+            chemin, _, detail = ligne.rpartition(".ps1:")
+            rel = Path(chemin + ".ps1").relative_to(ROOT).as_posix()
+            errors.append(f"{rel}:{detail} : erreur de syntaxe PowerShell")
 
 
 def tool_docs() -> list[tuple[str, Path]]:
@@ -322,7 +441,7 @@ def check_progress_tracking(errors: list[str]) -> None:
 
 
 def markdown_links(text: str) -> list[str]:
-    return LINK_RE.findall(text)
+    return LINK_RE.findall(text) + REF_DEF_RE.findall(text)
 
 
 def slugify(heading: str) -> str:
@@ -355,11 +474,13 @@ def check_relative_links(errors: list[str]) -> None:
             continue
         rel = path.relative_to(ROOT).as_posix()
         for target in markdown_links(text):
-            if EXTERNAL_LINK_RE.match(target):
+            if EXTERNAL_LINK_RE.match(target) and not target.startswith("#"):
                 continue
             # Separer une ancre eventuelle : chemin.md#section
             cible, _, anchor = target.partition("#")
             if not cible:
+                if anchor not in heading_anchors(text):
+                    errors.append(f"{rel} : ancre interne introuvable '{target}'")
                 continue
             resolved = (path.parent / cible).resolve()
             if not resolved.exists():
@@ -467,6 +588,8 @@ def check_no_hardcoded_paths(errors: list[str]) -> None:
             continue
         text = read(path)
         if text is None:
+            if path.suffix.lower() in UTF8_REQUIRED and path.is_file():
+                errors.append(f"{rel} : illisible en UTF-8")
             continue
         for pattern in LOCAL_PATH_PATTERNS:
             for match in pattern.finditer(text):
@@ -484,7 +607,11 @@ def main() -> int:
     check_orphan_docs(errors)
     check_entry_redirects(errors)
     check_no_hardcoded_paths(errors)
+    check_inventory(errors)
+    check_placeholders(errors)
+    check_scripts_and_config(errors)
 
+    errors = list(dict.fromkeys(errors))  # un meme ecart peut remonter de deux controles
     if errors:
         print(f"validate.py : {len(errors)} probleme(s)\n")
         for e in errors:

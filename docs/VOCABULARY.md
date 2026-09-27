@@ -60,6 +60,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **document de fond** | Un document de `docs/` qui explique le *pourquoi* des règles, enregistré dans la table. Ce n'est pas un outil. | « document compagnon » — calque de *companion document* ; « doc annexe » |
 | **lien de retour** | La ligne qui, depuis un document de fond, renvoie vers la table. | « lien retour » — composé sans préposition ; « backlink » |
 | **registre** | Le niveau de langue imposé par [CONVENTIONS.md §1.9](CONVENTIONS.md#19-registre-de-rédaction) : français formel, factuel, impersonnel. | « ton », « style » |
+| **template** (masculin) | Un texte ou un format à reproduire, tel quel ou en l'adaptant, selon qu'il est impératif ou indicatif ([qualite-outils.md §6](qualite-outils.md#6-règles-de-contenu)). Terme anglais courant en français technique (§1). | « gabarit » — correct, mais moins employé en français technique ; « modèle », ambigu avec le modèle de langage |
 | **lot de modifications** | Un ensemble de changements proposés fichier par fichier, que l'appelant applique. | « changeset », « patch » |
 
 ## 4. Outils
@@ -71,6 +72,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **agent** | Un fichier `agents/<nom>.md`. Persona spécialisée dont le raisonnement se réutilise. | « sous-agent » au sens d'agent de ce dépôt (voir ci-dessous) |
 | **sous-agent** | Une instance déléguée dans une session, quel que soit l'agent qu'elle exécute. À distinguer de l'artefact `agents/<nom>.md`. | — |
 | **hook** | Un dossier `hooks/<nom>/` avec son `HOOK.md` et son script, déclenché par un événement de session. | « crochet », « déclencheur » |
+| **hook git** | Un script de `.githooks/` déclenché par git (`pre-commit`, `commit-msg`), activé une fois par clone. Ce n'est pas un outil : il vit hors de `hooks/` et ne relève pas des conventions des hooks d'agent hôte. Toujours écrire « hook git », jamais « hook » seul, pour le distinguer d'un hook d'agent hôte. | « crochet git » |
 | **payload** (masculin) | L'objet JSON que l'agent hôte transmet à un hook sur son entrée standard (`cwd`, `stop_hook_active`…). | « charge utile » — traduction littérale, opaque hors du vocabulaire des réseaux |
 | **front-matter** | Le bloc YAML en tête de `SKILL.md` ou d'un fichier d'agent. | « en-tête », « métadonnées » |
 | **fichier embarqué** | Un script, une feuille de style ou un document de référence livré dans le dossier d'un outil. | « asset », « ressource » |
