@@ -82,6 +82,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | Terme retenu | Sens | À ne pas employer |
 |---|---|---|
 | **committer** | Enregistrer des modifications par un commit git. | « valider un commit », ambigu avec le contrôle du validateur |
+| **tag** (masculin) | Une référence git nommée qui désigne un commit ; dans ce dépôt, elle marque une version ([CONVENTIONS.md §8](CONVENTIONS.md#8-publier-une-version)). | « étiquette » — jamais employé spontanément ; « balise », qui désigne une balise XML |
 | **merge intelligent** | La procédure de [SETUP.md](SETUP.md) : rendre, comparer, adopter ou arbitrer, pour chaque agent hôte. | « fusion », « synchronisation » |
 | **placeholder** | `{NOM_VARIABLE}`, présent dans le dépôt et remplacé lors de l'installation par sa valeur locale — par exemple `{AGENT_DIR}`. À distinguer de la forme `<...>`, valeur renseignée à l'exécution et jamais substituée ([CONVENTIONS.md §1.2](CONVENTIONS.md#12-aucun-chemin-local-en-dur)). | « marqueur », « jeton » |
 | **agent hôte** | Le produit qui charge et exécute les outils : Claude Code ou Copilot CLI. Sa racine locale s'écrit `{AGENT_DIR}`. À distinguer de l'**agent**, artefact `agents/<nom>.md` de ce dépôt : ne pas l'abréger en « agent » dans un passage qui parle aussi des agents du dépôt. | « harnais », qui désigne autre chose (§2) ; « plateforme » ; « IDE » |

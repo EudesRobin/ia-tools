@@ -25,9 +25,10 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 | Ajouter ou modifier un script d'outillage du dépôt sous `scripts/`                | [CONVENTIONS.md](CONVENTIONS.md) §7 — **à suivre obligatoirement** |
 | Comprendre le hook du dépôt, son enregistrement pour chaque agent hôte et pourquoi il n'est pas distribué | [hooks/README.md](../hooks/README.md) |
 | Installer ou mettre à jour les outils vers `{AGENT_DIR}` (Claude Code, Copilot CLI) | [SETUP.md](SETUP.md) — **procédure à suivre** |
+| Publier une version du dépôt — choisir son numéro, poser son tag                  | [CONVENTIONS.md](CONVENTIONS.md) §8 — **procédure à suivre** |
 | Vérifier ou installer un prérequis système (Python, Git, bibliothèques, `adb`, `pwsh`) | [PREREQUIS.md](PREREQUIS.md) |
 
-Six lignes portent une règle à appliquer, pas du contexte. L'écriture d'un outil
+Sept lignes portent une règle à appliquer, pas du contexte. L'écriture d'un outil
 est la plus dense : [CONVENTIONS.md](CONVENTIONS.md) fixe l'arborescence et le
 nommage, la structure de `SKILL.md` / `HOOK.md` / des fichiers d'agent, le
 front-matter, le moindre privilège sur l'accès aux outils, le traitement des
