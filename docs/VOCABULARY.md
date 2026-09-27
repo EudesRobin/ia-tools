@@ -14,8 +14,8 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 Un terme anglais s'écrit tel quel lorsqu'il est **couramment employé en français
 technique** — *hook*, *skill*, *front-matter*, *pull request*, *merge*, *shell*,
-*flag*, *root*, *cache*, *swap*. Ne pas lui imposer une traduction française
-rare, qui obscurcit au lieu de clarifier.
+*flag*, *root*, *cache*, *swap*, *payload*. Ne pas lui imposer une traduction
+française rare, qui obscurcit au lieu de clarifier.
 
 La règle vaut aussi contre les traductions qui **existent** mais ne s'emploient
 pas : *flag* ne devient ni « drapeau », calque raide, ni « indicateur », exact
@@ -48,7 +48,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **suivi par l'outil de la session** | La liste tenue à jour dans l'outil de liste de tâches de la session, quand celle-ci en expose un, et affichée par lui. | « voie native », « mode natif », « panneau intégré » |
 | **suivi dans la réponse** | La liste tenue à jour dans un bloc `**Tâches**` écrit dans la réponse, quand la session n'expose aucun outil de ce type. **À égalité avec le suivi par l'outil de la session** : les deux satisfont le protocole, aucun n'est un échec. | « voie imprimée », « repli », « voie dégradée », « mode secours » |
 | **checklist Markdown** | La forme concrète que prend le suivi dans la réponse : le bloc `**Tâches**`, écrit puis ré-affiché en entier à chaque changement d'état. Markdown est le nom du format : ne pas chercher à le traduire. | « checklist imprimée », « checklist en prose » ; toute formulation la qualifiant de repli — les deux suivis se valent ([qualite-outils.md §5](qualite-outils.md#5-déroulés-et-suivi-de-progression)) ; le marqueur en une seule ligne `✓ n terminé → suivant`, incompatible avec le ré-affichage intégral |
-| **[mécanique]** (marqueur de checklist) | Signale qu'un item est vérifié par `scripts/validate.py`, par opposition aux items non marqués, qui relèvent du jugement ([qualite-outils.md §11](qualite-outils.md#11-checklist)). Repris de l'expression « vérifié mécaniquement » ([CLAUDE.md](../CLAUDE.md), [CONVENTIONS.md §6](CONVENTIONS.md#6-checklist--ajouter-un-document-de-fond)). | « [validé] » — contredit la case à cocher `[ ]` voisine, puisqu'il annonce un état accompli alors que `[ ]` marque ce qui reste à faire, et ne dit pas par quel moyen |
+| **[mécanique]** (marqueur de checklist) | Signale qu'un item est vérifié par `scripts/validate.py`, par opposition aux items non marqués, qui relèvent du jugement ([qualite-outils.md §11](qualite-outils.md#11-checklist)). Repris de l'expression « vérifié mécaniquement » ([AGENTS.md](../AGENTS.md), [CONVENTIONS.md §6](CONVENTIONS.md#6-checklist--ajouter-un-document-de-fond)). | « [validé] » — contredit la case à cocher `[ ]` voisine, puisqu'il annonce un état accompli alors que `[ ]` marque ce qui reste à faire, et ne dit pas par quel moyen |
 
 ## 3. Documentation
 
@@ -71,6 +71,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **agent** | Un fichier `agents/<nom>.md`. Persona spécialisée dont le raisonnement se réutilise. | « sous-agent » au sens d'agent de ce dépôt (voir ci-dessous) |
 | **sous-agent** | Une instance déléguée dans une session, quel que soit l'agent qu'elle exécute. À distinguer de l'artefact `agents/<nom>.md`. | — |
 | **hook** | Un dossier `hooks/<nom>/` avec son `HOOK.md` et son script, déclenché par un événement de session. | « crochet », « déclencheur » |
+| **payload** (masculin) | L'objet JSON que l'agent hôte transmet à un hook sur son entrée standard (`cwd`, `stop_hook_active`…). | « charge utile » — traduction littérale, opaque hors du vocabulaire des réseaux |
 | **front-matter** | Le bloc YAML en tête de `SKILL.md` ou d'un fichier d'agent. | « en-tête », « métadonnées » |
 | **fichier embarqué** | Un script, une feuille de style ou un document de référence livré dans le dossier d'un outil. | « asset », « ressource » |
 
@@ -78,8 +79,10 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 
 | Terme retenu | Sens | À ne pas employer |
 |---|---|---|
-| **merge intelligent** | La procédure de [SETUP.md](SETUP.md) : rendre, comparer, adopter ou arbitrer. | « fusion », « synchronisation » |
-| **placeholder** | `<NOM_VARIABLE>`, présent dans le dépôt et remplacé lors de l'installation par sa valeur locale. | « marqueur », « jeton » |
+| **committer** | Enregistrer des modifications par un commit git. | « valider un commit », ambigu avec le contrôle du validateur |
+| **merge intelligent** | La procédure de [SETUP.md](SETUP.md) : rendre, comparer, adopter ou arbitrer, pour chaque agent hôte. | « fusion », « synchronisation » |
+| **placeholder** | `{NOM_VARIABLE}`, présent dans le dépôt et remplacé lors de l'installation par sa valeur locale — par exemple `{AGENT_DIR}`. À distinguer de la forme `<...>`, valeur renseignée à l'exécution et jamais substituée ([CONVENTIONS.md §1.2](CONVENTIONS.md#12-aucun-chemin-local-en-dur)). | « marqueur », « jeton » |
+| **agent hôte** | Le produit qui charge et exécute les outils : Claude Code ou Copilot CLI. Sa racine locale s'écrit `{AGENT_DIR}`. À distinguer de l'**agent**, artefact `agents/<nom>.md` de ce dépôt : ne pas l'abréger en « agent » dans un passage qui parle aussi des agents du dépôt. | « harnais », qui désigne autre chose (§2) ; « plateforme » ; « IDE » |
 | **rendu** | La source du dépôt après substitution des placeholders. C'est le rendu, jamais la source brute, que l'on compare au fichier local. | — |
 | **conflit** | Un écart qui ne s'explique ni par les placeholders ni par une révision antérieure du dépôt : une édition locale manuelle. Seul cas qui justifie un arbitrage. | « divergence » |
 | **mode plan** | Le mode d'exploration en lecture seule précédant toute proposition. | « planning mode » |

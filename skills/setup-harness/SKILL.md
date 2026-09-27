@@ -1,14 +1,23 @@
 ---
 name: setup-harness
-description: Configurer le harnais (boucle de vérification lancer/tester/vérifier) d'un projet dans son CLAUDE.md. À utiliser quand l'utilisateur demande de mettre en place / configurer la boucle de feedback, le harnais, ou « comment vérifier que ça marche » pour un projet.
+description: Configurer le harnais (boucle de vérification lancer/tester/vérifier) d'un projet dans son fichier d'instructions — AGENTS.md, CLAUDE.md ou copilot-instructions.md. À utiliser quand l'utilisateur demande de mettre en place / configurer la boucle de feedback, le harnais, ou « comment vérifier que ça marche » pour un projet.
 ---
 
 # setup-harness
 
-Amorce la section « Harnais » du `CLAUDE.md` **de projet** (pas le `CLAUDE.md`
-global) : le bloc lancer / tester / vérifier qui permet de prouver qu'un
-changement fonctionne réellement, plutôt que de conclure sur la seule absence
-d'erreur.
+Amorce la section « Harnais » du fichier d'instructions **du projet** (pas des
+instructions globales de l'utilisateur) : le bloc lancer / tester / vérifier qui
+permet de prouver qu'un changement fonctionne réellement, plutôt que de conclure
+sur la seule absence d'erreur.
+
+**Fichier cible**, par ordre de préférence :
+
+- `AGENTS.md` à la racine du projet, s'il existe : c'est le fichier commun aux
+  agents hôtes ;
+- à défaut, le fichier d'instructions de l'agent hôte qui exécute la skill :
+  `CLAUDE.md` pour Claude Code, `.github/copilot-instructions.md` pour Copilot
+  CLI ;
+- si le fichier retenu se réduit à un renvoi, le fichier visé par ce renvoi.
 
 ## Suivi de progression — impératif
 
@@ -25,7 +34,7 @@ suivis n'est un repli.
 - [ ] Phase 1 : détecter la stack du projet courant
 - [ ] Phase 2 : proposer le bloc Harnais rempli avec les commandes détectées
 - [ ] Phase 3 : obtenir l'accord explicite de l'utilisateur
-- [ ] Phase 4 : écrire le bloc dans le `CLAUDE.md` du projet
+- [ ] Phase 4 : écrire le bloc dans le fichier cible du projet
 - [ ] Phase 5 : rappeler que le harnais est local au projet
 
 La phase 3 est un contrôle : elle ne passe à `[x]` que sur l'accord explicite de
@@ -78,15 +87,17 @@ phase 4.
    boucle** : le reproduire tel quel, ne pas le réduire à une simple consigne
    « vérifier avant de conclure ».
 
-3. **Faire confirmer** les commandes par l'utilisateur avant d'écrire le bloc —
-   les corriger si elles sont fausses ou incomplètes.
+3. **Faire confirmer** les commandes et le fichier cible par l'utilisateur avant
+   d'écrire le bloc — corriger les commandes ou le fichier cible si
+   l'utilisateur les juge faux ou incomplets.
 
-4. **Écrire** le bloc dans le `CLAUDE.md` du projet (le créer s'il n'existe
+4. **Écrire** le bloc dans le fichier cible du projet (le créer s'il n'existe
    pas) :
-   - Fichier déjà présent → ajouter/mettre à jour uniquement la section
+   - Fichier déjà présent → ajouter ou mettre à jour uniquement la section
      `## Harnais — boucle de vérification`, sans modifier le reste du fichier.
-   - Fichier absent → le créer avec uniquement cette section.
+   - Aucun fichier d'instructions dans le projet → créer celui de l'agent hôte
+     avec uniquement cette section.
 
-5. Rappeler que ce harnais est **local au projet** (pas dans le CLAUDE.md
-   global) et qu'une skill de lancement ou de vérification de l'application peut
-   s'en servir pour vérifier le changement de bout en bout.
+5. Rappeler que ce harnais est **local au projet** (pas dans les instructions
+   globales) et qu'une skill de lancement ou de vérification de l'application
+   peut s'en servir pour vérifier le changement de bout en bout.

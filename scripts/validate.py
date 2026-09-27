@@ -21,8 +21,10 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     relatif depuis un autre fichier Markdown du depot (hors points d'entree et
     fichiers embarques exemptes) ;
   - aucun fichier suivi par git ne contient de chemin local en dur
-    (C:\\Users\\<user reel>, /home/<user>) — seuls les placeholders <...> sont
-    admis.
+    (C:\\Users\\<user reel>, /home/<user>) — seuls les placeholders {...} et
+    les valeurs a renseigner <...> sont admis ;
+  - les fichiers d'entree propres a chaque agent hote (CLAUDE.md,
+    .github/copilot-instructions.md) existent et renvoient vers AGENTS.md.
 
 Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
@@ -73,10 +75,10 @@ LINK_RE = re.compile(r"(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 # Protocoles et formes de cibles qui ne designent pas un fichier du depot.
 EXTERNAL_LINK_RE = re.compile(r"^(https?:|mailto:|tel:|#|<)", re.IGNORECASE)
 
-# Chemins locaux en dur a bannir (hors placeholders <...>).
+# Chemins locaux en dur a bannir (hors placeholders {...} et valeurs <...>).
 LOCAL_PATH_PATTERNS = [
-    re.compile(r"C:\\Users\\(?!<)[^\\\s]+"),
-    re.compile(r"/home/(?!<)[^/\s]+"),
+    re.compile(r"C:\\Users\\(?![<{])[^\\\s]+"),
+    re.compile(r"/home/(?![<{])[^/\s]+"),
 ]
 
 # Fichiers exemptes du controle "chemin en dur" (ils documentent le motif lui-meme).
@@ -91,8 +93,15 @@ HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
 # et fichiers embarques references en prose plutot que par lien Markdown.
 ORPHAN_SCAN_EXCLUDE = {
     "README.md",
+    "AGENTS.md",
     "CLAUDE.md",
+    ".github/copilot-instructions.md",
 }
+
+# Instructions canoniques et fichiers d'entree propres a chaque agent hote, qui
+# doivent y renvoyer (AGENTS.md, section « Lecture prealable obligatoire »).
+CANONICAL_INSTRUCTIONS = "AGENTS.md"
+ENTRY_REDIRECTS = ("CLAUDE.md", ".github/copilot-instructions.md")
 
 # Suivi des taches (docs/qualite-outils.md, section 5). Le seuil est celui du
 # declencheur de la regle elle-meme : trois etapes distinctes ou plus. En deca,
@@ -132,9 +141,15 @@ BACKLINK_RE = re.compile(
 
 
 def tracked_files() -> list[Path]:
+    """Fichiers suivis, plus les fichiers nouveaux non ignores : un fichier cree
+    dans le tour doit etre controle avant d'etre ajoute a l'index."""
     try:
         out = subprocess.run(
-            ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+            ["git", "ls-files", "--cached", "--others", "--exclude-standard"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
         )
         return [ROOT / p for p in out.stdout.splitlines() if p.strip()]
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -422,6 +437,29 @@ def check_orphan_docs(errors: list[str]) -> None:
             errors.append(f"{rel} : aucun autre document Markdown ne le reference")
 
 
+def check_entry_redirects(errors: list[str]) -> None:
+    """Chaque agent hote lit son propre fichier d'entree : ce fichier doit mener
+    a AGENTS.md par un lien relatif, sans quoi l'agent ne voit pas les
+    instructions."""
+    canonique = (ROOT / CANONICAL_INSTRUCTIONS).resolve()
+    if not canonique.is_file():
+        errors.append(f"{CANONICAL_INSTRUCTIONS} manquant")
+        return
+    for rel in ENTRY_REDIRECTS:
+        path = ROOT / rel
+        text = read(path)
+        if text is None:
+            errors.append(f"{rel} manquant ou illisible : renvoi vers {CANONICAL_INSTRUCTIONS} attendu")
+            continue
+        cibles = {
+            (path.parent / t.split("#", 1)[0]).resolve()
+            for t in markdown_links(text)
+            if not EXTERNAL_LINK_RE.match(t) and t.split("#", 1)[0]
+        }
+        if canonique not in cibles:
+            errors.append(f"{rel} : aucun lien relatif vers {CANONICAL_INSTRUCTIONS}")
+
+
 def check_no_hardcoded_paths(errors: list[str]) -> None:
     for path in tracked_files():
         rel = path.relative_to(ROOT).as_posix()
@@ -444,6 +482,7 @@ def main() -> int:
     check_relative_links(errors)
     check_doc_map(errors)
     check_orphan_docs(errors)
+    check_entry_redirects(errors)
     check_no_hardcoded_paths(errors)
 
     if errors:

@@ -1,9 +1,9 @@
-# PREREQUIS — outils système (hors Claude)
+# PREREQUIS — outils système (hors agents hôtes)
 
-Outils **hôte** supposés présents par certaines skills et par l'outillage du
-dépôt. Indépendants de l'installation des outils Claude (voir
-[SETUP.md](SETUP.md)) : ce sont des binaires/paquets système, pas des
-fichiers copiés vers `~/.claude/`.
+Outils **système** supposés présents par certaines skills et par l'outillage du
+dépôt. Indépendants de l'installation des outils (voir [SETUP.md](SETUP.md)) :
+ce sont des binaires ou des paquets système, pas des fichiers copiés vers
+`{AGENT_DIR}`.
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 

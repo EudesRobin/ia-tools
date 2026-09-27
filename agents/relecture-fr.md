@@ -129,7 +129,7 @@ se corrige pas ; tout au plus se discute-t-il.
 
 **Les termes anglais entrés dans l'usage technique français** : *hook*, *skill*,
 *front-matter*, *pull request*, *merge*, *shell*, *flag*, *root*, *cache*,
-*swap*, *headless*.
+*swap*, *headless*, *payload*.
 
 **Plus largement, ne pas imposer de traduction à un terme technique anglais**,
 même quand une traduction française existe : *flag* ne devient ni « drapeau »,

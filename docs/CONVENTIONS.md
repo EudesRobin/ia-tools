@@ -28,19 +28,26 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 - **Un hook = un dossier** `hooks/<nom>/`, contenant `HOOK.md` et son script.
 
 L'agent est un fichier à plat, pas un dossier : c'est la structure attendue sous
-`~/.claude/agents/`, celle que [SETUP.md](SETUP.md) copie et celle que
-`scripts/validate.py` contrôle.
+`{AGENT_DIR}/agents/`, celle que [SETUP.md](SETUP.md) copie et celle que
+`scripts/validate.py` contrôle. Pour Copilot CLI, l'installation le renomme
+`<nom>.agent.md` ; le dépôt ne porte que `<nom>.md`.
 
 ### 1.2 Aucun chemin local en dur
 
 Aucun fichier versionné ne doit contenir de chemin utilisateur réel
-(`C:\Users\<nom>\…`, `/home/<nom>/…`). Employer un placeholder `<NOM_VARIABLE>`,
+(`C:\Users\<nom>\…`, `/home/<nom>/…`). Employer un placeholder `{NOM_VARIABLE}`,
 déclaré dans la table des variables de [SETUP.md](SETUP.md), que l'installation
 remplace par la valeur locale. Cette règle est contrôlée mécaniquement par
 `scripts/validate.py`.
 
-Les chemins `~/.claude/…` ne sont pas concernés : ils sont génériques et
-s'écrivent tels quels.
+La racine de l'agent hôte s'écrit `{AGENT_DIR}` : `~/.claude` pour Claude Code,
+`~/.copilot` pour Copilot CLI. Un chemin propre à un seul agent hôte
+(`~/.claude/…`) ne s'écrit tel quel que lorsque le propos ne concerne que cet
+agent hôte.
+
+La forme `<...>` désigne une valeur renseignée à l'exécution, par l'utilisateur
+ou par l'agent (`<IP_TV>`, `<nom>`) : elle n'est jamais substituée à
+l'installation.
 
 ### 1.3 Aucun secret dans le dépôt
 
@@ -53,7 +60,7 @@ dans un message de commit ou une description de *pull request*.
 
 Ce qu'un outil génère pendant son utilisation reste dans le dossier installé,
 pas dans le dépôt. Le cas type est un fichier de notes qu'un agent crée et tient
-à jour sous `~/.claude/agents/docs/<nom>/` : il est absent d'un environnement
+à jour sous `{AGENT_DIR}/agents/docs/<nom>/` : il est absent d'un environnement
 neuf, et l'installation ne doit ni le créer, ni l'écraser, ni le supprimer.
 `.gitignore` doit couvrir toute production de ce type.
 
@@ -75,9 +82,11 @@ Un outil s'installe **isolément** : l'utilisateur peut copier
 `skills/clean-android-tv/` sans le reste du dépôt. Il en découle deux règles.
 
 - **Ne jamais référencer un chemin relatif au dépôt.** Une fois installée dans
-  `~/.claude/skills/<nom>/`, une skill n'a plus ni `docs/`, ni `README.md` à
-  côté d'elle. Ne référencer que son propre dossier ou un chemin `~/.claude/…`.
-  Un renvoi vers `../../docs/…` est cassé dès l'installation.
+  `{AGENT_DIR}/skills/<nom>/`, une skill n'a plus ni `docs/`, ni `README.md` à
+  côté d'elle. Ne référencer que son propre dossier ou un chemin
+  `{AGENT_DIR}/…`.
+  Un renvoi vers `../../docs/…` ne mène plus nulle part une fois l'outil
+  installé.
 - **Répéter plutôt que renvoyer.** Si un outil a besoin d'une règle ou d'un
   gabarit qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
   duplication est délibérée : elle garantit que l'outil fonctionne seul. Elle
@@ -91,19 +100,23 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 
 | Contenu dupliqué | Copies |
 |---|---|
-| Dépôt source de vérité / arbitrage seulement sur conflit | [CLAUDE.md](../CLAUDE.md) et [SETUP.md](SETUP.md) |
-| Ne jamais écraser `settings.json` en bloc | [CLAUDE.md](../CLAUDE.md), [SETUP.md](SETUP.md) et [hooks/README.md](../hooks/README.md) |
+| Dépôt source de vérité / arbitrage seulement sur conflit | [AGENTS.md](../AGENTS.md) et [SETUP.md](SETUP.md) |
+| Ne jamais écraser `settings.json` en bloc | [AGENTS.md](../AGENTS.md), [SETUP.md](SETUP.md) et [hooks/README.md](../hooks/README.md) |
+| Consigne de lire `AGENTS.md` avant toute action | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) et [.github/copilot-instructions.md](../.github/copilot-instructions.md) |
 | Règle de suivi des tâches — déclencheur, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral, équivalence des deux suivis | [docs/qualite-outils.md](qualite-outils.md) §5 et chaque outil multi-étapes de `skills/` et `agents/` |
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
 
-Les deux dernières lignes relèvent du [§1.7](#17-auto-suffisance-des-outils) :
+La troisième ligne tient au chargement : chaque agent hôte lit son propre fichier
+d'entrée, et `AGENTS.md` doit être atteint depuis chacun d'eux. Les deux
+dernières lignes relèvent du [§1.7](#17-auto-suffisance-des-outils) :
 `skills/` et `agents/` sont distribués séparément et `docs/` ne l'est pas du
 tout — aucun de ces ensembles ne peut renvoyer vers un autre.
 
 ### 1.9 Registre de rédaction
 
 Cette règle s'applique à **tout** ce qui est écrit dans ce dépôt : documentation
-d'outil, documents de fond, `README.md`, `CLAUDE.md`, ce fichier compris.
+d'outil, documents de fond, `README.md`, `AGENTS.md` et ses renvois, ce fichier
+compris.
 
 - **Français formel et neutre.** Pas de langage familier, pas de réflexion à
   voix haute, pas de commentaire sur la démarche suivie. Concis et impersonnel.
@@ -116,14 +129,16 @@ d'outil, documents de fond, `README.md`, `CLAUDE.md`, ce fichier compris.
   [VOCABULARY.md](VOCABULARY.md), qui fait autorité : s'y reporter avant
   d'introduire un terme, et y ajouter tout terme ayant fait l'objet d'une
   hésitation. Les termes anglais largement employés en français (*front-matter*,
-  *hook*, *pull request*, *headless*) s'écrivent tels quels ; ne pas imposer une
-  traduction française peu usitée. Inversement, ne pas employer d'anglicisme
-  quand le terme français est courant.
-- **Ne pas changer la langue d'un document existant.** Un document rédigé en
-  français le reste, même si la demande est formulée dans une autre langue.
+  *hook*, *pull request*, *headless*, *payload*) s'écrivent tels quels ; ne pas
+  imposer une traduction française peu usitée. Inversement, ne pas employer
+  d'anglicisme quand le terme français est courant.
+- **Tout en français.** Un document rédigé en français le reste, même si la
+  demande est formulée dans une autre langue ; un nouveau document s'écrit en
+  français.
 
-Ce dépôt est spécifique à Claude : écrire « Claude » quand c'est de Claude qu'il
-s'agit, sans chercher de formulation neutre entre plusieurs outils.
+Les outils de ce dépôt servent plusieurs agents hôtes — Claude Code et Copilot
+CLI. Écrire « l'agent » pour désigner celui qui exécute un outil ; ne nommer
+Claude ou Copilot que pour un comportement propre à l'un d'eux.
 
 ---
 
@@ -145,7 +160,7 @@ allowed-tools:          # FACULTATIF — moindre privilège, voir §2.2
 
 - **`name`** — kebab-case, strictement identique au nom du dossier. Contrôlé par
   `scripts/validate.py`.
-- **`description`** — c'est la chaîne d'après laquelle Claude décide de
+- **`description`** — c'est la chaîne d'après laquelle l'agent décide de
   déclencher la skill. Deux parties : *ce que fait la skill*, puis les
   **conditions de déclenchement explicites**, introduites par « À utiliser
   quand… » ou « À utiliser pour… ». Les formuler avec les mots que l'utilisateur
@@ -154,9 +169,10 @@ allowed-tools:          # FACULTATIF — moindre privilège, voir §2.2
   Markdown… », jamais « Convertit… » ni « Cette skill convertit… » : c'est la
   forme qui désigne une capacité en français, et elle est uniforme sur tout le
   dépôt.
-- **`allowed-tools`** — facultatif ; les skills actuelles n'en déclarent pas. Le
-  renseigner dans toute nouvelle skill dont le périmètre d'outils est
-  identifiable reste préférable.
+- **`allowed-tools`** — facultatif. Il est préférable de le renseigner dans
+  toute nouvelle skill dont le périmètre d'outils est identifiable. Ce champ n'est
+  appliqué que par Claude Code ; Copilot CLI l'ignore, si bien qu'il ne remplace
+  pas les garde-fous énoncés dans le corps de la skill.
 
 ### 2.2 `allowed-tools` — moindre privilège
 
@@ -191,7 +207,7 @@ les sections utiles dans l'ordre d'exécution.
 - **`## Règles`** — les règles impératives, sous forme de liste.
 - **`## Limites`** — cas non couverts et comportements connus.
 
-Rédiger les instructions comme des ordres adressés à Claude (« Lire… »,
+Rédiger les instructions comme des ordres adressés à l'agent (« Lire… »,
 « Vérifier… », « Ne pas… »), pas comme des conseils. Mettre dans un bloc de code
 toute commande ou tout gabarit à reproduire tel quel.
 
@@ -224,19 +240,26 @@ Pas de front-matter. Sections attendues :
 
 - **Ne rien faire quand les conditions ne sont pas réunies.** Vérifier le
   contexte (extension de fichier, présence d'un marqueur de projet, contenu de
-  la charge utile reçue) et sortir silencieusement sinon. Un hook doit être sans
+  le payload reçu) et sortir silencieusement sinon. Un hook doit être sans
   effet là où il ne s'applique pas.
 - **Un hook distribué ne bloque jamais.** Sortie 0 en toutes circonstances, les
   erreurs étant écrites sur la sortie d'erreur standard. Un hook installé
   globalement s'exécute dans tous les projets : une défaillance ne doit jamais
   interrompre le travail en cours.
 - **Exception : les hooks de vérification.** Un hook dont l'objet *est* de
-  bloquer, comme `hooks/validate-tool/`, se termine volontairement avec un code
-  bloquant quand son contrôle échoue. C'est la seule catégorie autorisée à le
-  faire, et elle est réservée aux hooks enregistrés **localement à un dépôt**,
-  jamais globalement. Un tel hook doit se prémunir contre les boucles : quand la
-  charge utile reçue indique qu'il a déjà bloqué le tour en cours, il se termine
-  avec le code 0.
+  bloquer, comme `hooks/validate-tool/`, bloque volontairement la fin du tour
+  quand son contrôle échoue. C'est la seule catégorie autorisée à le faire, et
+  elle est réservée aux hooks enregistrés **localement à un dépôt**, jamais
+  globalement. Un tel hook doit se prémunir contre les boucles : quand la charge
+  utile reçue indique qu'il a déjà bloqué le tour en cours, il se termine avec le
+  code 0 sans rien bloquer.
+- **Contrat commun aux deux agents hôtes.** Un hook destiné à Claude Code et à
+  Copilot CLI bloque en écrivant sur la sortie standard l'objet JSON
+  `{"decision": "block", "reason": "…"}` et en se terminant avec le code 0 :
+  c'est la seule forme que les deux agents reconnaissent. Le code 2, bloquant
+  pour Claude Code, n'est qu'un avertissement pour Copilot CLI. La racine du
+  projet se lit dans le champ `cwd` du payload, présent chez les deux
+  agents, plutôt que dans une variable d'environnement propre à l'un d'eux.
 - **Paramètres en tête de script**, pas dispersés dans le corps.
 
 ---
@@ -273,7 +296,11 @@ tools: Read, Grep, Glob # OBLIGATOIRE — moindre privilège
   Appliquer le moindre privilège : **omettre `Write`, `Edit` et `Bash` sauf
   besoin réel**. Un agent d'analyse privé d'outil d'écriture ne peut pas
   rapporter une modification qu'il n'a pas faite — c'est une garantie, pas une
-  restriction subie.
+  restriction subie. Ces noms sont ceux de Claude Code ; Copilot CLI les fait
+  correspondre aux siens (`Read` → `read`, `Grep` et `Glob` → `search`, `Edit`
+  et `Write` → `edit`, `Bash` → `execute`, `TodoWrite` → `todo`) et ignore un
+  nom qu'il ne connaît pas. Les écrire sous la forme de Claude Code, qui vaut
+  pour les deux agents hôtes.
 - **Outil de liste de tâches** — l'accorder quand l'agent applique le protocole
   de suivi de progression ([§4.2](#42-corps)), pour que le suivi par l'outil de
   la session reste disponible là où la session l'expose. Cet outil gère une
@@ -318,7 +345,7 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
       l'arborescence, avec ses fichiers embarqués.
 - [ ] **[SETUP.md](SETUP.md)** — l'outil figure dans la table d'installation,
       fichiers embarqués compris, pour que la copie soit complète.
-- [ ] **[CLAUDE.md](../CLAUDE.md)** — une règle d'usage est ajoutée **uniquement**
+- [ ] **[AGENTS.md](../AGENTS.md)** — une règle d'usage est ajoutée **uniquement**
       si l'outil doit être déclenché dans des situations précises.
 - [ ] **Front-matter conforme** au [§2](#2-skills-skillsnomskillmd) ou au
       [§4](#4-agents-agentsnommd), aucun chemin local en dur, moindre privilège
@@ -340,12 +367,12 @@ tout ceci n'est pas fait :
 - [ ] Il est **enregistré dans [DOC_MAP.md](DOC_MAP.md)**, dans la table
       « Où chercher », avec une entrée formulée par intention (« Avant de… »).
 - [ ] Il est **atteint par la table**. `DOC_MAP.md` est le point de routage
-      par intention, et tout nouveau document de fond y entre. `CLAUDE.md` ne
+      par intention, et tout nouveau document de fond y entre. `AGENTS.md` ne
       lie directement un document de fond que lorsqu'une de ses propres règles
       en dépend — c'est le cas de `CONVENTIONS.md` et `VOCABULARY.md`, cités par
-      le DoD et par la règle de registre. **Ne pas y ajouter de liste parallèle
-      à celle de la table** : c'est cela que la règle prévient, pas le lien
-      ponctuel et justifié.
+      le DoD et par la règle de registre. **Ne pas ajouter à `AGENTS.md` de
+      liste parallèle à celle de la table** : c'est ce que cette exigence
+      prévient, pas le lien ponctuel et justifié.
 - [ ] Il porte son **lien de retour**, sous son introduction :
       `Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).`
 - [ ] Le **registre de rédaction** ([§1.9](#19-registre-de-rédaction)) est
@@ -361,7 +388,7 @@ sont des règles en prose, à appliquer délibérément.
 ## 7. Scripts d'outillage du dépôt (`scripts/`)
 
 Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
-`~/.claude/` et rien des §§1.1 à 4 ne s'y applique, hormis les règles d'or 1.2,
+`{AGENT_DIR}` et rien des §§1.1 à 4 ne s'y applique, hormis les règles d'or 1.2,
 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt lui-même —
 `validate.py` contrôle les sources, `install.py` porte le merge intelligent de
 [SETUP.md](SETUP.md).
@@ -386,7 +413,7 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
   [PREREQUIS.md](PREREQUIS.md).
 - **DoD** : le script doit avoir été **lancé sur une invocation réelle**, et
   toute vérification ajoutée doit avoir été **vue en rouge** au moins une fois
-  sur un cas volontairement cassé ([CLAUDE.md](../CLAUDE.md), section
+  sur un cas volontairement cassé ([AGENTS.md](../AGENTS.md), section
   « Definition of Done »).
 
 Un script qui écrit hors du dépôt n'écrase jamais un contenu qu'il ne saurait
@@ -402,6 +429,6 @@ reconstituer : il le signale et laisse l'utilisateur trancher.
 | Fichier canonique | `SKILL.md` (front-matter) | le fichier lui-même (front-matter) | `HOOK.md` (sans front-matter) |
 | Identité | `name` = nom du dossier | `name` = nom du fichier | nom du dossier |
 | Déclenchement | `description` / `/nom` | `description` ou délégation explicite | événement de session |
-| Restriction d'outils | `allowed-tools` (motifs restreints à un préfixe) | `tools` (noms simples) | garde-fous dans le script |
+| Restriction d'outils | `allowed-tools` (motifs restreints à un préfixe ; Claude Code seul) | `tools` (noms simples, forme Claude) | garde-fous dans le script |
 | Fichiers embarqués | scripts, styles, références | `agents/docs/<nom>/` | le script |
-| Installation | copie du dossier | copie du fichier | copie **et** enregistrement |
+| Installation | copie du dossier sous `{AGENT_DIR}/skills/` | copie du fichier sous `{AGENT_DIR}/agents/`, renommé `<nom>.agent.md` pour Copilot CLI | copie **et** enregistrement, propre à chaque agent hôte |

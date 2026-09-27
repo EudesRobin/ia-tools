@@ -37,9 +37,9 @@ produit pas une erreur visible : l'outil est ignoré silencieusement.
 - Minuscules, chiffres et traits d'union uniquement.
 - Aucune balise XML.
 - Ne doit contenir ni `anthropic`, ni `claude` : ce sont des mots réservés.
-  C'est une contrainte de chargement, sans rapport avec la règle de rédaction de
-  [CONVENTIONS.md](CONVENTIONS.md) §1.9, qui impose au contraire d'écrire
-  « Claude » en prose quand c'est de Claude qu'il s'agit.
+  C'est une contrainte de chargement, distincte de la règle de rédaction de
+  [CONVENTIONS.md](CONVENTIONS.md) §1.9, qui réserve le nom « Claude » en prose
+  aux comportements propres à Claude Code.
 
 **`description`**
 
@@ -274,8 +274,9 @@ formulée plus fermement, pas à être répétée.
 
 ## 10. Écarts locaux — où `CONVENTIONS.md` prévaut
 
-Ce document est une synthèse de règles d'écriture d'usage général. Ce dépôt s'en
-écarte sur les points suivants ; c'est [CONVENTIONS.md](CONVENTIONS.md) qui fait
+Ce document est une synthèse de règles d'écriture d'usage général. Le tableau
+ci-dessous précise la position de ce dépôt sur les points où il s'en écarte ou
+en restreint la portée ; c'est [CONVENTIONS.md](CONVENTIONS.md) qui fait
 autorité.
 
 | Règle générale | Position de ce dépôt |
@@ -284,8 +285,8 @@ autorité.
 | Nom d'outil au gérondif (`processing-pdfs`) | Ce dépôt emploie le groupe nominal ou le verbe d'action — `clean-android-tv`, `setup-harness` |
 | `allowed-tools` obligatoire | `CONVENTIONS.md` §2.1 le rend facultatif ; le moindre privilège du §2.2 s'applique dès que le champ est renseigné |
 | Liste de déclencheurs incluant la forme `/nom` | `CONVENTIONS.md` §2.1 exige « À utiliser quand… », formulé avec les mots de l'utilisateur ; la forme `/nom` n'est pas requise |
-| Placeholder d'un dossier d'agent, pour un outil installable sous plusieurs environnements | Sans objet : ce dépôt est spécifique à Claude. Le seul placeholder est `<NOM_VARIABLE>` (`CONVENTIONS.md` §1.2) |
-| Prose neutre entre outils (« l'agent », jamais « Claude ») | Sans objet : `CONVENTIONS.md` §1.9 impose l'inverse. Sans contradiction avec l'interdiction du mot `claude` dans `name` (§1), qui est une contrainte de chargement et non une règle de rédaction |
+| Placeholder d'un dossier d'agent, pour un outil installable sous plusieurs environnements | **Reprise.** Les outils sont installés pour Claude Code et Copilot CLI : la racine de l'agent hôte s'écrit `{AGENT_DIR}` (`CONVENTIONS.md` §1.2) |
+| Prose neutre entre outils (« l'agent », jamais « Claude ») | **Reprise**, avec une réserve : `CONVENTIONS.md` §1.9 admet de nommer Claude ou Copilot pour un comportement propre à l'un d'eux |
 | Séparateurs de chemin en `/` sans exception | **Non repris.** Ce dépôt ne fixe aucune convention de séparateur et n'a aucun script embarqué qui construise un chemin absolu ; la règle serait sans objet |
 
 ## 11. Checklist

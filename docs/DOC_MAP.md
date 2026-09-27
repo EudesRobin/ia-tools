@@ -1,16 +1,17 @@
 # Table de routage de la documentation
 
 L'autorité de routage de ce dépôt : chaque tâche est rattachée au document
-unique qui la régit, et cette table indique quoi faire quand aucune ligne ne
-couvre la tâche. [CLAUDE.md](../CLAUDE.md) est chargé automatiquement et y
-renvoie en lecture obligatoire — cette table fait partie de la chaîne
-d'instructions, ce n'est pas du contexte facultatif.
+unique qui la régit, et cette table indique la conduite à tenir quand aucune
+ligne ne couvre la tâche. [AGENTS.md](../AGENTS.md), atteint par chaque agent
+hôte — directement ou par son fichier de renvoi —, en impose la lecture : cette
+table fait partie de la chaîne d'instructions ; ce n'est pas du contexte
+facultatif.
 
-Certaines lignes pointent vers une **règle dure**, à suivre obligatoirement ;
-les autres pointent vers du fond qui explique *pourquoi* les règles sont ce
-qu'elles sont. La documentation propre à une skill ou à un agent donné se trouve
-à côté de l'outil qu'elle décrit, pas ici (voir [CONVENTIONS.md](CONVENTIONS.md)
-§6).
+Certaines lignes pointent vers une **règle impérative**, à suivre
+obligatoirement ; les autres pointent vers des documents de fond qui expliquent
+*pourquoi* les règles sont ce qu'elles sont. La documentation propre à une
+skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas ici
+(voir [CONVENTIONS.md](CONVENTIONS.md) §6).
 
 ## Où chercher
 
@@ -22,8 +23,8 @@ qu'elles sont. La documentation propre à une skill ou à un agent donné se tro
 | Rédiger un document, quel qu'il soit — niveau de langue, forme des énoncés        | [CONVENTIONS.md](CONVENTIONS.md) §1.9 — **à suivre obligatoirement** |
 | Ajouter ou reprendre un document de fond sous `docs/`                             | [CONVENTIONS.md](CONVENTIONS.md) §6 — **checklist à dérouler** |
 | Ajouter ou modifier un script d'outillage du dépôt sous `scripts/`                | [CONVENTIONS.md](CONVENTIONS.md) §7 — **à suivre obligatoirement** |
-| Comprendre le hook du dépôt et pourquoi il n'est pas distribué                    | [hooks/README.md](../hooks/README.md) |
-| Installer ou mettre à jour les outils vers `~/.claude/`                            | [SETUP.md](SETUP.md) — **procédure à suivre** |
+| Comprendre le hook du dépôt, son enregistrement pour chaque agent hôte et pourquoi il n'est pas distribué | [hooks/README.md](../hooks/README.md) |
+| Installer ou mettre à jour les outils vers `{AGENT_DIR}` (Claude Code, Copilot CLI) | [SETUP.md](SETUP.md) — **procédure à suivre** |
 | Vérifier ou installer un prérequis système (Python, bibliothèques, `adb`, `pwsh`)  | [PREREQUIS.md](PREREQUIS.md) |
 
 Six lignes portent une règle à appliquer, pas du contexte. L'écriture d'un outil
@@ -47,7 +48,7 @@ d'instructions.
 ## Quand aucune ligne ne couvre la tâche
 
 Si une tâche n'est couverte ni par une ligne ci-dessus, ni par une règle de
-[CLAUDE.md](../CLAUDE.md), ne pas deviner en silence. Signaler le manque à
+[AGENTS.md](../AGENTS.md), ne pas deviner en silence. Signaler le manque à
 l'utilisateur et proposer où loger la règle absente — une nouvelle ligne dans
-cette table, une nouvelle règle dans `CLAUDE.md`, ou un nouveau document de fond
+cette table, une nouvelle règle dans `AGENTS.md`, ou un nouveau document de fond
 selon [CONVENTIONS.md](CONVENTIONS.md) §6 — avant de poursuivre.

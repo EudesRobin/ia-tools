@@ -1,67 +1,99 @@
-# SETUP — installer / mettre à jour les outils Claude
+# SETUP — installer / mettre à jour les outils
 
-Procédure d'installation et de mise à jour des outils de ce dépôt vers
-`~/.claude/`. **Le dépôt est la source de vérité** : par défaut, sa version est
-adoptée. Un arbitrage n'est demandé que sur un **conflit non résoluble
-automatiquement** (§2).
+Procédure d'installation et de mise à jour des outils de ce dépôt pour chaque
+agent hôte : Claude Code et Copilot CLI. **Le dépôt est la source de vérité** :
+par défaut, sa version est adoptée. Un arbitrage n'est demandé que sur un
+**conflit non résoluble automatiquement** (§2).
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 > **Prérequis système** (`adb`, Python, `pyyaml`,
-> `pwsh`) — outils hôte supposés présents par certaines skills : voir
+> `pwsh`) — outils supposés présents par certaines skills et par l'outillage du
+> dépôt : voir
 > [PREREQUIS.md](PREREQUIS.md). Étape optionnelle, distincte de la copie vers
-> `~/.claude/` ci-dessous.
+> `{AGENT_DIR}` ci-dessous.
 
-## 1. Cibles et variables
+## 1. Agents hôtes, cibles et variables
 
-Sous Windows, `~/.claude/` = `C:\Users\<user>\.claude\`.
+### Agents hôtes
 
-| Type        | Source du dépôt         | Cible locale                                           |
-|-------------|-------------------------|--------------------------------------------------------|
-| Skill       | `skills/<nom>/`         | `~/.claude/skills/<nom>/`                              |
-| Agent       | `agents/<nom>.md`       | `~/.claude/agents/<nom>.md`                            |
-| Docs agents | `agents/docs/<nom>/`    | `~/.claude/agents/docs/<nom>/`                         |
-| Hook        | `hooks/<nom>/`          | `~/.claude/hooks/<nom>/` + entrée dans `settings.json` |
+Seuls Claude Code et Copilot CLI sont pris en charge. Les intégrations aux IDE
+ne le sont pas : certaines lisent aussi `~/.claude` ou `~/.copilot`, mais la
+procédure ne repose pas sur ce comportement.
 
-**Non distribué.** `docs/`, `README.md`, `scripts/`, `.claude/` et
-`hooks/validate-tool/` régissent le dépôt lui-même et ne partent jamais vers
-`~/.claude/`. Le hook `validate-tool` est délibérément **local au dépôt** — voir
+| Agent hôte | Option | `{AGENT_DIR}` | Nom d'un agent installé |
+|------------|--------|---------------|-------------------------|
+| Claude Code | `claude` | `~/.claude` | `<nom>.md` |
+| Copilot CLI | `copilot` | `~/.copilot` | `<nom>.agent.md` — extension exigée par Copilot CLI |
+
+Sous Windows, `~` = `C:\Users\<user>`.
+
+### Cibles
+
+| Type        | Source du dépôt         | Cible locale                                              |
+|-------------|-------------------------|-----------------------------------------------------------|
+| Skill       | `skills/<nom>/`         | `{AGENT_DIR}/skills/<nom>/`                               |
+| Agent       | `agents/<nom>.md`       | `{AGENT_DIR}/agents/<nom>.md`, ou `<nom>.agent.md` pour Copilot CLI |
+| Docs agents | `agents/docs/<nom>/`    | `{AGENT_DIR}/agents/docs/<nom>/`                          |
+| Hook        | `hooks/<nom>/`          | `{AGENT_DIR}/hooks/<nom>/` + enregistrement propre à l'agent hôte (§5) |
+
+Le front-matter des skills et des agents est commun aux deux agents hôtes :
+Copilot CLI fait correspondre les noms d'outils de Claude Code aux siens et
+ignore `allowed-tools`. Seul le nom du fichier d'agent diffère.
+
+**Non distribué.** `docs/`, `README.md`, `AGENTS.md`, `CLAUDE.md`, `scripts/`,
+`.claude/`, `.github/` et `hooks/validate-tool/` régissent le dépôt lui-même et
+ne sont jamais copiés vers `{AGENT_DIR}`. Le hook `validate-tool` est délibérément
+**local au dépôt** — voir
 [hooks/validate-tool/HOOK.md](../hooks/validate-tool/HOOK.md).
 
 ### Variables substituées à l'installation
 
-La substitution de ces variables est la **seule** différence légitime entre un
-fichier du dépôt et sa cible locale. Le dépôt contient des placeholders
-`<NOM_VARIABLE>` que l'installation remplace par la valeur locale réelle.
+La substitution de ces variables est la **seule** différence légitime entre le
+contenu d'un fichier du dépôt et celui de sa cible locale. Le dépôt contient
+des placeholders `{NOM_VARIABLE}` que l'installation remplace par la valeur
+propre à l'agent hôte visé.
 
-Aucun fichier du dépôt ne porte aujourd'hui de placeholder : le rendu du dépôt
-est la source telle quelle. Toute variable ajoutée se déclare dans la fonction
-`variables()` de `scripts/install.py`, sans quoi elle n'est pas substituée.
+| Placeholder | Valeur |
+|-------------|--------|
+| `{AGENT_DIR}` | `~/.claude` pour Claude Code, `~/.copilot` pour Copilot CLI ; le chemin absolu de la cible quand `--target` est fourni |
+
+Toute variable ajoutée se déclare dans la fonction `variables()` de
+`scripts/install.py`, sans quoi elle n'est pas substituée. La forme `<...>`
+désigne une valeur renseignée à l'exécution et n'est jamais substituée.
 
 ## 2. Procédure — merge intelligent
 
 Le merge intelligent est porté par **`scripts/install.py`**. Ne pas le refaire,
 ne pas écrire de comparaison ad hoc : le script rend les sources, compare,
-classe et applique les cas sûrs. Ce qui reste à la session, c'est l'arbitrage
-des conflits.
+classe et applique les cas sûrs, pour chaque agent hôte. Ce qui reste à la
+session, c'est l'arbitrage des conflits.
 
 ```powershell
 python scripts/install.py                     # audit : n'écrit rien
 python scripts/install.py --apply             # écrit les cas sûrs
 python scripts/install.py --diff <chemin>     # écart d'un fichier en conflit
 python scripts/install.py --scope skills,agents
+python scripts/install.py --agent copilot
 python scripts/install.py --outil clean-android-tv --apply
 ```
 
-Le périmètre par défaut est `skills,agents,hooks`, tous outils compris.
-`--outil` restreint l'examen et l'écriture aux outils nommés, séparés par des
-virgules. `--target` permet de viser une autre racine que `~/.claude/`, et
-`--json` produit la même sortie au format JSON.
+Le périmètre par défaut est `skills,agents,hooks`, tous outils compris, pour
+les agents hôtes `claude,copilot`. `--agent` restreint l'installation aux agents
+hôtes nommés. `--outil` restreint l'examen et l'écriture aux outils nommés,
+séparés par des virgules. `--target` permet de viser une autre racine que
+`{AGENT_DIR}` et n'est admis qu'avec un seul agent hôte. `--json` produit la
+même sortie au format JSON.
+
+**Chaque agent hôte est traité séparément.** Classes, écritures et conflits
+sont établis pour chacun ; un conflit chez l'un n'empêche pas l'écriture chez
+l'autre.
 
 **Un outil s'installe d'un bloc.** Si l'un des fichiers d'un outil est en
-conflit, `--apply` n'écrit aucun de ses fichiers, y compris ceux classés
-`absent`. Une skill ou un agent homonyme créé par l'utilisateur n'est ainsi
-jamais complété ni modifié : le script le signale et le laisse intact.
+conflit chez un agent hôte, `--apply` n'écrit aucun de ses fichiers chez cet
+agent hôte, y compris ceux classés `absent`. Une skill ou un agent homonyme créé par
+l'utilisateur n'est ainsi jamais complété ni modifié : le script le signale et
+le laisse intact.
 
 ### Ce que le script classe
 
@@ -69,30 +101,32 @@ jamais complété ni modifié : le script le signale et le laisse intact.
 |---|---|---|
 | `identique` | le rendu et la cible ne diffèrent pas | rien |
 | `absent` | la cible n'existe pas | écrit le rendu |
-| `obsolete` | la cible est le rendu d'une révision antérieure du dépôt : installation propre devenue obsolète | écrit le rendu, sans demander |
-| `conflit` | l'écart ne s'explique ni par les variables ni par une révision : **édition locale manuelle**, ou outil homonyme de l'utilisateur | **rien**, pour aucun fichier du même outil |
+| `obsolete` | la cible est le rendu d'une révision antérieure du dépôt : installation propre devenue obsolète | écrit le rendu, sans confirmation |
+| `conflit` | l'écart ne s'explique ni par les variables ni par une révision : **édition locale manuelle**, ou outil homonyme de l'utilisateur | **rien**, pour aucun fichier du même outil chez cet agent hôte |
 | `local seul` | fichier présent seulement en local | **rien**, jamais de suppression |
 
-Code de sortie : `0` si aucun conflit ne reste, `1` sinon.
+Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon.
 
 ### Ce qui reste à la session
 
-1. **Confirmer le périmètre** avant la première écriture, puis lancer `--apply`.
-2. **Arbitrer chaque conflit** : afficher l'écart par `--diff <chemin>`, puis
-   demander à l'utilisateur de choisir — adopter le dépôt / garder la version
-   locale / fusionner écart par écart — et appliquer le choix. Le script n'écrit
-   jamais un fichier en conflit.
+1. **Confirmer le périmètre et les agents hôtes** avant la première écriture,
+   puis lancer `--apply`.
+2. **Arbitrer chaque conflit** : afficher l'écart par `--diff <chemin>` (avec
+   `--agent` pour ne viser qu'un seul agent hôte), puis demander à l'utilisateur
+   de choisir — adopter la version du dépôt / garder la version locale /
+   fusionner écart par écart — et
+   appliquer le choix. Le script n'écrit jamais un fichier en conflit.
 3. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
-4. **Récapituler** : installé / mis à jour (automatiquement) / inchangé /
-   arbitré.
+4. **Récapituler**, par agent hôte : installé / mis à jour (automatiquement) /
+   inchangé / arbitré.
 
 ## 3. Skills
 
 `--scope skills` parcourt chaque dossier **fichier par fichier**, pas seulement
 `SKILL.md` : un fichier embarqué présent uniquement dans le dépôt est classé
-`absent` et ajouté par `--apply`, un fichier présent uniquement en local est
+`absent` et ajouté par `--apply` ; un fichier présent uniquement en local est
 classé `local seul` et jamais supprimé.
 
 La conformité du front-matter — `name` identique au nom du dossier — relève de
@@ -105,10 +139,11 @@ La conformité du front-matter — `name` identique au nom du dossier — relèv
 
 ## 4. Agents
 
-`--scope agents` couvre `agents/<nom>.md` et `agents/docs/<nom>/` d'un seul
-tenant. Sur un conflit portant sur un fichier d'agent, examiner en priorité les
-champs `tools` et `model` : un écart sur ces champs change les droits de
-l'agent.
+`--scope agents` couvre ensemble `agents/<nom>.md` et `agents/docs/<nom>/`.
+Pour Copilot CLI, le fichier d'agent est installé sous le nom `<nom>.agent.md` ;
+ses documents de référence gardent leur nom. En cas de conflit portant sur un
+fichier d'agent, examiner en priorité les champs `tools` et `model` : un écart
+sur ces champs change les droits de l'agent.
 
 | Agent          | Documents de référence |
 |----------------|------------------------|
@@ -117,14 +152,18 @@ l'agent.
 
 ## 5. Hooks
 
-Un hook s'installe en deux temps : la copie du script, puis son enregistrement.
+Un hook s'installe en deux temps : la copie du script, puis l'enregistrement du
+hook.
 
-- Scripts → `~/.claude/hooks/<nom>/`, par le merge intelligent comme ci-dessus.
-- Enregistrement dans `~/.claude/settings.json` (clé `hooks`) : **ne jamais
-  écraser ce fichier en bloc**, fusionner seulement les entrées de hook
+- Scripts → `{AGENT_DIR}/hooks/<nom>/`, par le merge intelligent comme
+  ci-dessus.
+- Enregistrement, propre à chaque agent hôte : clé `hooks` de
+  `~/.claude/settings.json` pour Claude Code, fichier
+  `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
+  `{AGENT_DIR}/settings.json` en bloc** : fusionner seulement les entrées de hook
   concernées. Pas d'adoption automatique du fichier entier. Le script **n'écrit
-  jamais** `settings.json` : il affiche l'entrée à fusionner ; la fusion reste
-  manuelle.
+  jamais** ces fichiers d'enregistrement : il affiche ce qui reste à faire ; la
+  fusion reste manuelle.
 
 Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
 (§1). `--scope hooks` le constate et ne touche à rien.
@@ -132,6 +171,8 @@ Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est loca
 ## 6. Après installation
 
 - Skills et agents : le `name` apparaît dans la liste des outils à la
-  **prochaine session**, pas immédiatement.
-- Hooks : tester le déclenchement réel. La présence du script et de son entrée
-  dans `settings.json` ne prouve pas qu'il fonctionne.
+  **prochaine session** de l'agent hôte, pas immédiatement. Le vérifier dans
+  chaque agent hôte : liste des skills et des agents d'une session Claude Code ; commandes
+  `/skills` et `/agent` de Copilot CLI.
+- Hooks : tester le déclenchement réel. La présence du script et de son
+  enregistrement ne prouve pas qu'il fonctionne.

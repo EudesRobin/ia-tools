@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "Stop": [
+      {
+        "type": "command",
+        "cwd": ".",
+        "powershell": "pwsh -NoProfile -File hooks/validate-tool/validate-tool.ps1",
+        "bash": "pwsh -NoProfile -File hooks/validate-tool/validate-tool.ps1",
+        "timeoutSec": 120
+      }
+    ]
+  }
+}
