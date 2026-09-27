@@ -7,9 +7,12 @@ ce sont des binaires ou des paquets système, pas des fichiers copiés vers
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
-**Étape optionnelle**, à proposer sur un environnement neuf ou incomplet. Ne
-rien installer sans accord : d'abord **vérifier** ce qui manque, en dresser la
-liste, puis demander l'accord de l'utilisateur.
+La vérification des prérequis système est à proposer sur un environnement neuf
+ou incomplet. Python et Git sont nécessaires au merge intelligent de
+`scripts/install.py` ; les autres prérequis ne concernent qu'une skill ou la
+contribution au dépôt. Ne rien installer sans
+accord : d'abord **vérifier** ce qui manque, en dresser la liste, puis demander
+l'accord de l'utilisateur.
 
 Commandes ci-dessous pour **Windows** (`winget`, PowerShell). Adapter le
 gestionnaire de paquets sur un autre système.
@@ -18,7 +21,8 @@ gestionnaire de paquets sur un autre système.
 
 | Outil              | Requis par                                  | Vérifier                         | Installer (Windows)                          |
 |--------------------|---------------------------------------------|----------------------------------|----------------------------------------------|
-| Python 3 (PATH)    | `scripts/` (contribution au dépôt)          | `python --version`               | `winget install Python.Python.3.13` (dernière 3.x) |
+| Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
+| Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions) | `git --version` | `winget install Git.Git` |
 | Bibliothèques Python | `scripts/validate.py`                     | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
 | `adb` (platform-tools) | `clean-android-tv`                      | `adb version`                    | `winget install Google.PlatformTools`        |
 | PowerShell 7 (`pwsh`) | hook `validate-tool` (contribution au dépôt) | `pwsh --version`             | `winget install Microsoft.PowerShell`        |
@@ -27,18 +31,28 @@ gestionnaire de paquets sur un autre système.
 
 1. Vérifier chaque outil (colonne « Vérifier »). Lister ce qui manque.
 2. Demander l'accord avant d'installer. Ne jamais réinstaller un outil présent.
-3. Après l'installation d'un binaire (Python, adb, pwsh) : rouvrir le terminal
+3. Après l'installation d'un binaire (Python, Git, adb, pwsh) : rouvrir le terminal
    pour rafraîchir le PATH, puis revérifier.
 
 ## Détails
 
 ### Python
 
-Dernière version 3.x (pas de version imposée). L'identifiant winget contient le
-numéro de version : `winget search Python.Python` pour trouver la version
-mineure la plus récente, sinon `Python.Python.3.13`. Cocher
+La syntaxe des scripts exige la version 3.10 au minimum ; la dernière version
+3.x convient. L'identifiant winget contient le numéro de version : lancer
+`winget search Python.Python` pour trouver la version mineure la plus récente,
+ou, à défaut, employer `Python.Python.3.14`. Cocher
 `Add python.exe to PATH` en cas d'installation manuelle : les scripts
 supposent `python` accessible sans chemin absolu.
+
+### Git
+
+`scripts/install.py` lit l'historique git du dépôt pour reconnaître une
+installation locale rendue à partir d'une révision antérieure : l'installation
+est alors classée `obsolete` et remplacée sans arbitrage. Si `git` est absent du
+PATH, ou si le dépôt provient d'une archive dépourvue du dossier `.git`, cette
+reconnaissance est impossible : une telle installation est classée `conflit`. Obtenir le dépôt par `git clone`, non par
+téléchargement d'une archive ZIP.
 
 ### Bibliothèques Python
 

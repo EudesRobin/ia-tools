@@ -3,6 +3,11 @@
 Commandes employées par la skill `clean-android-tv`. Aucune ne requiert d'accès
 root. Remplacer `<IP_TV>` par l'adresse du téléviseur sur le réseau local.
 
+Tout filtre — `grep`, `head`, `wc` — s'écrit **à l'intérieur des guillemets**
+d'`adb shell` : il s'exécute alors sur le téléviseur, qui le fournit, et la
+commande fonctionne quel que soit le shell du poste. Hors des guillemets, il est
+confié au shell du poste, et PowerShell ne le connaît pas.
+
 ## 1. Activer le débogage sur le téléviseur
 
 Le démon adb est déjà présent dans le système : il suffit de l'activer, sans
@@ -165,10 +170,10 @@ libère à la première demande. Le confondre avec un processus résident condui
 désactiver une application sans aucun gain.
 
 ```bash
-adb shell "dumpsys activity oom" | grep -B1 -A1 <PAQUET>
+adb shell "dumpsys activity oom | grep -B1 -A1 <PAQUET>"
 adb shell "dumpsys activity services <PAQUET>"
-adb shell "dumpsys jobscheduler" | grep <PAQUET>
-adb shell "dumpsys package <PAQUET>" | grep BOOT_COMPLETED
+adb shell "dumpsys jobscheduler | grep <PAQUET>"
+adb shell "dumpsys package <PAQUET> | grep BOOT_COMPLETED"
 ```
 
 - `cch-empty`, `cch-act`, `prev` — processus conservé pour une réouverture
@@ -182,7 +187,7 @@ adb shell "dumpsys package <PAQUET>" | grep BOOT_COMPLETED
 ## 7. Identifier un paquet inconnu
 
 ```bash
-adb shell dumpsys package <PAQUET> | head -40   # version, chemin, flags
+adb shell "dumpsys package <PAQUET> | head -40" # version, chemin, flags
 adb shell pm path <PAQUET>                      # emplacement de l'apk
 adb shell cmd package list packages --show-versioncode -s
 ```
@@ -198,7 +203,7 @@ peut donc pas être désactivé.
 ```bash
 adb shell "cmd package query-activities -a android.intent.action.MAIN -c android.intent.category.HOME"
 adb shell "cmd package set-home-activity <PAQUET>/<ACTIVITE>"
-adb shell "dumpsys package preferred-activities" | grep -B8 category.HOME
+adb shell "dumpsys package preferred-activities | grep -B8 category.HOME"
 ```
 
 **Vérifier par `dumpsys package preferred-activities`, non par
@@ -209,7 +214,7 @@ l'activité voulue.
 
 Contrôler ensuite par un appui réel sur la touche HOME depuis une application au
 premier plan, et constater le résultat par
-`dumpsys window | grep mCurrentFocus`. Le lanceur d'origine ne se désactive
+`adb shell "dumpsys window | grep mCurrentFocus"`. Le lanceur d'origine ne se désactive
 qu'une fois ce contrôle concluant.
 
 **Exception : le NVIDIA Shield.** Le système y ignore la préférence d'accueil :
@@ -316,10 +321,11 @@ adb shell "pm enable <PAQUET>/<CLASSE_DU_COMPOSANT>"
 ```
 
 L'UID `shell` ne peut modifier l'état d'un composant que sur une application
-portant le flag `SYSTEM`. Sur une application tierce, la commande échoue avec
+portant le flag `SYSTEM`. Sur une application tierce, la commande échoue et renvoie
 `SecurityException: Shell cannot change component state`, et seul le basculement
-du paquet entier reste possible. Vérifier ce flag par `dumpsys package <PAQUET>
-| grep pkgFlags` avant de proposer cette méthode.
+du paquet entier reste possible. Vérifier ce flag par
+`adb shell "dumpsys package <PAQUET> | grep pkgFlags"` avant de proposer la
+désactivation d'un composant.
 
 **Les récepteurs de recommandations ne demandent aucune action.** Les
 applications de diffusion déclarent des récepteurs visant
@@ -363,8 +369,8 @@ liste à l'usage réel.
 ```bash
 adb reboot
 adb connect <IP_TV>:5555                          # apres le redemarrage
-adb shell dumpsys window | grep -i mCurrentFocus  # lanceur au premier plan
-adb shell pm list packages -d | wc -l             # desactivations conservees
+adb shell "dumpsys window | grep -i mCurrentFocus" # lanceur au premier plan
+adb shell "pm list packages -d | wc -l"            # desactivations conservees
 adb shell df -h /data
 ```
 

@@ -47,7 +47,21 @@ ia-tools/
                          enregistrement du hook local (hooks/)
 ```
 
+## Prérequis
+
+| Prérequis | Nécessaire pour |
+|---|---|
+| Un agent hôte : Claude Code ou Copilot CLI | utiliser les outils installés |
+| Python ≥ 3.10 | lancer `scripts/install.py` |
+| Git, et le dépôt obtenu par `git clone` | reconnaître une installation obsolète : sans l'historique git, elle est signalée comme conflit |
+| `adb` (platform-tools) | la skill `clean-android-tv` |
+| `pyyaml` et PowerShell 7 (`pwsh`) | contribuer au dépôt : `scripts/validate.py` et hook `validate-tool` |
+
+Commandes de vérification et d'installation : [PREREQUIS.md](./docs/PREREQUIS.md).
+
 ## Installation
+
+### Par le script
 
 ```powershell
 python scripts/install.py                  # audit : n'écrit rien
@@ -69,8 +83,23 @@ manuelle ne remplace pas les placeholders `{…}` qu'un outil pourrait contenir 
 le script reste la méthode de référence. L'outil apparaît à la session
 suivante.
 
-Prérequis système (`adb` pour `clean-android-tv`, Python pour les scripts) :
-[PREREQUIS.md](./docs/PREREQUIS.md).
+### Par un prompt
+
+Dans une session de l'agent hôte ouverte à la racine du dépôt, un chemin de
+fichier précédé de `@` joint ce fichier au prompt. L'agent dispose ainsi
+d'emblée de la procédure d'installation, sans avoir à la rechercher dans le
+dépôt, et un
+modèle moins coûteux, choisi par `/model`, suffit à la dérouler. Exemple :
+
+```text
+Lis @AGENTS.md et @docs/SETUP.md, puis installe ou mets à jour les skills,
+agents et hooks de ce dépôt pour Claude Code et Copilot CLI. Lance d'abord
+l'audit, présente-moi le périmètre et attends ma confirmation avant --apply.
+En cas de conflit, affiche l'écart avec --diff et laisse-moi choisir.
+```
+
+Ajouter `@docs/PREREQUIS.md` au prompt pour faire d'abord vérifier les prérequis :
+l'agent dresse la liste de ce qui manque et n'installe rien sans accord.
 
 ## Contribuer
 

@@ -7,11 +7,11 @@ par défaut, sa version est adoptée. Un arbitrage n'est demandé que sur un
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
-> **Prérequis système** (`adb`, Python, `pyyaml`,
-> `pwsh`) — outils supposés présents par certaines skills et par l'outillage du
-> dépôt : voir
-> [PREREQUIS.md](PREREQUIS.md). Étape optionnelle, distincte de la copie vers
-> `{AGENT_DIR}` ci-dessous.
+> **Prérequis système** (Python ≥ 3.10, Git, `adb`, `pwsh`, bibliothèque
+> `pyyaml`) — outils supposés présents par certaines skills et par l'outillage
+> du dépôt : voir [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires au merge
+> intelligent décrit ci-dessous ; les autres ne concernent qu'une skill ou la
+> contribution au dépôt.
 
 ## 1. Agents hôtes, cibles et variables
 

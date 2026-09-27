@@ -85,6 +85,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **agent hôte** | Le produit qui charge et exécute les outils : Claude Code ou Copilot CLI. Sa racine locale s'écrit `{AGENT_DIR}`. À distinguer de l'**agent**, artefact `agents/<nom>.md` de ce dépôt : ne pas l'abréger en « agent » dans un passage qui parle aussi des agents du dépôt. | « harnais », qui désigne autre chose (§2) ; « plateforme » ; « IDE » |
 | **rendu** | La source du dépôt après substitution des placeholders. C'est le rendu, jamais la source brute, que l'on compare au fichier local. | — |
 | **conflit** | Un écart qui ne s'explique ni par les placeholders ni par une révision antérieure du dépôt : une édition locale manuelle. Seul cas qui justifie un arbitrage. | « divergence » |
+| **prompt** | La requête que l'utilisateur adresse à l'agent hôte dans une session. Terme anglais courant en français technique (§1). | « invite », « consigne » — la première évoque d'abord l'invite de commandes, la seconde désigne une règle et non une requête |
 | **mode plan** | Le mode d'exploration en lecture seule précédant toute proposition. | « planning mode » |
 
 ## 6. Domaines couverts par les skills

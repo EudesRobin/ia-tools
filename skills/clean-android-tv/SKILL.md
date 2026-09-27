@@ -101,7 +101,7 @@ résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationne
 6. **Appliquer.** Après accord explicite, par groupes de risque homogène.
    Employer `pm disable-user --user 0`, jamais `pm uninstall` sauf demande
    expresse. Contrôler l'interface après chaque groupe par
-   `dumpsys window | grep mCurrentFocus`. Consigner chaque commande et sa
+   `adb shell "dumpsys window | grep mCurrentFocus"`. Consigner chaque commande et sa
    commande inverse dans le journal, à mesure.
 7. **Redémarrer et vérifier.** Avertir d'abord que l'accès adb sera perdu s'il
    repose sur `service.adb.tcp.port`, propriété qui ne survit pas au
