@@ -428,7 +428,53 @@ reconstituer : il le signale et laisse l'utilisateur trancher.
 
 ---
 
-## 8. Référence rapide
+## 8. Publier une version
+
+Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`.
+Le numéro de version ne figure dans aucun fichier : le tag le porte seul.
+
+### 8.1 Numérotation
+
+Le tag suit la forme `MAJEUR.MINEUR.CORRECTIF` du versionnage sémantique, sans
+préfixe : `1.0.0`, jamais `v1.0.0`. Le numéro à incrémenter se choisit d'après
+l'ensemble des changements intervenus depuis la version précédente, du point de
+vue de l'utilisateur qui installe les outils :
+
+| Numéro | Incrémenté quand |
+|---|---|
+| `MAJEUR` | Une installation existante exige une action de l'utilisateur : un outil est supprimé ou renommé, ou le comportement d'un outil ou de `scripts/install.py` change de façon incompatible. |
+| `MINEUR` | Un outil est ajouté ou acquiert une capacité nouvelle, sans incompatibilité. |
+| `CORRECTIF` | Tout autre changement : correction, documentation, outillage du dépôt. |
+
+Incrémenter un numéro remet à zéro ceux qui le suivent : `1.4.2` devient
+`1.5.0` ou `2.0.0`.
+
+### 8.2 Procédure
+
+Le tag est posé **après le merge** de la *pull request* qui clôt la version,
+jamais sur une branche de travail : le tag désigne l'état de `main` que les
+utilisateurs installent. Vérifier au préalable que la dernière exécution de
+l'intégration continue sur `main` est au vert, dans l'onglet *Actions* du dépôt
+GitHub.
+
+```powershell
+git switch main
+git pull --ff-only
+git tag -a <version> -m "<version>"
+git push origin <version>
+```
+
+- **Tag annoté** (`-a`) : il enregistre l'auteur et la date de publication, ce
+  que ne fait pas un tag léger.
+- **Confirmation avant publication.** `git push` rend le tag visible sur le
+  dépôt public : l'agent obtient l'accord de l'utilisateur avant de lancer `git push`.
+- **Tag immuable.** Un tag publié n'est jamais déplacé ni supprimé : un clone
+  qui l'a déjà récupéré conserverait l'ancienne cible. Une erreur se corrige par
+  une nouvelle version.
+
+---
+
+## 9. Référence rapide
 
 | Aspect | Skill | Agent | Hook |
 |---|---|---|---|
