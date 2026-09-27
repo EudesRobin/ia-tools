@@ -42,7 +42,8 @@ console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 (voir docs/PREREQUIS.md, section « Encodage de la console »).
 
 Usage : python scripts/validate.py
-Code de sortie : 0 si tout passe, 1 sinon.
+Code de sortie : 0 si tout passe, 1 si un controle echoue, 2 sur anomalie
+d'environnement (dependance absente), que le hook validate-tool ne bloque pas.
 """
 
 import json
@@ -61,7 +62,7 @@ except ImportError:
         "    pip install pyyaml",
         file=sys.stderr,
     )
-    sys.exit(1)
+    sys.exit(2)
 
 ROOT = Path(__file__).resolve().parent.parent
 

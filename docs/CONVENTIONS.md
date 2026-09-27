@@ -250,9 +250,11 @@ Pas de front-matter. Sections attendues :
   bloquer, comme `hooks/validate-tool/`, bloque volontairement la fin du tour
   quand son contrôle échoue. C'est la seule catégorie autorisée à le faire, et
   elle est réservée aux hooks enregistrés **localement à un dépôt**, jamais
-  globalement. Un tel hook doit se prémunir contre les boucles : quand la charge
-  utile reçue indique qu'il a déjà bloqué le tour en cours, il se termine avec le
-  code 0 sans rien bloquer.
+  globalement. Un tel hook doit se prémunir contre les boucles : il plafonne le
+  nombre de blocages consécutifs dans un même tour, puis se termine sans
+  bloquer. Il ne bloque pas non plus sur une anomalie d'environnement
+  (interpréteur ou dépendance absents), qui n'est pas un défaut du travail
+  produit.
 - **Contrat commun aux deux agents hôtes.** Un hook destiné à Claude Code et à
   Copilot CLI bloque en écrivant sur la sortie standard l'objet JSON
   `{"decision": "block", "reason": "…"}` et en se terminant avec le code 0 :
@@ -406,9 +408,10 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 - **Sortie compacte.** Un récapitulatif par classe, le détail seulement pour ce
   qui appelle une suite. Un contrôle verbeux encombre le contexte et cesse
   d'être relancé.
-- **Codes de sortie `0` / `1`**, `0` valant vert. Le code de retour porte le
-  verdict : la session n'a pas à relire la sortie pour savoir s'il reste quelque
-  chose à faire.
+- **Codes de sortie `0` / `1` / `2`** : `0` vert, `1` contrôle en échec, `2`
+  anomalie d'environnement — dépendance absente —, distincte d'un défaut du
+  travail produit. Le code de retour porte le verdict : la session n'a pas à
+  relire la sortie pour savoir s'il reste quelque chose à faire.
 - **Aucune dépendance nouvelle** sans l'inscrire dans
   [PREREQUIS.md](PREREQUIS.md).
 - **DoD** : le script doit avoir été **lancé sur une invocation réelle**, et
