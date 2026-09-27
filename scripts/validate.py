@@ -112,7 +112,7 @@ UTF8_REQUIRED = {".md", ".py", ".ps1", ".json"}
 
 # Fichiers exemptes du controle "chemin en dur" (ils documentent le motif lui-meme).
 # Chemins relatifs a la racine, pas des noms de base.
-PATH_SCAN_EXCLUDE = {"scripts/validate.py"}
+PATH_SCAN_EXCLUDE = {"scripts/validate.py", "scripts/test_validate.py"}
 
 # Titre Markdown : "#{1,6} texte".
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
