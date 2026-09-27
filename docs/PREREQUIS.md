@@ -57,8 +57,11 @@ téléchargement d'une archive ZIP.
 ### Bibliothèques Python
 
 ```powershell
-pip install pyyaml
+pip install -r requirements-dev.txt
 ```
+
+Les versions sont épinglées dans [requirements-dev.txt](../requirements-dev.txt),
+que l'intégration continue installe à l'identique et que Dependabot tient à jour.
 
 | Bibliothèque       | Usage                                              |
 |--------------------|----------------------------------------------------|

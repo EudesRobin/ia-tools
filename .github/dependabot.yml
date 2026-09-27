@@ -1,0 +1,21 @@
+# Mises a jour des actions epinglees par SHA et des dependances de
+# requirements-dev.txt. Une version n'est proposee que 30 jours apres sa
+# publication ; les mises a jour de securite ne sont pas soumises a ce delai.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 30
+    commit-message:
+      prefix: build
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 30
+    commit-message:
+      prefix: build

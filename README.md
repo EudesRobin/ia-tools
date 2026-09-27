@@ -1,6 +1,7 @@
 # ia-tools
 
 [![validate](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml)
+[![Dependabot](https://img.shields.io/badge/Dependabot-actif-025E8C?logo=dependabot)](./.github/dependabot.yml)
 
 Outils pour agents de code — **skills**, **agents** et **hooks** — rédigés en
 français et publiés sous licence MIT. Le dépôt les versionne ; un script les
@@ -37,6 +38,7 @@ ia-tools/
 ├── CLAUDE.md            renvoi vers AGENTS.md (point d'entrée de Claude Code)
 ├── README.md            ce fichier
 ├── LICENSE              licence MIT
+├── requirements-dev.txt  dépendances Python épinglées pour contribuer
 ├── docs/                règles d'écriture, installation (SETUP.md), prérequis
 ├── skills/              une skill par sous-dossier
 ├── agents/              un agent par fichier ; agents/docs/<nom>/ pour ses références
@@ -49,8 +51,8 @@ ia-tools/
 ├── .githooks/           hooks git pre-commit et commit-msg (à activer dans chaque clone)
 ├── .claude/             config Claude Code du dépôt (enregistrement du hook local)
 └── .github/             renvoi pour Copilot (copilot-instructions.md),
-                         enregistrement du hook local (hooks/) et intégration
-                         continue (workflows/)
+                         enregistrement du hook local (hooks/), intégration
+                         continue (workflows/) et Dependabot (dependabot.yml)
 ```
 
 ## Prérequis
