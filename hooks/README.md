@@ -21,12 +21,13 @@ l'ouverture d'une session dans ce dépôt. La procédure de
 ## Ajouter un hook distribué
 
 Un hook destiné à `{AGENT_DIR}` se compose de deux parties : un **script** et
-son `HOOK.md`, dans un sous-dossier de `hooks/`, puis un **enregistrement**
+son `HOOK.md`, dans un sous-dossier de `hooks/`, et un **enregistrement**
 propre à chaque agent hôte — clé `hooks` de `~/.claude/settings.json` pour
 Claude Code, fichier `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais
-écraser `{AGENT_DIR}/settings.json` en bloc** : fusionner seulement les entrées
-du hook concerné.
+écraser `{AGENT_DIR}/settings.json` en bloc** : n'y fusionner que les entrées de
+hook concernées. Pour Copilot CLI, ce fichier propre au hook laisse
+`~/.copilot/settings.json` intact.
 
 Structure du `HOOK.md`, comportement du script et contrat commun aux deux
 agents hôtes : [docs/CONVENTIONS.md](../docs/CONVENTIONS.md) §3. Installation
-et prudence sur `settings.json` : [SETUP.md](../docs/SETUP.md) §5.
+et précautions relatives à `settings.json` : [SETUP.md](../docs/SETUP.md) §5.

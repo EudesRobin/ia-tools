@@ -171,9 +171,12 @@ hook.
   `~/.claude/settings.json` pour Claude Code, fichier
   `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
   `{AGENT_DIR}/settings.json` en bloc** : n'y fusionner que les entrées de hook
-  concernées. Pas d'adoption automatique du fichier entier.
+  concernées. Pas d'adoption automatique du fichier entier. Copilot CLI admet
+  aussi une clé `hooks` dans `~/.copilot/settings.json`, son fichier de
+  configuration principal ; le dépôt retient le fichier dédié, qui laisse
+  `~/.copilot/settings.json` intact.
   `scripts/install.py` **n'écrit jamais** ces fichiers d'enregistrement : il
-  affiche ce qui reste à faire ; la fusion reste manuelle.
+  affiche ce qui reste à faire ; l'enregistrement se fait à la main.
 
 Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
 (§1). `--scope hooks` le constate et ne touche à rien.

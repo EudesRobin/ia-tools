@@ -28,13 +28,13 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 | Publier une version du dépôt — choisir son numéro, poser son tag                  | [CONVENTIONS.md](CONVENTIONS.md) §8 — **procédure à suivre** |
 | Vérifier ou installer un prérequis système (Python, Git, bibliothèques, `adb`, `pwsh`) | [PREREQUIS.md](PREREQUIS.md) |
 
-Sept lignes portent une règle à appliquer, pas du contexte. L'écriture d'un outil
-est la plus dense : [CONVENTIONS.md](CONVENTIONS.md) fixe l'arborescence et le
-nommage, la structure de `SKILL.md`, de `HOOK.md`, de `STATUSLINE.md` et des
-fichiers d'agent, le front-matter, le moindre privilège sur l'accès aux outils,
-le traitement des secrets et des chemins locaux, ainsi que les checklists
-d'enregistrement. Il
-prévaut sur tout template par défaut avec lequel il entrerait en contradiction.
+Sept lignes portent une règle à appliquer, pas du contexte. La ligne consacrée
+à l'écriture d'un outil est la plus dense : [CONVENTIONS.md](CONVENTIONS.md)
+fixe l'arborescence et le nommage, la structure de `SKILL.md`, de `HOOK.md`, de
+`STATUSLINE.md` et des fichiers d'agent, le front-matter, le moindre privilège
+sur l'accès aux outils, le traitement des secrets et des chemins locaux, ainsi
+que les checklists d'enregistrement. Il prévaut sur tout template par défaut
+avec lequel il entrerait en contradiction.
 
 [qualite-outils.md](qualite-outils.md) se place en dessous : il traite de la
 **qualité** d'un outil — concision, découpage, latitude laissée à l'agent, suivi
