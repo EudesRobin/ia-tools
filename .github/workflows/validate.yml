@@ -26,3 +26,4 @@ jobs:
       - run: python scripts/validate.py
       - run: python scripts/test_validate.py
       - run: python scripts/test_check_commit_msg.py
+      - run: python scripts/test_statusline.py

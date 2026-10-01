@@ -29,11 +29,15 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     et tout agent declare 'tools' par des noms simples ;
   - tout outil figure dans l'inventaire de README.md et, hors hooks, dans les
     tables de docs/SETUP.md (CONVENTIONS.md section 5) ;
+  - une status line vit sous statuslines/<agent hote>/<nom>/, pour un agent
+    hote dote de status lines dans scripts/install.py (SCOPE_AGENTS), et
+    contient STATUSLINE.md et statusline.ps1 ;
   - tout placeholder {NOM} d'un outil distribue est declare dans
     scripts/install.py, faute de quoi il serait installe tel quel ;
   - les scripts Python compilent, les enregistrements du hook sont du JSON
-    valide et designent un script existant, les scripts PowerShell sont
-    syntaxiquement corrects (controle saute si pwsh est absent) ;
+    valide et designent un script existant, les scripts PowerShell de hooks/
+    et de statuslines/ sont syntaxiquement corrects (controle saute si pwsh
+    est absent) ;
   - les fichiers d'entree propres a chaque agent hote (CLAUDE.md,
     .github/copilot-instructions.md) existent et renvoient vers AGENTS.md.
 
@@ -100,7 +104,10 @@ LOCAL_PATH_PATTERNS = [
 
 # Placeholder {NOM_VARIABLE} dans un outil distribue.
 PLACEHOLDER_RE = re.compile(r"\{[A-Z][A-Z0-9_]*\}")
-DISTRIBUTED_DIRS = ("skills", "agents", "hooks")
+DISTRIBUTED_DIRS = ("skills", "agents", "hooks", "statuslines")
+
+# Fichiers obligatoires d'une status line (CONVENTIONS.md section 5).
+STATUSLINE_FILES = ("STATUSLINE.md", "statusline.ps1")
 
 # Cles de front-matter admises (CONVENTIONS.md sections 2.1 et 4.1).
 SKILL_KEYS = {"name", "description", "allowed-tools"}
@@ -304,6 +311,11 @@ def check_inventory(errors: list[str]) -> None:
     outils = [("agents", p.stem) for p in sorted((ROOT / "agents").glob("*.md"))]
     for kind in ("skills", "hooks"):
         outils += [(kind, p.name) for p in sorted((ROOT / kind).glob("*/")) if p.is_dir()]
+    outils += [
+        (f"statuslines/{p.parent.name}", p.name)
+        for p in sorted((ROOT / "statuslines").glob("*/*/"))
+        if p.is_dir()
+    ]
     for kind, nom in outils:
         if f"[`{nom}`]" not in readme:
             errors.append(f"{kind}/{nom} : absent de l'inventaire de README.md")
@@ -312,12 +324,40 @@ def check_inventory(errors: list[str]) -> None:
             errors.append(f"{kind}/{nom} : absent des tables de docs/SETUP.md")
 
 
+def charger_install():
+    """Module scripts/install.py ; l'exception d'import est laissee a l'appelant."""
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    import install
+    return install
+
+
+def check_statuslines(errors: list[str]) -> None:
+    """Une status line vit sous statuslines/<agent hote>/<nom>/ et porte son
+    document et son script. Seuls les agents hotes que install.py dote de status
+    lines sont admis : un autre dossier ne serait jamais installe."""
+    try:
+        hotes = charger_install().SCOPE_AGENTS["statusline"]
+    except Exception as exc:
+        errors.append(f"scripts/install.py : SCOPE_AGENTS inutilisable ({exc})")
+        return
+    for d in sorted(p for p in (ROOT / "statuslines").glob("*/") if p.is_dir()):
+        if d.name not in hotes:
+            errors.append(
+                f"statuslines/{d.name} : pas un dossier d'agent hote "
+                f"(admis : {', '.join(sorted(hotes))})"
+            )
+            continue
+        for outil in sorted(p for p in d.glob("*/") if p.is_dir()):
+            for nom in STATUSLINE_FILES:
+                if not (outil / nom).is_file():
+                    errors.append(f"statuslines/{d.name}/{outil.name}/{nom} manquant")
+
+
 def check_placeholders(errors: list[str]) -> None:
     """Un placeholder non declare dans install.py serait installe tel quel."""
-    sys.path.insert(0, str(ROOT / "scripts"))
     try:
-        import install
-        declares = set(install.variables("claude", Path("."), False))
+        declares = set(charger_install().variables("claude", Path("."), False))
     except Exception as exc:
         errors.append(f"scripts/install.py : variables() inutilisable ({exc})")
         return
@@ -355,7 +395,7 @@ def check_scripts_and_config(errors: list[str]) -> None:
             if not (ROOT / script).is_file():
                 errors.append(f"{rel} : script de hook introuvable '{script}'")
     pwsh = shutil.which("pwsh")
-    ps1 = sorted((ROOT / "hooks").rglob("*.ps1"))
+    ps1 = sorted(f for d in ("hooks", "statuslines") for f in (ROOT / d).rglob("*.ps1"))
     if pwsh and ps1:
         fichiers = ",".join("'" + str(f).replace("'", "''") + "'" for f in ps1)
         cmd = (
@@ -608,6 +648,7 @@ def main() -> int:
     check_entry_redirects(errors)
     check_no_hardcoded_paths(errors)
     check_inventory(errors)
+    check_statuslines(errors)
     check_placeholders(errors)
     check_scripts_and_config(errors)
 

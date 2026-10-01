@@ -1,16 +1,16 @@
-# Conventions d'écriture des outils — skills, agents, hooks
+# Conventions d'écriture des outils — skills, agents, hooks, status lines
 
 Les règles à suivre pour **ajouter ou modifier un outil** de ce dépôt : une
-**skill**, un **agent**, un **hook**, ou tout fichier embarqué (script, document
-de référence, feuille de style). Elles reprennent les conventions déjà en place
-dans `skills/` et `agents/` pour que les nouveaux outils restent cohérents et
-installables.
+**skill**, un **agent**, un **hook**, une **status line**, ou tout fichier
+embarqué (script, document de référence, feuille de style). Elles reprennent les
+conventions déjà en place dans `skills/` et `agents/` pour que les nouveaux
+outils restent cohérents et installables.
 
 > **Pour l'agent.** Quand l'utilisateur demande de créer ou modifier une skill,
-> un agent ou un hook dans ce dépôt, appliquer les règles ci-dessous. En cas de
-> contradiction avec un template par défaut, **ce document prévaut**. La procédure
-> d'installation est décrite dans [SETUP.md](SETUP.md) ; l'inventaire de ce
-> que fait chaque outil figure dans [README.md](../README.md).
+> un agent, un hook ou une status line dans ce dépôt, appliquer les règles
+> ci-dessous. En cas de contradiction avec un template par défaut, **ce document
+> prévaut**. La procédure d'installation est décrite dans [SETUP.md](SETUP.md) ;
+> l'inventaire de ce que fait chaque outil figure dans [README.md](../README.md).
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
@@ -26,6 +26,10 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 - **Un agent = un fichier** `agents/<nom>.md`. Ses documents de référence
   versionnés sont placés dans `agents/docs/<nom>/`.
 - **Un hook = un dossier** `hooks/<nom>/`, contenant `HOOK.md` et son script.
+- **Une status line = un dossier** `statuslines/claude/<nom>/`, contenant
+  `STATUSLINE.md` et `statusline.ps1`. Le dossier intermédiaire nomme l'agent
+  hôte qui exécute la status line : Claude Code est aujourd'hui le seul agent
+  hôte concerné ([§3.3](#33-status-lines-statuslinesclaudenom)).
 
 L'agent est un fichier à plat, pas un dossier : c'est la structure attendue sous
 `{AGENT_DIR}/agents/`, celle que [SETUP.md](SETUP.md) copie et celle que
@@ -101,17 +105,19 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 | Contenu dupliqué | Copies |
 |---|---|
 | Dépôt source de vérité / arbitrage seulement sur conflit | [AGENTS.md](../AGENTS.md) et [SETUP.md](SETUP.md) |
-| Ne jamais écraser `settings.json` en bloc | [AGENTS.md](../AGENTS.md), [SETUP.md](SETUP.md) et [hooks/README.md](../hooks/README.md) |
+| Ne jamais écraser `settings.json` en bloc | [AGENTS.md](../AGENTS.md), [SETUP.md](SETUP.md), [hooks/README.md](../hooks/README.md) et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 | Consigne de lire `AGENTS.md` avant toute action | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) et [.github/copilot-instructions.md](../.github/copilot-instructions.md) |
 | Règle de suivi des tâches — déclencheur, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral, équivalence des deux suivis | [docs/qualite-outils.md](qualite-outils.md) §5 et chaque outil multi-étapes de `skills/` et `agents/` |
 | Activation des hooks git (`git config core.hooksPath .githooks`) | [AGENTS.md](../AGENTS.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
+| Commande d'enregistrement d'une status line — interpréteur, `-ExecutionPolicy Bypass`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 
-La troisième ligne tient au chargement : chaque agent hôte lit son propre fichier
-d'entrée, et `AGENTS.md` doit être atteint depuis chacun d'eux. Les deux
-dernières lignes relèvent du [§1.7](#17-auto-suffisance-des-outils) :
-`skills/` et `agents/` sont distribués séparément et `docs/` ne l'est pas du
-tout — aucun de ces ensembles ne peut renvoyer vers un autre.
+La ligne relative à la lecture d'`AGENTS.md` tient au chargement : chaque
+agent hôte lit son propre fichier d'entrée, et `AGENTS.md` doit être atteint
+depuis chacun d'eux. Les lignes du suivi des tâches, du registre et de la
+commande d'enregistrement relèvent du [§1.7](#17-auto-suffisance-des-outils) :
+`skills/`, `agents/` et `statuslines/` sont distribués séparément et `docs/` ne
+l'est pas du tout — aucun de ces ensembles ne peut renvoyer vers un autre.
 
 ### 1.9 Registre de rédaction
 
@@ -222,7 +228,7 @@ d'installation de [SETUP.md](SETUP.md), sans quoi la copie sera incomplète.
 
 ---
 
-## 3. Hooks (`hooks/<nom>/HOOK.md` + script)
+## 3. Hooks (`hooks/<nom>/HOOK.md` + script) et status lines
 
 ### 3.1 Structure de `HOOK.md`
 
@@ -264,6 +270,38 @@ Pas de front-matter. Sections attendues :
   projet se lit dans le champ `cwd` du payload, présent chez les deux
   agents, plutôt que dans une variable d'environnement propre à l'un d'eux.
 - **Paramètres en tête de script**, pas dispersés dans le corps.
+
+### 3.3 Status lines (`statuslines/claude/<nom>/`)
+
+Une status line est un dossier dont Claude Code exécute le script à chaque
+rafraîchissement de sa barre d'état. Elle est **propre à Claude Code**, ce que
+signale le dossier `claude/` de son chemin : `scripts/install.py` ne l'examine
+pour aucun autre agent hôte, et `scripts/validate.py` refuse sous
+`statuslines/` tout dossier qui ne nomme pas un agent hôte doté de status lines
+par `install.py`. L'installation ne reprend pas ce dossier intermédiaire : la cible
+est `~/.claude/statuslines/<nom>/`.
+
+- **`STATUSLINE.md`**, sans front-matter, reprend les sections de `HOOK.md`
+  ([§3.1](#31-structure-de-hookmd)) : « Ce qu'elle affiche », avec ce qu'elle
+  ne fait délibérément pas, « Installation », « Configuration » et « Limites ».
+  Il recopie le fragment `statusLine` à enregistrer
+  ([§1.7](#17-auto-suffisance-des-outils)).
+- **`statusline.ps1`** lit le payload JSON sur son entrée standard et écrit une
+  ligne sur sa sortie standard. Il ne fait aucun appel au modèle.
+- **Elle n'échoue jamais.** Sur un payload absent, illisible ou incomplet, le
+  script produit un affichage réduit et se termine avec le code 0, sans rien
+  écrire sur la sortie d'erreur.
+  Tout champ facultatif du payload est lu de façon tolérante.
+- **Elle est sans état.** Elle n'écrit aucun fichier : elle s'exécute plusieurs
+  fois par minute.
+- **Compatible avec PowerShell 5.1 et 7.** Pas d'opérateur propre à
+  PowerShell 7 ; fichier en ASCII, car PowerShell 5.1 lit un script sans BOM
+  dans l'encodage ANSI — un caractère non ASCII se construit par son code
+  (`[char]0x2502`).
+- **Paramètres en tête de script** ; la variable d'environnement `NO_COLOR`
+  désactive les couleurs.
+- **Tests.** Chaque affichage est vérifié par `scripts/test_statusline.py`, sur
+  des payloads couvrant les champs absents ou nuls.
 
 ---
 
@@ -346,13 +384,15 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
 
 - [ ] **[README.md](../README.md)** — l'outil figure dans l'inventaire et dans
       l'arborescence, avec ses fichiers embarqués.
+- [ ] **Status line** — `STATUSLINE.md` et `statusline.ps1` présents, cas
+      d'affichage ajoutés à `scripts/test_statusline.py`.
 - [ ] **[SETUP.md](SETUP.md)** — l'outil figure dans la table d'installation,
       fichiers embarqués compris, pour que la copie soit complète.
 - [ ] **[AGENTS.md](../AGENTS.md)** — une règle d'usage est ajoutée **uniquement**
       si l'outil doit être déclenché dans des situations précises.
 - [ ] **Front-matter conforme** au [§2](#2-skills-skillsnomskillmd) ou au
-      [§4](#4-agents-agentsnommd), aucun chemin local en dur, moindre privilège
-      respecté.
+      [§4](#4-agents-agentsnommd) — sans objet pour un hook ou une status
+      line —, aucun chemin local en dur, moindre privilège respecté.
 - [ ] **Aucun secret ni fichier produit à l'exécution** n'est versionné.
 - [ ] **Protocole de suivi de progression** appliqué si le déroulé compte trois
       étapes ou plus — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]`
@@ -395,12 +435,15 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt lui-même —
 `validate.py` contrôle les sources, `install.py` porte le merge intelligent de
 [SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit pour
-le hook git `commit-msg`. Les fichiers `test_*.py` testent ces contrôles avec la
-seule bibliothèque standard ; toute vérification ajoutée à `validate.py` ou à
-`check_commit_msg.py` y reçoit son cas volontairement cassé.
+le hook git `commit-msg`. Les fichiers `test_*.py` testent ces contrôles et
+l'affichage des status lines avec la seule bibliothèque standard ; toute
+vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y reçoit son cas
+volontairement cassé.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
-  scripts de hook, où le contrat d'appel l'impose.
+  scripts de hook, où le contrat d'appel l'impose, et aux scripts de status
+  line, qui ne doivent rien exiger d'autre que PowerShell 5.1, intégré à
+  Windows.
 - **Racine dérivée du fichier** :
   `ROOT = Path(__file__).resolve().parent.parent`. Aucun chemin local en dur
   ([§1.2](#12-aucun-chemin-local-en-dur)) ; une valeur propre à la machine est
@@ -476,12 +519,12 @@ git push origin <version>
 
 ## 9. Référence rapide
 
-| Aspect | Skill | Agent | Hook |
-|---|---|---|---|
-| Emplacement | `skills/<nom>/` | `agents/<nom>.md` | `hooks/<nom>/` |
-| Fichier canonique | `SKILL.md` (front-matter) | le fichier lui-même (front-matter) | `HOOK.md` (sans front-matter) |
-| Identité | `name` = nom du dossier | `name` = nom du fichier | nom du dossier |
-| Déclenchement | `description` / `/nom` | `description` ou délégation explicite | événement de session |
-| Restriction d'outils | `allowed-tools` (motifs restreints à un préfixe ; Claude Code seul) | `tools` (noms simples, forme Claude) | garde-fous dans le script |
-| Fichiers embarqués | scripts, styles, références | `agents/docs/<nom>/` | le script |
-| Installation | copie du dossier sous `{AGENT_DIR}/skills/` | copie du fichier sous `{AGENT_DIR}/agents/`, renommé `<nom>.agent.md` pour Copilot CLI | copie **et** enregistrement, propre à chaque agent hôte |
+| Aspect | Skill | Agent | Hook | Status line |
+|---|---|---|---|---|
+| Emplacement | `skills/<nom>/` | `agents/<nom>.md` | `hooks/<nom>/` | `statuslines/claude/<nom>/` |
+| Fichier canonique | `SKILL.md` (front-matter) | le fichier lui-même (front-matter) | `HOOK.md` (sans front-matter) | `STATUSLINE.md` (sans front-matter) |
+| Identité | `name` = nom du dossier | `name` = nom du fichier | nom du dossier | nom du dossier |
+| Déclenchement | `description` / `/nom` | `description` ou délégation explicite | événement de session | rafraîchissement de la barre d'état |
+| Restriction d'outils | `allowed-tools` (motifs restreints à un préfixe ; Claude Code seul) | `tools` (noms simples, forme Claude) | garde-fous dans le script | sans objet : aucun appel au modèle |
+| Fichiers embarqués | scripts, styles, références | `agents/docs/<nom>/` | le script | `statusline.ps1` |
+| Installation | copie du dossier sous `{AGENT_DIR}/skills/` | copie du fichier sous `{AGENT_DIR}/agents/`, renommé `<nom>.agent.md` pour Copilot CLI | copie **et** enregistrement, propre à chaque agent hôte | copie sous `~/.claude/statuslines/` **et** clé `statusLine` fusionnée à la main ; Claude Code seul |

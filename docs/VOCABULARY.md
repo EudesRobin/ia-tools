@@ -67,13 +67,14 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 
 | Terme retenu | Sens | À ne pas employer |
 |---|---|---|
-| **outil** | Une skill, un agent ou un hook. S'installe **isolément** : l'utilisateur peut le copier seul, sans le reste du dépôt, d'où l'exigence d'auto-suffisance ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)). Terme générique par défaut ; ne préciser skill, agent ou hook que lorsque la distinction importe. | « unité installable isolément » — exact mais lourd, et jamais employé spontanément |
+| **outil** | Une skill, un agent, un hook ou une status line. S'installe **isolément** : l'utilisateur peut le copier seul, sans le reste du dépôt, d'où l'exigence d'auto-suffisance ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)). Terme générique par défaut ; ne préciser skill, agent, hook ou status line que lorsque la distinction importe. | « unité installable isolément » — exact mais lourd, et jamais employé spontanément |
 | **skill** | Un dossier `skills/<nom>/` avec son `SKILL.md`. Suite d'étapes fixes, sortie unique. | « compétence », « capacité » |
 | **agent** | Un fichier `agents/<nom>.md`. Persona spécialisée dont le raisonnement se réutilise. | « sous-agent » au sens d'agent de ce dépôt (voir ci-dessous) |
 | **sous-agent** | Une instance déléguée dans une session, quel que soit l'agent qu'elle exécute. À distinguer de l'artefact `agents/<nom>.md`. | — |
 | **hook** | Un dossier `hooks/<nom>/` avec son `HOOK.md` et son script, déclenché par un événement de session. | « crochet », « déclencheur » |
 | **hook git** | Un script de `.githooks/` déclenché par git (`pre-commit`, `commit-msg`), activé une fois par clone. Ce n'est pas un outil : il vit hors de `hooks/` et ne relève pas des conventions des hooks d'agent hôte. Toujours écrire « hook git », jamais « hook » seul, pour le distinguer d'un hook d'agent hôte. | « crochet git » |
-| **payload** (masculin) | L'objet JSON que l'agent hôte transmet à un hook sur son entrée standard (`cwd`, `stop_hook_active`…). | « charge utile » — traduction littérale, opaque hors du vocabulaire des réseaux |
+| **status line** (féminin) | Un dossier `statuslines/claude/<nom>/` avec son `STATUSLINE.md` et son script, que Claude Code exécute à chaque rafraîchissement de sa barre d'état. Propre à Claude Code, ce que signale le dossier `claude/`. Terme anglais courant en français technique (§1). | « ligne d'état », « barre de statut » |
+| **payload** (masculin) | L'objet JSON que l'agent hôte transmet sur l'entrée standard d'un hook ou d'une status line (`cwd`, `stop_hook_active`, `context_window`…). | « charge utile » — traduction littérale, opaque hors du vocabulaire des réseaux |
 | **front-matter** | Le bloc YAML en tête de `SKILL.md` ou d'un fichier d'agent. | « en-tête », « métadonnées » |
 | **fichier embarqué** | Un script, une feuille de style ou un document de référence livré dans le dossier d'un outil. | « asset », « ressource » |
 
@@ -87,7 +88,9 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **placeholder** | `{NOM_VARIABLE}`, présent dans le dépôt et remplacé lors de l'installation par sa valeur locale — par exemple `{AGENT_DIR}`. À distinguer de la forme `<...>`, valeur renseignée à l'exécution et jamais substituée ([CONVENTIONS.md §1.2](CONVENTIONS.md#12-aucun-chemin-local-en-dur)). | « marqueur », « jeton » |
 | **agent hôte** | Le produit qui charge et exécute les outils : Claude Code ou Copilot CLI. Sa racine locale s'écrit `{AGENT_DIR}`. À distinguer de l'**agent**, artefact `agents/<nom>.md` de ce dépôt : ne pas l'abréger en « agent » dans un passage qui parle aussi des agents du dépôt. | « harnais », qui désigne autre chose (§2) ; « plateforme » ; « IDE » |
 | **rendu** | La source du dépôt après substitution des placeholders. C'est le rendu, jamais la source brute, que l'on compare au fichier local. | — |
+| **affichage** | La ligne qu'une status line écrit sur sa sortie standard et que Claude Code affiche. | « rendu », réservé à la source après substitution des placeholders |
 | **conflit** | Un écart qui ne s'explique ni par les placeholders ni par une révision antérieure du dépôt : une édition locale manuelle. Seul cas qui justifie un arbitrage. | « divergence » |
+| **token** (masculin) | L'unité de texte que compte le modèle de langage : remplissage du contexte, quotas, facturation. Terme anglais courant en français technique (§1). | « jeton » — traduction peu usitée ; déjà écarté comme équivalent de *placeholder*, il serait ambigu |
 | **prompt** | La requête que l'utilisateur adresse à l'agent hôte dans une session. Terme anglais courant en français technique (§1). | « invite », « consigne » — la première évoque d'abord l'invite de commandes, la seconde désigne une règle et non une requête |
 | **mode plan** | Le mode d'exploration en lecture seule précédant toute proposition. | « planning mode » |
 

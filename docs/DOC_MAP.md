@@ -17,7 +17,7 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 
 | Avant de…                                                                         | Lire |
 |-----------------------------------------------------------------------------------|------|
-| Ajouter ou modifier un outil — skill, agent, hook, script embarqué                | [CONVENTIONS.md](CONVENTIONS.md) — **à suivre obligatoirement** |
+| Ajouter ou modifier un outil — skill, agent, hook, status line, script embarqué   | [CONVENTIONS.md](CONVENTIONS.md) — **à suivre obligatoirement** |
 | Juger si un outil est *bien écrit* — concision, découpage, latitude laissée à l'agent, suivi de progression, évaluation | [qualite-outils.md](qualite-outils.md) |
 | Rédiger ou reprendre un document, et hésiter sur un terme                         | [VOCABULARY.md](VOCABULARY.md) — **à suivre obligatoirement** |
 | Rédiger un document, quel qu'il soit — niveau de langue, forme des énoncés        | [CONVENTIONS.md](CONVENTIONS.md) §1.9 — **à suivre obligatoirement** |
@@ -30,9 +30,10 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 
 Sept lignes portent une règle à appliquer, pas du contexte. L'écriture d'un outil
 est la plus dense : [CONVENTIONS.md](CONVENTIONS.md) fixe l'arborescence et le
-nommage, la structure de `SKILL.md` / `HOOK.md` / des fichiers d'agent, le
-front-matter, le moindre privilège sur l'accès aux outils, le traitement des
-secrets et des chemins locaux, ainsi que les checklists d'enregistrement. Il
+nommage, la structure de `SKILL.md`, de `HOOK.md`, de `STATUSLINE.md` et des
+fichiers d'agent, le front-matter, le moindre privilège sur l'accès aux outils,
+le traitement des secrets et des chemins locaux, ainsi que les checklists
+d'enregistrement. Il
 prévaut sur tout template par défaut avec lequel il entrerait en contradiction.
 
 [qualite-outils.md](qualite-outils.md) se place en dessous : il traite de la

@@ -7,11 +7,12 @@ par défaut, sa version est adoptée. Un arbitrage n'est demandé que sur un
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
-> **Prérequis système** (Python ≥ 3.10, Git, `adb`, `pwsh`, bibliothèque
-> `pyyaml`) — outils supposés présents par certaines skills et par l'outillage
-> du dépôt : voir [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires au merge
-> intelligent décrit ci-dessous ; les autres ne concernent qu'une skill ou la
-> contribution au dépôt.
+> **Prérequis système** (Python ≥ 3.10, Git, `adb`, PowerShell, bibliothèque
+> `pyyaml`) — outils supposés présents par certaines skills, par la status line
+> `usage-session` et par l'outillage du dépôt : voir
+> [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires au merge
+> intelligent décrit ci-dessous ; les autres ne concernent qu'une skill, une
+> status line ou la contribution au dépôt.
 
 ## 1. Agents hôtes, cibles et variables
 
@@ -36,6 +37,7 @@ Sous Windows, `~` = `C:\Users\<user>`.
 | Agent       | `agents/<nom>.md`       | `{AGENT_DIR}/agents/<nom>.md`, ou `<nom>.agent.md` pour Copilot CLI |
 | Docs agents | `agents/docs/<nom>/`    | `{AGENT_DIR}/agents/docs/<nom>/`                          |
 | Hook        | `hooks/<nom>/`          | `{AGENT_DIR}/hooks/<nom>/` + enregistrement propre à l'agent hôte (§5) |
+| Status line | `statuslines/claude/<nom>/` | `~/.claude/statuslines/<nom>/` + clé `statusLine` de `~/.claude/settings.json` (§6) ; Claude Code seul |
 
 Le front-matter des skills et des agents est commun aux deux agents hôtes :
 Copilot CLI fait correspondre les noms d'outils de Claude Code aux siens et
@@ -76,10 +78,12 @@ python scripts/install.py --diff <chemin>     # écart d'un fichier en conflit
 python scripts/install.py --scope skills,agents
 python scripts/install.py --agent copilot
 python scripts/install.py --outil clean-android-tv --apply
+python scripts/install.py --scope statusline --agent claude
 ```
 
-Le périmètre par défaut est `skills,agents,hooks`, tous outils compris, pour
-les agents hôtes `claude,copilot`. `--agent` restreint l'installation aux agents
+Le périmètre par défaut est `skills,agents,hooks,statusline`, tous outils
+compris, pour les agents hôtes `claude,copilot`. Le périmètre `statusline` n'est
+examiné que pour Claude Code, seul agent hôte doté de status lines. `--agent` restreint l'installation aux agents
 hôtes nommés. `--outil` restreint l'examen et l'écriture aux outils nommés,
 séparés par des virgules. `--target` permet de viser une autre racine que
 `{AGENT_DIR}` et n'est admis qu'avec un seul agent hôte. `--json` produit la
@@ -166,15 +170,43 @@ hook.
 - Enregistrement, propre à chaque agent hôte : clé `hooks` de
   `~/.claude/settings.json` pour Claude Code, fichier
   `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
-  `{AGENT_DIR}/settings.json` en bloc** : fusionner seulement les entrées de hook
-  concernées. Pas d'adoption automatique du fichier entier. Le script **n'écrit
-  jamais** ces fichiers d'enregistrement : il affiche ce qui reste à faire ; la
-  fusion reste manuelle.
+  `{AGENT_DIR}/settings.json` en bloc** : n'y fusionner que les entrées de hook
+  concernées. Pas d'adoption automatique du fichier entier.
+  `scripts/install.py` **n'écrit jamais** ces fichiers d'enregistrement : il
+  affiche ce qui reste à faire ; la fusion reste manuelle.
 
 Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
 (§1). `--scope hooks` le constate et ne touche à rien.
 
-## 6. Après installation
+## 6. Status lines
+
+Chaque status line est propre à un agent hôte, nommé dans son chemin source :
+`statuslines/claude/<nom>/` pour Claude Code, seul agent hôte concerné
+aujourd'hui. Elle s'installe en deux temps : la copie du script, puis
+l'enregistrement de la clé `statusLine`.
+
+- Script → `~/.claude/statuslines/<nom>/`, par le merge intelligent comme
+  ci-dessus. Le dossier `claude/` de la source n'est pas repris dans la cible :
+  celle-ci, sous `~/.claude/`, est déjà propre à Claude Code.
+- Enregistrement → clé `statusLine` de `~/.claude/settings.json`.
+  `scripts/install.py` **n'écrit jamais** ce fichier : il lit la clé et lui
+  attribue l'un des états `enregistree` (elle désigne une status line du
+  dépôt), `absente`, `autre` (elle désigne un autre script) ou `illisible`
+  (JSON invalide), puis affiche le fragment à fusionner. **Ne jamais écraser
+  `~/.claude/settings.json` en bloc** : n'y fusionner que la clé `statusLine`,
+  après accord de l'utilisateur quand la clé existante désigne un autre
+  script. L'état de cette clé n'influe pas sur le code de sortie.
+
+La commande du fragment se compose du chemin absolu de la cible, en barres
+obliques, de l'interpréteur — `pwsh` s'il est présent, sinon `powershell` — et
+de `-ExecutionPolicy Bypass`, sans lequel PowerShell 5.1 refuse le script. Une
+mise à jour du script ne demande aucune modification de la clé.
+
+| Status line     | Fichiers embarqués |
+|-----------------|--------------------|
+| `usage-session` | `statusline.ps1`   |
+
+## 7. Après installation
 
 - Skills et agents : le `name` apparaît dans la liste des outils à la
   **prochaine session** de l'agent hôte, pas immédiatement. Le vérifier dans
@@ -182,3 +214,5 @@ Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est loca
   `/skills` et `/agent` de Copilot CLI.
 - Hooks : tester le déclenchement réel. La présence du script et de son
   enregistrement ne prouve pas qu'il fonctionne.
+- Status line : elle s'affiche au rafraîchissement suivant de la session, sans
+  redémarrage. Vérifier qu'elle apparaît et que ses valeurs sont renseignées.
