@@ -1,9 +1,10 @@
 # AGENTS.md — ia-tools
 
-Dépôt public d'outils pour agents de code (skills, agents, hooks), destinés à
-être **installés / mis à jour** dans l'environnement local de chaque agent
-hôte : `~/.claude/` pour Claude Code, `~/.copilot/` pour Copilot CLI. La
-documentation désigne cette racine par le placeholder `{AGENT_DIR}`.
+Dépôt public d'outils pour agents de code (skills, agents, hooks, status
+lines), destinés à être **installés / mis à jour** dans l'environnement local
+de chaque agent hôte : `~/.claude/` pour Claude Code, `~/.copilot/` pour
+Copilot CLI. La documentation désigne la racine de chaque agent hôte par le
+placeholder `{AGENT_DIR}`.
 
 Ce fichier est la **seule source d'instructions faisant autorité** dans le
 dépôt.
@@ -53,10 +54,11 @@ python scripts/install.py --apply    # écrit les cas sûrs
 1. Lancer l'audit, qui n'écrit rien.
 2. Annoncer le périmètre et les agents hôtes visés, puis les **faire
    confirmer** avant `--apply`. Une demande qui ne les précise pas (« mets à jour
-   mes outils ») prend les valeurs par défaut du script : skills, agents et
-   hooks, pour `claude` et `copilot`.
+   mes outils ») prend les valeurs par défaut du script : skills, agents,
+   hooks et status lines, pour `claude` et `copilot` — les status lines pour
+   `claude` seul.
 3. Lancer `--apply`, puis dérouler [SETUP.md](./docs/SETUP.md) §2. Skills → §3.
-   Agents → §4. Hooks → §5.
+   Agents → §4. Hooks → §5. Status lines → §6.
 4. Le script se termine avec le code `1` tant qu'un conflit subsiste. Un conflit
    s'arbitre avec l'utilisateur (`--diff <chemin>`), jamais unilatéralement.
 
@@ -68,8 +70,8 @@ délibérée et déclarée dans [CONVENTIONS.md](./docs/CONVENTIONS.md) §1.8) :
 - **N'arbitrer que sur conflit non résoluble** : le fichier local porte une
   édition manuelle non reconstituable depuis le dépôt et les variables. Dans ce
   cas seulement : diff et choix laissé à l'utilisateur.
-- **Ne jamais écraser `{AGENT_DIR}/settings.json` en bloc** : pour les hooks, ne
-  fusionner que les entrées concernées.
+- **Ne jamais écraser `{AGENT_DIR}/settings.json` en bloc** : n'y fusionner que
+  les entrées de hook concernées et, pour une status line, la clé `statusLine`.
 
 ## Definition of Done
 
@@ -86,10 +88,12 @@ que la rédaction s'écarte du registre ([CONVENTIONS.md](./docs/CONVENTIONS.md)
 Un nouveau fichier sous `docs/` est un **document de fond** : dérouler aussi la
 checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §6.
 
-### Skills, agents, hooks
+### Skills, agents, hooks, status lines
 
 Pas terminé tant que **`python scripts/validate.py`** n'est pas au vert, et que
-la checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §5 n'est pas complète.
+la checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §5 n'est pas complète. Une
+status line n'est en outre pas terminée tant que
+**`python scripts/test_statusline.py`** n'est pas au vert.
 
 **Rouge → pas fait.** Ne pas passer à autre chose, ne pas proposer de commit, ne
 pas dire « c'est fait » : lire les écarts listés, corriger, relancer. Ne pas
@@ -98,10 +102,11 @@ pas ignorer l'erreur.
 
 ### Scripts
 
-`scripts/*.py`, `hooks/**/*.ps1` : pas terminé tant que le script n'a pas été
-**lancé sur une invocation réelle** et sa sortie effective lue. Un contrôle
-jamais vu en rouge n'est pas un contrôle : après avoir ajouté ou modifié une
-vérification, la voir échouer au moins une fois sur un cas volontairement cassé.
+`scripts/*.py`, `hooks/**/*.ps1`, `statuslines/**/*.ps1` : pas terminé tant
+que le script n'a pas été **lancé sur une invocation réelle** et sa sortie
+effective lue. Un contrôle jamais vu en rouge n'est pas un contrôle : après
+avoir ajouté ou modifié une vérification, la voir échouer au moins une fois sur
+un cas volontairement cassé.
 
 Pour `validate.py` et `check_commit_msg.py`, ce cas cassé s'inscrit dans leurs
 tests, qui le rejouent à chaque exécution : pas terminé tant que
@@ -114,12 +119,13 @@ tests, qui le rejouent à chaque exécution : pas terminé tant que
 (longueur de `name` et de `description`, jeu de caractères, absence de balise
 XML), champ `tools` des agents —, la taille du corps d'un outil, les liens
 relatifs et les ancres, la cohérence de `docs/`, l'inventaire des outils dans
-`README.md` et `docs/SETUP.md`, les placeholders non déclarés, les chemins
-locaux en dur, la syntaxe des scripts et de l'enregistrement du hook, et la
-présence des renvois de `CLAUDE.md` et de `.github/copilot-instructions.md` vers
-ce fichier. Il vérifie en outre qu'un outil multi-étapes **porte** la règle de
-suivi des tâches — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]` `[-]` —
-sans rien pouvoir dire de la façon dont une session s'y tient réellement.
+`README.md` et `docs/SETUP.md`, l'emplacement et les fichiers obligatoires
+d'une status line, les placeholders non déclarés, les chemins locaux en dur, la
+syntaxe des scripts et de l'enregistrement du hook, et la présence des renvois
+de `CLAUDE.md` et de `.github/copilot-instructions.md` vers ce fichier. Il
+vérifie en outre qu'un outil multi-étapes **porte** la règle de suivi des
+tâches — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]` `[-]` — sans rien
+pouvoir dire de la façon dont une session s'y tient réellement.
 
 Trois mécanismes le lancent : le hook `validate-tool` en fin de tour, le hook
 git `pre-commit` à chaque commit, et l'intégration continue, qui lance aussi les

@@ -3,10 +3,10 @@
 [![validate](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml)
 [![Dependabot](https://img.shields.io/badge/Dependabot-actif-025E8C?logo=dependabot)](./.github/dependabot.yml)
 
-Outils pour agents de code — **skills**, **agents** et **hooks** — rédigés en
-français et publiés sous licence MIT. Le dépôt les versionne ; un script les
-installe ou les met à jour pour **Claude Code** (`~/.claude/`) et pour
-**Copilot CLI** (`~/.copilot/`).
+Outils pour agents de code — **skills**, **agents**, **hooks** et **status
+lines** — rédigés en français et publiés sous licence MIT. Le dépôt les
+versionne ; un script les installe ou les met à jour pour **Claude Code**
+(`~/.claude/`) et pour **Copilot CLI** (`~/.copilot/`).
 
 ## Outils
 
@@ -30,6 +30,15 @@ installe ou les met à jour pour **Claude Code** (`~/.claude/`) et pour
 |---|---|
 | [`validate-tool`](./hooks/validate-tool/HOOK.md) | Lance `scripts/validate.py` en fin de tour et empêche l'agent de rendre la main tant que le validateur est au rouge, sous Claude Code comme sous Copilot CLI. **Local au dépôt**, non distribué. |
 
+### Status lines
+
+Chaque status line est propre à un agent hôte, nommé dans son chemin :
+`statuslines/claude/` pour Claude Code, seul agent hôte concerné aujourd'hui.
+
+| Status line | Ce qu'elle affiche |
+|---|---|
+| [`usage-session`](./statuslines/claude/usage-session/STATUSLINE.md) | Modèle, effort, remplissage du contexte en pourcentage et en tokens, puis quotas 5 h et 7 jours de l'abonnement ou, en facturation API, coût estimé de la session, sur une ligne alignée à droite. Script PowerShell sans appel au modèle : aucun token consommé. |
+
 ## Arborescence
 
 ```
@@ -43,11 +52,12 @@ ia-tools/
 ├── skills/              une skill par sous-dossier
 ├── agents/              un agent par fichier ; agents/docs/<nom>/ pour ses références
 ├── hooks/               un hook par sous-dossier ; hooks/README.md en donne l'état
+├── statuslines/claude/  une status line par sous-dossier, propre à Claude Code
 ├── scripts/             outillage du dépôt (réservé au développement, non installé)
 │   ├── validate.py      validateur des sources
 │   ├── install.py       merge intelligent vers chaque agent hôte
 │   ├── check_commit_msg.py  contrôle des messages de commit
-│   └── test_*.py        tests du validateur et du contrôle des messages
+│   └── test_*.py        tests du validateur, du contrôle des messages et des status lines
 ├── .githooks/           hooks git pre-commit et commit-msg (à activer dans chaque clone)
 ├── .claude/             config Claude Code du dépôt (enregistrement du hook local)
 └── .github/             renvoi pour Copilot (copilot-instructions.md),
@@ -63,6 +73,7 @@ ia-tools/
 | Python ≥ 3.10 | lancer `scripts/install.py` |
 | Git, et le dépôt obtenu par `git clone` | reconnaître une installation obsolète : sans l'historique git, elle est signalée comme conflit |
 | `adb` (platform-tools) | la skill `clean-android-tv` |
+| PowerShell 5.1 (intégré à Windows) ou 7 (`pwsh`) | la status line `usage-session` |
 | `pyyaml` et PowerShell 7 (`pwsh`) | contribuer au dépôt : `scripts/validate.py` et hook `validate-tool` |
 
 Commandes de vérification et d'installation : [PREREQUIS.md](./docs/PREREQUIS.md).
@@ -81,15 +92,46 @@ python scripts/install.py --outil clean-android-tv --apply   # un seul outil
 Une installation locale obsolète est remplacée par la version du dépôt. Un
 fichier modifié à la main est signalé comme conflit et laissé intact. Le script
 ne supprime aucun fichier local et ne modifie jamais le `settings.json` d'un
-agent hôte. Procédure détaillée : [SETUP.md](./docs/SETUP.md).
+agent hôte. Une status line est donc copiée mais reste inactive tant que sa clé
+n'est pas enregistrée ([ci-dessous](#activer-une-status-line)). Procédure
+détaillée : [SETUP.md](./docs/SETUP.md).
 
 Sans le script, un outil s'installe par simple copie : le dossier
 `skills/<nom>/` sous `{AGENT_DIR}/skills/`, le fichier `agents/<nom>.md` sous
-`{AGENT_DIR}/agents/` — renommé `<nom>.agent.md` pour Copilot CLI. `{AGENT_DIR}`
-vaut `~/.claude` pour Claude Code et `~/.copilot` pour Copilot CLI. Une copie
+`{AGENT_DIR}/agents/` — renommé `<nom>.agent.md` pour Copilot CLI —, le dossier
+`statuslines/claude/<nom>/` sous `~/.claude/statuslines/`. `{AGENT_DIR}` vaut
+`~/.claude` pour Claude Code et `~/.copilot` pour Copilot CLI. Une copie
 manuelle ne remplace pas les placeholders `{…}` qu'un outil pourrait contenir :
-le script reste la méthode de référence. L'outil apparaît à la session
-suivante.
+le script reste la méthode de référence. Une skill ou un agent apparaît à la
+session suivante ; une status line, au rafraîchissement suivant une fois sa clé
+enregistrée.
+
+### Activer une status line
+
+Une status line est facultative. `install.py --apply` copie son script avec les
+autres outils, mais Claude Code ne l'affiche qu'une fois la clé `statusLine`
+enregistrée dans `~/.claude/settings.json`, fichier que le script n'écrit
+jamais.
+
+1. Copier le script et obtenir la clé à enregistrer :
+
+   ```powershell
+   python scripts/install.py --scope statusline --agent claude --apply
+   ```
+
+   La sortie indique l'état de la clé `statusLine`. Si elle est absente ou
+   désigne un autre script, la sortie affiche le fragment JSON à enregistrer,
+   avec le chemin absolu du script sur la machine.
+2. Ajouter ce fragment au premier niveau de `~/.claude/settings.json`, sans
+   écraser le reste du fichier. Une clé `statusLine` existante désigne une autre
+   status line : la remplacer seulement si elle n'est plus voulue.
+3. Relancer la commande sans `--apply` : la clé doit être signalée
+   `enregistree`. La status line apparaît au rafraîchissement suivant, sans
+   redémarrage.
+
+Retirer la clé `statusLine` désactive la status line. Ce qu'elle affiche et ses
+paramètres sont décrits dans son
+[STATUSLINE.md](./statuslines/claude/usage-session/STATUSLINE.md).
 
 ### Par un prompt
 
@@ -130,6 +172,7 @@ ouverte dans le dépôt. Lancement manuel :
 python scripts/validate.py
 python scripts/test_validate.py
 python scripts/test_check_commit_msg.py
+python scripts/test_statusline.py
 ```
 
 ## Licence

@@ -28,7 +28,14 @@ recopie les octets du rendu, ce qui preserve celles de l'arbre de travail.
 
 Garde-fou non negociable : le settings.json d'un agent hote et ses fichiers
 d'enregistrement de hooks ne sont jamais ecrits. Ce qui reste a fusionner est
-affiche, pas applique.
+affiche, pas applique. Il en va de meme pour la cle statusLine d'une status
+line : l'audit lit settings.json, indique si la cle designe le script installe
+et affiche le fragment a fusionner.
+
+Une status line est propre a un agent hote, que nomme son dossier source :
+statuslines/<agent hote>/<nom>/ s'installe sous {AGENT_DIR}/statuslines/<nom>/.
+Seul Claude Code en a aujourd'hui (SCOPE_AGENTS) : le perimetre statusline
+n'est examine pour aucun autre agent hote.
 
 Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
@@ -43,6 +50,7 @@ Code de sortie : 0 si aucun conflit ne reste chez aucun agent hote, 1 sinon.
 import argparse
 import difflib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -58,13 +66,23 @@ AGENTS = {
 DEFAULT_AGENTS = ["claude", "copilot"]
 
 # Perimetres et paires source -> cible (docs/SETUP.md section 1).
-# Un dossier source est recopie recursivement sous le dossier cible.
+# Un dossier source est recopie recursivement sous le dossier cible ; {agent}
+# y designe l'agent hote examine.
 SCOPES = {
     "skills": [("skills", "skills")],
     "agents": [("agents", "agents")],
     "hooks": [],  # aucun hook distribue : validate-tool est local au depot
+    "statusline": [("statuslines/{agent}", "statuslines")],
 }
-DEFAULT_SCOPES = ["skills", "agents", "hooks"]
+DEFAULT_SCOPES = ["skills", "agents", "hooks", "statusline"]
+
+# Perimetres reserves a certains agents hotes ; les autres les ignorent.
+# scripts/validate.py n'admet sous statuslines/ que les dossiers declares ici.
+SCOPE_AGENTS = {"statusline": {"claude"}}
+
+# Script d'une status line : statuslines/<agent hote>/<nom>/statusline.ps1,
+# enregistre par la cle statusLine de settings.json (docs/SETUP.md section 6).
+STATUSLINE_SCRIPT = "statusline.ps1"
 
 # Enregistrement des hooks, jamais ecrit par ce script (docs/SETUP.md section 5).
 HOOK_REGISTRATION = {
@@ -116,8 +134,11 @@ def source_rel(agent: str, src_rel: str, rel: Path) -> Path | None:
 
 def tool_of(rel: str) -> str:
     """Nom de l'outil auquel appartient un chemin : skills/<nom>/...,
-    agents/<nom>.md, agents/<nom>.agent.md ou agents/docs/<nom>/..."""
+    agents/<nom>.md, agents/<nom>.agent.md, agents/docs/<nom>/...,
+    statuslines/<agent hote>/<nom>/... (source) ou statuslines/<nom>/... (cible)."""
     parts = rel.split("/")
+    if parts[0] == "statuslines" and len(parts) > 3 and parts[1] in AGENTS:
+        return parts[2]
     if parts[0] == "agents":
         if parts[1] == "docs" and len(parts) > 2:
             return parts[2]
@@ -165,24 +186,44 @@ def git_bytes(args: list[str]) -> bytes | None:
 
 
 def previous_renders(source: str, subs: dict[str, str]) -> list[bytes]:
-    """Formes normalisees prises par le rendu de ce fichier dans l'historique."""
-    log = git_bytes(["log", f"-{HISTORY_MAX_REVS}", "--format=%H", "--", source])
+    """Formes normalisees prises par le rendu de ce fichier dans l'historique.
+
+    L'historique suit les renommages (--follow) : chaque revision est lue sous
+    le chemin qu'avait le fichier a cette revision. Une installation faite avant
+    le deplacement d'un outil reste ainsi reconnue comme obsolete.
+    """
+    log = git_bytes(
+        ["log", "--follow", f"-{HISTORY_MAX_REVS}", "--format=@%H", "--name-only", "--", source]
+    )
     if not log:
         return []
+    revisions: list[tuple[str, str]] = []
+    chemin = source
+    for ligne in log.decode("utf-8", errors="replace").splitlines():
+        if ligne.startswith("@"):
+            revisions.append((ligne[1:], chemin))
+        elif ligne.strip() and revisions:
+            chemin = ligne.strip()
+            revisions[-1] = (revisions[-1][0], chemin)
     formes = []
-    for rev in log.decode("utf-8", errors="replace").split():
-        blob = git_bytes(["show", f"{rev}:{source}"])
+    for rev, chemin in revisions:
+        blob = git_bytes(["show", f"{rev}:{chemin}"])
         if blob is None:
             continue
         formes.append(normalize(render(blob, subs)))
     return formes
 
 
+def scope_pairs(agent: str, scope: str) -> list[tuple[str, str]]:
+    """Paires (source, cible) d'un perimetre pour cet agent hote."""
+    return [(src.format(agent=agent), dst) for src, dst in SCOPES[scope]]
+
+
 def pairs(agent: str, scopes: list[str], target_root: Path) -> list[tuple[str, Path, Path]]:
     """(chemin source affiche, source, cible) pour tout le perimetre demande."""
     out = []
     for scope in scopes:
-        for src_rel, dst_rel in SCOPES[scope]:
+        for src_rel, dst_rel in scope_pairs(agent, scope):
             src = ROOT / src_rel
             dst = target_root / dst_rel
             if src.is_file():
@@ -212,7 +253,7 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
     outils = {tool_of(rel) for rel, _, _ in pairs(agent, scopes, target_root)}
     out = []
     for scope in scopes:
-        for src_rel, dst_rel in SCOPES[scope]:
+        for src_rel, dst_rel in scope_pairs(agent, scope):
             src, dst = ROOT / src_rel, target_root / dst_rel
             if not src.is_dir() or not dst.is_dir():
                 continue
@@ -255,6 +296,61 @@ def unified(agent: str, source: str, src: Path, dst: Path, subs: dict[str, str])
             tofile=f"depot/{source}",
         )
     )
+
+
+def scopes_of(agent: str, scopes: list[str]) -> list[str]:
+    """Perimetres demandes que cet agent hote prend en charge."""
+    return [s for s in scopes if agent in SCOPE_AGENTS.get(s, AGENTS)]
+
+
+def statusline_command(script: Path) -> str:
+    """Commande attendue dans la cle statusLine. Barres obliques : Claude Code
+    passe la commande a Git Bash quand il est installe. -ExecutionPolicy Bypass :
+    la strategie par defaut de PowerShell 5.1 refuse les scripts."""
+    interprete = "pwsh" if shutil.which("pwsh") else "powershell"
+    return (
+        f'{interprete} -NoProfile -NonInteractive -ExecutionPolicy Bypass '
+        f'-File "{script.as_posix()}"'
+    )
+
+
+def statusline_state(agent: str, scopes: list[str], target_root: Path, outils: set[str] | None) -> dict | None:
+    """Etat de la cle statusLine, en lecture seule : 'enregistree' si elle
+    designe une status line du depot, 'absente', 'autre' si elle designe un
+    autre script, 'illisible' si settings.json n'est pas du JSON valide."""
+    if "statusline" not in scopes_of(agent, scopes):
+        return None
+    noms = sorted(
+        p.name for p in (ROOT / "statuslines" / agent).glob("*/")
+        if (p / STATUSLINE_SCRIPT).is_file() and (outils is None or p.name in outils)
+    )
+    if not noms:
+        return None
+    settings = target_root / "settings.json"
+    cle = None
+    if settings.is_file():
+        try:
+            cle = json.loads(settings.read_text(encoding="utf-8-sig")).get("statusLine")
+        except (ValueError, AttributeError, OSError):
+            return {"etat": "illisible", "fichier": str(settings), "fragments": {}}
+    commande = cle.get("command", "") if isinstance(cle, dict) else ""
+    commande = commande.replace("\\", "/").lower()
+    fragments = {
+        nom: {
+            "type": "command",
+            "command": statusline_command(target_root / "statuslines" / nom / STATUSLINE_SCRIPT),
+        }
+        for nom in noms
+    }
+    for nom in noms:
+        if f"statuslines/{nom}/{STATUSLINE_SCRIPT}".lower() in commande:
+            return {"etat": "enregistree", "outil": nom, "fichier": str(settings), "fragments": {}}
+    return {
+        "etat": "absente" if cle is None else "autre",
+        "fichier": str(settings),
+        "actuelle": cle,
+        "fragments": fragments,
+    }
 
 
 def hooks_notice(agent: str, scopes: list[str], target_root: Path) -> str | None:
@@ -316,11 +412,13 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
     racine = args.target if target_given else AGENTS[agent]["root"]
     target_root = Path(racine).expanduser().resolve()
     subs = variables(agent, target_root, target_given)
+    ignores = [s for s in scopes if s not in scopes_of(agent, scopes)]
+    scopes = scopes_of(agent, scopes)
     couples = pairs(agent, scopes, target_root)
     orphelins = local_only(agent, scopes, target_root)
+    voulus = set(parse_list(args.outil)) if args.outil else None
 
-    if args.outil:
-        voulus = set(parse_list(args.outil))
+    if voulus is not None:
         couples = [c for c in couples if tool_of(c[0]) in voulus]
         orphelins = [o for o in orphelins if tool_of(o) in voulus]
 
@@ -354,6 +452,8 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
         "ecrits": ecrits,
         "examines": len(couples),
         "notice": hooks_notice(agent, scopes, target_root),
+        "ignores": ignores,
+        "statusline": statusline_state(agent, scopes, target_root, voulus),
         "couples": couples,
         "subs": subs,
     }
@@ -375,6 +475,21 @@ def print_report(agent: str, r: dict, apply: bool) -> None:
         print(f"  local seul   {len(r['local_seul'])}  {', '.join(r['local_seul'])}")
     if r["notice"]:
         print(f"  {r['notice']}")
+    for scope in r["ignores"]:
+        print(f"  {scope} : non pris en charge pour {agent}, rien d'examine")
+    sl = r["statusline"]
+    if sl:
+        if sl["etat"] == "enregistree":
+            print(f"  statusLine   enregistree ({sl['outil']}) dans {sl['fichier']}")
+        elif sl["etat"] == "illisible":
+            print(f"  statusLine   {sl['fichier']} illisible (JSON invalide)")
+        else:
+            libelle = "absente" if sl["etat"] == "absente" else "designe un autre script"
+            print(f"  statusLine   {libelle} dans {sl['fichier']} ; jamais ecrite par ce script.")
+            print("    Fragment a fusionner a la main, sans ecraser le reste du fichier :")
+            for fragment in sl["fragments"].values():
+                texte = json.dumps({"statusLine": fragment}, indent=2)
+                print("\n".join("      " + ligne for ligne in texte.splitlines()))
     if apply:
         detail = f"  {', '.join(r['ecrits'])}" if r["ecrits"] else ""
         print(f"  ecrits : {len(r['ecrits'])}{detail}")
@@ -413,7 +528,13 @@ def main() -> int:
 
     if args.outil:
         voulus = set(parse_list(args.outil))
-        connus = {tool_of(rel) for rel, _, _ in pairs(agents[0], scopes, ROOT)}
+        # Outils connus de tout agent hote : une status line demandee pour
+        # Copilot CLI est signalee comme non prise en charge, non comme inconnue.
+        connus = {
+            tool_of(rel)
+            for agent in AGENTS
+            for rel, _, _ in pairs(agent, scopes_of(agent, scopes), ROOT)
+        }
         if voulus - connus:
             print(
                 f"install.py : outil inconnu : {', '.join(sorted(voulus - connus))}",
@@ -449,7 +570,7 @@ def main() -> int:
     conflits = sum(len(r["classes"]["conflit"]) for r in rapports.values())
 
     if args.json:
-        cles = ("cible", "classes", "local_seul", "outils_bloques", "ecrits")
+        cles = ("cible", "classes", "local_seul", "outils_bloques", "ecrits", "statusline")
         print(
             json.dumps(
                 {

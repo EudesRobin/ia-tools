@@ -1,18 +1,18 @@
 # PREREQUIS — outils système (hors agents hôtes)
 
-Outils **système** supposés présents par certaines skills et par l'outillage du
-dépôt. Indépendants de l'installation des outils (voir [SETUP.md](SETUP.md)) :
-ce sont des binaires ou des paquets système, pas des fichiers copiés vers
-`{AGENT_DIR}`.
+Outils **système** supposés présents par certaines skills, par la status line
+`usage-session` et par l'outillage du dépôt. Indépendants de l'installation des
+outils (voir [SETUP.md](SETUP.md)) : ce sont des binaires ou des paquets
+système, pas des fichiers copiés vers `{AGENT_DIR}`.
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 La vérification des prérequis système est à proposer sur un environnement neuf
 ou incomplet. Python et Git sont nécessaires au merge intelligent de
-`scripts/install.py` ; les autres prérequis ne concernent qu'une skill ou la
-contribution au dépôt. Ne rien installer sans
-accord : d'abord **vérifier** ce qui manque, en dresser la liste, puis demander
-l'accord de l'utilisateur.
+`scripts/install.py` ; les autres prérequis ne concernent qu'une skill, une
+status line ou la contribution au dépôt. Ne rien installer sans accord :
+d'abord **vérifier** ce qui manque, en dresser la liste, puis demander l'accord
+de l'utilisateur.
 
 Commandes ci-dessous pour **Windows** (`winget`, PowerShell). Adapter le
 gestionnaire de paquets sur un autre système.
@@ -25,7 +25,7 @@ gestionnaire de paquets sur un autre système.
 | Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions) | `git --version` | `winget install Git.Git` |
 | Bibliothèques Python | `scripts/validate.py`                     | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
 | `adb` (platform-tools) | `clean-android-tv`                      | `adb version`                    | `winget install Google.PlatformTools`        |
-| PowerShell 7 (`pwsh`) | hook `validate-tool` (contribution au dépôt) | `pwsh --version`             | `winget install Microsoft.PowerShell`        |
+| PowerShell 7 (`pwsh`) | hook `validate-tool` (contribution au dépôt) ; status line `usage-session`, à défaut de PowerShell 5.1 | `pwsh --version`             | `winget install Microsoft.PowerShell`        |
 
 ## Procédure
 
@@ -82,8 +82,12 @@ avec `where.exe adb` et retirer l'entrée surnuméraire.
 ### PowerShell 7
 
 Requis par le hook [`validate-tool`](../hooks/validate-tool/HOOK.md), qui ne
-s'active que dans une session ouverte sur ce dépôt. Sans objet pour qui se
-contente d'utiliser les outils installés.
+s'active que dans une session ouverte sur ce dépôt : ce prérequis ne concerne
+donc pas qui se contente d'utiliser les outils installés.
+
+La status line [`usage-session`](../statuslines/claude/usage-session/STATUSLINE.md)
+s'exécute sous PowerShell 7 ou sous PowerShell 5.1, intégré à Windows :
+`scripts/install.py` retient `pwsh` s'il est présent, sinon `powershell`.
 
 ## Encodage de la console
 

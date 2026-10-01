@@ -60,6 +60,9 @@ CAS = [
     ("syntaxe Python", ajouter("scripts/install.py", "\ndef (:\n"), "erreur de syntaxe"),
     ("JSON d'enregistrement", remplacer(".claude/settings.json", "{", "{ ,"), "JSON invalide"),
     ("script de hook introuvable", remplacer(".github/hooks/validate-tool.json", "validate-tool.ps1", "absent.ps1"), "script de hook introuvable"),
+    ("status line hors inventaire", ajouter("statuslines/claude/neuve/STATUSLINE.md", "# Status line\n"), "statuslines/claude/neuve : absent de l'inventaire"),
+    ("script de status line manquant", lambda d: (d / "statuslines/claude/usage-session/statusline.ps1").unlink(), "statusline.ps1 manquant"),
+    ("status line hors dossier d'agent hote", ajouter("statuslines/neuve/STATUSLINE.md", "# Status line\n"), "statuslines/neuve : pas un dossier d'agent hote"),
     ("document hors table", ajouter("docs/NOUVEAU.md", "# Nouveau\n"), "non enregistre"),
     ("fichier non UTF-8", lambda d: (d / "README.md").write_text("# Titre\n", encoding="utf-16"), "illisible en UTF-8"),
 ]
@@ -70,6 +73,11 @@ if shutil.which("pwsh"):
         "syntaxe PowerShell",
         ajouter("hooks/validate-tool/validate-tool.ps1", "\nif ($x {\n"),
         "erreur de syntaxe PowerShell",
+    ))
+    CAS.append((
+        "syntaxe PowerShell d'une status line",
+        ajouter("statuslines/claude/usage-session/statusline.ps1", "\nif ($x {\n"),
+        "statuslines/claude/usage-session/statusline.ps1:",
     ))
 
 
