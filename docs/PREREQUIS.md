@@ -22,7 +22,8 @@ gestionnaire de paquets sur un autre système.
 | Outil              | Requis par                                  | Vérifier                         | Installer (Windows)                          |
 |--------------------|---------------------------------------------|----------------------------------|----------------------------------------------|
 | Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
-| Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions) | `git --version` | `winget install Git.Git` |
+| Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions), `pull-request` | `git --version` | `winget install Git.Git` |
+| GitHub CLI (`gh`)  | `pull-request` (push et création de PR)     | `gh --version`, `gh auth status` | `winget install GitHub.cli`                  |
 | Bibliothèques Python | `scripts/validate.py`                     | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
 | `adb` (platform-tools) | `clean-android-tv`                      | `adb version`                    | `winget install Google.PlatformTools`        |
 | PowerShell 7 (`pwsh`) | hook `validate-tool` (contribution au dépôt) ; status line `usage-session`, à défaut de PowerShell 5.1 | `pwsh --version`             | `winget install Microsoft.PowerShell`        |
@@ -31,7 +32,7 @@ gestionnaire de paquets sur un autre système.
 
 1. Vérifier chaque outil (colonne « Vérifier »). Lister ce qui manque.
 2. Demander l'accord avant d'installer. Ne jamais réinstaller un outil présent.
-3. Après l'installation d'un binaire (Python, Git, adb, pwsh) : rouvrir le terminal
+3. Après l'installation d'un binaire (Python, Git, adb, gh, pwsh) : rouvrir le terminal
    pour rafraîchir le PATH, puis revérifier.
 
 ## Détails
@@ -78,6 +79,13 @@ ne voit pas `adb` et doit être rouvert.
 `platform-tools` laisse un second binaire, souvent d'une version différente, ce
 qui provoque une erreur de correspondance entre client et serveur adb. Contrôler
 avec `where.exe adb` et retirer l'entrée surnuméraire.
+
+### GitHub CLI
+
+Après l'installation, `gh` doit être authentifié auprès de GitHub :
+`gh auth status` le vérifie. La commande `gh auth login`, interactive, est lancée
+par l'utilisateur lui-même : un agent ne peut pas la mener à sa place. Le commit
+seul, sans push ni PR, n'exige pas `gh`.
 
 ### PowerShell 7
 

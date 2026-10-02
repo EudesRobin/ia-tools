@@ -26,7 +26,7 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 | Comprendre le hook du dépôt, son enregistrement pour chaque agent hôte et pourquoi il n'est pas distribué | [hooks/README.md](../hooks/README.md) |
 | Installer ou mettre à jour les outils vers `{AGENT_DIR}` (Claude Code, Copilot CLI) | [SETUP.md](SETUP.md) — **procédure à suivre** |
 | Publier une version du dépôt — choisir son numéro, poser son tag                  | [CONVENTIONS.md](CONVENTIONS.md) §8 — **procédure à suivre** |
-| Vérifier ou installer un prérequis système (Python, Git, bibliothèques, `adb`, `pwsh`) | [PREREQUIS.md](PREREQUIS.md) |
+| Vérifier ou installer un prérequis système (Python, Git, bibliothèques, `adb`, `gh`, `pwsh`) | [PREREQUIS.md](PREREQUIS.md) |
 
 Sept lignes portent une règle à appliquer, pas du contexte. La ligne consacrée
 à l'écriture d'un outil est la plus dense : [CONVENTIONS.md](CONVENTIONS.md)
