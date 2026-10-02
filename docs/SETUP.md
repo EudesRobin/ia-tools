@@ -145,6 +145,7 @@ La conformité du front-matter — `name` identique au nom du dossier — relèv
 | Skill               | Fichiers embarqués                          |
 |---------------------|---------------------------------------------|
 | `clean-android-tv`  | `reference-adb.md`, `paquets.md`             |
+| `pull-request`      | `conventions-defaut.md`, `template-pr.md`    |
 | `setup-harness`    | —                                            |
 
 ## 4. Agents

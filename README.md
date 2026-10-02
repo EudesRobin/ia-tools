@@ -15,6 +15,7 @@ versionne ; un script les installe ou les met à jour pour **Claude Code**
 | Skill | Ce qu'elle fait |
 |---|---|
 | [`clean-android-tv`](./skills/clean-android-tv/SKILL.md) | Rend un téléviseur Android TV plus réactif par adb : libère la mémoire vive en désactivant les applications préinstallées inutilisées, de façon réversible. Embarque `reference-adb.md` et `paquets.md`. |
+| [`pull-request`](./skills/pull-request/SKILL.md) | Committe des modifications, crée la branche de travail, la pousse et ouvre ou met à jour la *pull request* GitHub par `gh`, selon les conventions et le template de PR du projet. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet n'en déclare aucun. |
 | [`setup-harness`](./skills/setup-harness/SKILL.md) | Installe la section « Harnais » — lancer / tester / vérifier — dans le fichier d'instructions d'un projet tiers (`AGENTS.md`, à défaut celui de l'agent hôte). |
 
 ### Agents
@@ -73,6 +74,7 @@ ia-tools/
 | Python ≥ 3.10 | lancer `scripts/install.py` |
 | Git, et le dépôt obtenu par `git clone` | reconnaître une installation obsolète : sans l'historique git, elle est signalée comme conflit |
 | `adb` (platform-tools) | la skill `clean-android-tv` |
+| GitHub CLI (`gh`), authentifié | la skill `pull-request`, pour pousser et ouvrir une PR |
 | PowerShell 5.1 (intégré à Windows) ou 7 (`pwsh`) | la status line `usage-session` |
 | `pyyaml` et PowerShell 7 (`pwsh`) | contribuer au dépôt : `scripts/validate.py` et hook `validate-tool` |
 

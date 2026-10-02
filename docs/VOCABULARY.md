@@ -107,6 +107,9 @@ revenir.
 |---|---|---|
 | **paquet critique** | Un paquet dont la désactivation rend l'appareil inutilisable ou le prive de son interface ([skills/clean-android-tv](../skills/clean-android-tv/paquets.md)). | « liste rouge » — en français, être sur liste rouge signifie être **absent** de l'annuaire : le sens est inverse de celui visé |
 | **accélérer**, **réduire la consommation mémoire** | Ce que fait `clean-android-tv` : libérer de la mémoire vive et raccourcir les temps de réponse. Nommer le résultat attendu, pas la métaphore. | « allègement », « alléger », « désencombrer » — évoquent un régime, et ne disent ni ce qui est fait ni pourquoi |
+| ***pull request***, abrégée **PR** (féminin) | La demande d'intégration d'une branche dans une autre sur GitHub ([skills/pull-request](../skills/pull-request/SKILL.md)). Forme longue en italique au premier emploi, puis « PR ». | « demande de tirage », « demande de fusion » — traductions peu usitées (§1) ; « merge request », terme propre à GitLab |
+| **branche de travail** | La branche créée pour porter un changement jusqu'à sa PR, par opposition à la **branche par défaut** du dépôt distant (`main`, `master`…). | « feature branch », « branche de fonctionnalité » — une branche de travail porte aussi une correction ou de la documentation |
+| **pousser**, **un push** (masculin) | Transférer les commits locaux vers le dépôt distant par `git push`. | « pusher », « envoyer », « publier » — ce dernier est réservé à la PR et à la version |
 
 ## 7. Tics de rédaction
 
@@ -119,6 +122,7 @@ couper à la relecture.
 | **Pronom sans antécédent net** — « le », « la », « en », « l' » renvoyant à une idée non nommée | Le lecteur remonte la phrase pour deviner la cible, et l'accord en genre part souvent sur le mauvais nom. | Répéter le groupe nominal, même au prix d'une redite |
 | **Virgule entre deux propositions indépendantes** | Le second membre justifie ou précise le premier : la virgule ne porte pas ce lien. | Deux-points, point-virgule, ou « car » |
 | **Adjectif sans support nominal** — « Android 8 et antérieur » | L'adjectif se rattache à un nom absent. | « Android 8 et les versions antérieures » |
+| **« rendre » au sens de *to return*** — « rendre l'URL », « rendre le hash du commit » | Calque de l'anglais : en français, on rend ce qu'on a reçu, pas un résultat qu'on communique. Le mot entre en outre en concurrence avec **rendu**, terme fixé au [§5](#5-installation-et-contexte). Le rapport « rendu » par un sous-agent reste correct : il s'agit d'un travail remis. | « indiquer », « communiquer », « donner » |
 
 ## 8. Ajouter un terme
 

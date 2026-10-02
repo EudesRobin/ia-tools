@@ -108,14 +108,16 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 | Ne jamais écraser `settings.json` en bloc | [AGENTS.md](../AGENTS.md), [SETUP.md](SETUP.md), [hooks/README.md](../hooks/README.md) et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 | Consigne de lire `AGENTS.md` avant toute action | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) et [.github/copilot-instructions.md](../.github/copilot-instructions.md) |
 | Règle de suivi des tâches — déclencheur, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral, équivalence des deux suivis | [docs/qualite-outils.md](qualite-outils.md) §5 et chaque outil multi-étapes de `skills/` et `agents/` |
+| Conventions de commit — préfixes admis, 50 mots au plus, sujet sans point final, absence d'attribution d'IA | `scripts/check_commit_msg.py` et [skills/pull-request/conventions-defaut.md](../skills/pull-request/conventions-defaut.md), qui ajoute la langue, la forme du sujet et le rôle du corps, que le script ne contrôle pas |
 | Activation des hooks git (`git config core.hooksPath .githooks`) | [AGENTS.md](../AGENTS.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
 | Commande d'enregistrement d'une status line — interpréteur, `-ExecutionPolicy Bypass`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 
 La ligne relative à la lecture d'`AGENTS.md` tient au chargement : chaque
 agent hôte lit son propre fichier d'entrée, et `AGENTS.md` doit être atteint
-depuis chacun d'eux. Les lignes du suivi des tâches, du registre et de la
-commande d'enregistrement relèvent du [§1.7](#17-auto-suffisance-des-outils) :
+depuis chacun d'eux. Les lignes du suivi des tâches, des conventions de commit,
+du registre et de la commande d'enregistrement relèvent du
+[§1.7](#17-auto-suffisance-des-outils) :
 `skills/`, `agents/` et `statuslines/` sont distribués séparément et `docs/` ne
 l'est pas du tout — aucun de ces ensembles ne peut renvoyer vers un autre.
 
