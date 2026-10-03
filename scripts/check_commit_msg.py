@@ -10,11 +10,23 @@ Verifie (CONVENTIONS.md section 1.5 et regles de style des commits) :
 
 Un commit de fusion (« Merge ... ») n'est pas controle.
 
-Usage : python scripts/check_commit_msg.py <fichier du message>
-Code de sortie : 0 si le message est conforme, 1 sinon.
+Trois modes :
+  <fichier>             message d'un commit en cours (hook git commit-msg) ;
+  --plage <base>..<tete> chaque commit hors fusion de la plage (integration
+                        continue, sur une pull request) ;
+  --pr                  titre et description d'une pull request, lus dans les
+                        variables d'environnement PR_TITLE et PR_BODY : seule
+                        l'absence d'attribution d'IA y est controlee.
+
+Usage : python scripts/check_commit_msg.py <fichier> | --plage <base>..<tete> | --pr
+Code de sortie : 0 si tout est conforme, 1 sinon ou sur erreur d'usage, 2 si
+git est absent.
 """
 
+import argparse
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -58,11 +70,53 @@ def ecarts(message: str) -> list[str]:
     return out
 
 
+def ecarts_plage(plage: str) -> list[str]:
+    """Ecarts de chaque commit hors fusion de la plage, prefixes du sha court."""
+    shas = subprocess.run(
+        ["git", "rev-list", "--no-merges", "--reverse", plage],
+        capture_output=True, text=True, check=True,
+    ).stdout.split()
+    out = []
+    for sha in shas:
+        message = subprocess.run(
+            ["git", "log", "-1", "--format=%B", sha],
+            capture_output=True, text=True, encoding="utf-8", check=True,
+        ).stdout.strip()
+        out += [f"{sha[:7]} : {e}" for e in ecarts(message)]
+    return out
+
+
+def ecarts_pr() -> list[str]:
+    out = []
+    for nom, libelle in (("PR_TITLE", "titre"), ("PR_BODY", "description")):
+        if ATTRIBUTION_RE.search(os.environ.get(nom, "")):
+            out.append(f"{libelle} de la pull request : attribution d'outil d'IA interdite (CONVENTIONS.md section 1.5)")
+    return out
+
+
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage : python scripts/check_commit_msg.py <fichier>", file=sys.stderr)
+    p = argparse.ArgumentParser(prog="check_commit_msg.py")
+    mode = p.add_mutually_exclusive_group(required=True)
+    mode.add_argument("fichier", nargs="?", help="fichier du message (hook git commit-msg)")
+    mode.add_argument("--plage", metavar="BASE..TETE", help="commits d'une pull request")
+    mode.add_argument("--pr", action="store_true", help="titre et description (PR_TITLE, PR_BODY)")
+    try:
+        args = p.parse_args()
+    except SystemExit as exc:  # argparse sort en 2 ; le code 2 est reserve a l'environnement
+        return 1 if exc.code else 0
+    try:
+        if args.plage:
+            erreurs = ecarts_plage(args.plage)
+        elif args.pr:
+            erreurs = ecarts_pr()
+        else:
+            erreurs = ecarts(lire_message(Path(args.fichier)))
+    except FileNotFoundError:
+        print("commit-msg : git introuvable dans le PATH", file=sys.stderr)
+        return 2
+    except subprocess.CalledProcessError as exc:
+        print(f"commit-msg : plage illisible '{args.plage}' ({exc.stderr.strip().splitlines()[0]})", file=sys.stderr)
         return 1
-    erreurs = ecarts(lire_message(Path(sys.argv[1])))
     for e in erreurs:
         print(f"commit-msg : {e}", file=sys.stderr)
     return 1 if erreurs else 0
