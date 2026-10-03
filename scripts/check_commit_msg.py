@@ -8,12 +8,12 @@ Verifie (CONVENTIONS.md section 1.5 et regles de style des commits) :
   - le message compte au plus 50 mots, sujet et corps compris ;
   - aucune attribution d'outil d'IA (Co-Authored-By, « Generated with »...).
 
-Un commit de fusion (« Merge ... ») n'est pas controle.
+Un commit de merge (« Merge ... ») n'est pas controle.
 
 Trois modes :
   <fichier>             message d'un commit en cours (hook git commit-msg) ;
-  --plage <base>..<tete> chaque commit hors fusion de la plage (integration
-                        continue, sur une pull request) ;
+  --range <base>..<head> chaque commit de la plage, hors commits de merge
+                        (integration continue, sur une pull request) ;
   --pr                  titre et description d'une pull request, lus dans les
                         variables d'environnement PR_TITLE et PR_BODY : seule
                         l'absence d'attribution d'IA y est controlee.
@@ -21,7 +21,7 @@ Trois modes :
 Dans l'integration continue (GITHUB_ACTIONS=true), chaque ecart est aussi emis
 en annotation GitHub.
 
-Usage : python scripts/check_commit_msg.py <fichier> | --plage <base>..<tete> | --pr
+Usage : python scripts/check_commit_msg.py <fichier> | --range <base>..<head> | --pr
 Code de sortie : 0 si tout est conforme, 1 sinon ou sur erreur d'usage, 2 si
 git est absent.
 """
@@ -73,8 +73,8 @@ def ecarts(message: str) -> list[str]:
     return out
 
 
-def ecarts_plage(plage: str) -> list[str]:
-    """Ecarts de chaque commit hors fusion de la plage, prefixes du sha court."""
+def ecarts_range(plage: str) -> list[str]:
+    """Ecarts de chaque commit de la plage hors commits de merge, prefixes du sha court."""
     shas = subprocess.run(
         ["git", "rev-list", "--no-merges", "--reverse", plage],
         capture_output=True, text=True, check=True,
@@ -101,15 +101,15 @@ def main() -> int:
     p = argparse.ArgumentParser(prog="check_commit_msg.py")
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("fichier", nargs="?", help="fichier du message (hook git commit-msg)")
-    mode.add_argument("--plage", metavar="BASE..TETE", help="commits d'une pull request")
+    mode.add_argument("--range", metavar="BASE..HEAD", help="commits d'une pull request")
     mode.add_argument("--pr", action="store_true", help="titre et description (PR_TITLE, PR_BODY)")
     try:
         args = p.parse_args()
     except SystemExit as exc:  # argparse sort en 2 ; le code 2 est reserve a l'environnement
         return 1 if exc.code else 0
     try:
-        if args.plage:
-            erreurs = ecarts_plage(args.plage)
+        if args.range:
+            erreurs = ecarts_range(args.range)
         elif args.pr:
             erreurs = ecarts_pr()
         else:
@@ -118,7 +118,7 @@ def main() -> int:
         print("commit-msg : git introuvable dans le PATH", file=sys.stderr)
         return 2
     except subprocess.CalledProcessError as exc:
-        print(f"commit-msg : plage illisible '{args.plage}' ({exc.stderr.strip().splitlines()[0]})", file=sys.stderr)
+        print(f"commit-msg : plage illisible '{args.range}' ({exc.stderr.strip().splitlines()[0]})", file=sys.stderr)
         return 1
     for e in erreurs:
         print(f"commit-msg : {e}", file=sys.stderr)
