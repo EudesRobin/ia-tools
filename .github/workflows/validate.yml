@@ -2,7 +2,7 @@
 # validateur des sources puis tests du validateur (AGENTS.md, Definition of Done),
 # et analyse de securite des workflows par zizmor.
 # Les noms de jobs sont ceux des checks requis par la protection de main.
-name: validate
+name: CI
 
 on:
   push:
@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   validate:
-    name: validate
+    name: validation
     runs-on: windows-latest
     timeout-minutes: 10
     env:
@@ -44,7 +44,7 @@ jobs:
         run: python scripts/test_statusline.py
 
   workflows:
-    name: workflows
+    name: zizmor
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
