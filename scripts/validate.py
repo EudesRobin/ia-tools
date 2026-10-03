@@ -299,39 +299,39 @@ def check_agents(errors: list[str]) -> None:
         check_frontmatter_fields(label, fm, agent_md.stem, errors)
         check_keys(label, fm, AGENT_KEYS, errors)
         tools = fm.get("tools")
-        noms = tools.split(",") if isinstance(tools, str) else tools
-        if not isinstance(noms, list) or not noms:
+        names = tools.split(",") if isinstance(tools, str) else tools
+        if not isinstance(names, list) or not names:
             errors.append(f"{label} : champ 'tools' manquant ou vide (obligatoire)")
-        elif not all(isinstance(n, str) and TOOL_NAME_RE.fullmatch(n.strip()) for n in noms):
+        elif not all(isinstance(n, str) and TOOL_NAME_RE.fullmatch(n.strip()) for n in names):
             errors.append(f"{label} : 'tools' attend des noms simples (Read, Grep...)")
 
 
-def check_keys(label: str, fm: dict, admises: set[str], errors: list[str]) -> None:
-    for cle in sorted(set(fm) - admises):
-        errors.append(f"{label} : cle de front-matter non prevue '{cle}'")
+def check_keys(label: str, fm: dict, allowed: set[str], errors: list[str]) -> None:
+    for key in sorted(set(fm) - allowed):
+        errors.append(f"{label} : cle de front-matter non prevue '{key}'")
 
 
 def check_inventory(errors: list[str]) -> None:
     """CONVENTIONS.md section 5 : tout outil figure au README et a SETUP.md."""
     readme = read(ROOT / "README.md") or ""
     setup = read(ROOT / "docs" / "SETUP.md") or ""
-    outils = [("agents", p.stem) for p in sorted((ROOT / "agents").glob("*.md"))]
+    tools = [("agents", p.stem) for p in sorted((ROOT / "agents").glob("*.md"))]
     for kind in ("skills", "hooks"):
-        outils += [(kind, p.name) for p in sorted((ROOT / kind).glob("*/")) if p.is_dir()]
-    outils += [
+        tools += [(kind, p.name) for p in sorted((ROOT / kind).glob("*/")) if p.is_dir()]
+    tools += [
         (f"statuslines/{p.parent.name}", p.name)
         for p in sorted((ROOT / "statuslines").glob("*/*/"))
         if p.is_dir()
     ]
-    for kind, nom in outils:
-        if f"[`{nom}`]" not in readme:
-            errors.append(f"{kind}/{nom} : absent de l'inventaire de README.md")
-        ligne = re.compile(rf"^\|\s*`{re.escape(nom)}`", re.MULTILINE)
-        if kind != "hooks" and not ligne.search(setup):
-            errors.append(f"{kind}/{nom} : absent des tables de docs/SETUP.md")
+    for kind, name in tools:
+        if f"[`{name}`]" not in readme:
+            errors.append(f"{kind}/{name} : absent de l'inventaire de README.md")
+        line = re.compile(rf"^\|\s*`{re.escape(name)}`", re.MULTILINE)
+        if kind != "hooks" and not line.search(setup):
+            errors.append(f"{kind}/{name} : absent des tables de docs/SETUP.md")
 
 
-def charger_install():
+def load_install():
     """Module scripts/install.py ; l'exception d'import est laissee a l'appelant."""
     if str(ROOT / "scripts") not in sys.path:
         sys.path.insert(0, str(ROOT / "scripts"))
@@ -341,12 +341,12 @@ def charger_install():
 
 def check_changelog(errors: list[str]) -> None:
     """Structure du journal des modifications (scripts/changelog.py)."""
-    chemin = ROOT / "CHANGELOG.md"
-    if not chemin.is_file():
+    file_path = ROOT / "CHANGELOG.md"
+    if not file_path.is_file():
         errors.append("CHANGELOG.md manquant")
         return
-    texte = read(chemin)
-    if texte is None:
+    text = read(file_path)
+    if text is None:
         errors.append("CHANGELOG.md : illisible en UTF-8")
         return
     if str(ROOT / "scripts") not in sys.path:
@@ -356,7 +356,7 @@ def check_changelog(errors: list[str]) -> None:
     except Exception as exc:  # noqa: BLE001 - toute erreur d'import est un ecart
         errors.append(f"scripts/changelog.py : inutilisable ({exc})")
         return
-    errors.extend(changelog.ecarts_structure(texte))
+    errors.extend(changelog.structure_issues(text))
 
 
 def check_statuslines(errors: list[str]) -> None:
@@ -364,27 +364,27 @@ def check_statuslines(errors: list[str]) -> None:
     document et son script. Seuls les agents hotes que install.py dote de status
     lines sont admis : un autre dossier ne serait jamais installe."""
     try:
-        hotes = charger_install().SCOPE_AGENTS["statusline"]
+        hosts = load_install().SCOPE_AGENTS["statusline"]
     except Exception as exc:
         errors.append(f"scripts/install.py : SCOPE_AGENTS inutilisable ({exc})")
         return
     for d in sorted(p for p in (ROOT / "statuslines").glob("*/") if p.is_dir()):
-        if d.name not in hotes:
+        if d.name not in hosts:
             errors.append(
                 f"statuslines/{d.name} : pas un dossier d'agent hote "
-                f"(admis : {', '.join(sorted(hotes))})"
+                f"(admis : {', '.join(sorted(hosts))})"
             )
             continue
-        for outil in sorted(p for p in d.glob("*/") if p.is_dir()):
-            for nom in STATUSLINE_FILES:
-                if not (outil / nom).is_file():
-                    errors.append(f"statuslines/{d.name}/{outil.name}/{nom} manquant")
+        for tool in sorted(p for p in d.glob("*/") if p.is_dir()):
+            for name in STATUSLINE_FILES:
+                if not (tool / name).is_file():
+                    errors.append(f"statuslines/{d.name}/{tool.name}/{name} manquant")
 
 
 def check_placeholders(errors: list[str]) -> None:
     """Un placeholder non declare dans install.py serait installe tel quel."""
     try:
-        declares = set(charger_install().variables("claude", Path("."), False))
+        declared = set(load_install().variables("claude", Path("."), False))
     except Exception as exc:
         errors.append(f"scripts/install.py : variables() inutilisable ({exc})")
         return
@@ -393,7 +393,7 @@ def check_placeholders(errors: list[str]) -> None:
         if rel.split("/", 1)[0] not in DISTRIBUTED_DIRS:
             continue
         found = set(PLACEHOLDER_RE.findall(read(path) or ""))
-        for ph in sorted(found - declares):
+        for ph in sorted(found - declared):
             errors.append(f"{rel} : placeholder non declare dans install.py '{ph}'")
 
 
@@ -414,19 +414,19 @@ def check_scripts_and_config(errors: list[str]) -> None:
     for p in regs:
         rel = p.relative_to(ROOT).as_posix()
         try:
-            texte = json.dumps(json.loads(p.read_text(encoding="utf-8")))
+            text = json.dumps(json.loads(p.read_text(encoding="utf-8")))
         except (ValueError, UnicodeDecodeError) as exc:
             errors.append(f"{rel} : JSON invalide ({exc}) ; le hook est inactif")
             continue
-        for script in sorted(set(re.findall(r"hooks/[\w./-]+\.ps1", texte))):
+        for script in sorted(set(re.findall(r"hooks/[\w./-]+\.ps1", text))):
             if not (ROOT / script).is_file():
                 errors.append(f"{rel} : script de hook introuvable '{script}'")
     pwsh = shutil.which("pwsh")
     ps1 = sorted(f for d in ("hooks", "statuslines") for f in (ROOT / d).rglob("*.ps1"))
     if pwsh and ps1:
-        fichiers = ",".join("'" + str(f).replace("'", "''") + "'" for f in ps1)
+        files = ",".join("'" + str(f).replace("'", "''") + "'" for f in ps1)
         cmd = (
-            f"foreach($f in @({fichiers})){{$t=$null;$x=$null;"
+            f"foreach($f in @({files})){{$t=$null;$x=$null;"
             "[void][System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$t,[ref]$x);"
             "foreach($r in $x){Write-Output ($f+':'+$r.Extent.StartLineNumber+' : '+$r.ErrorId)}}"
         )
@@ -434,9 +434,9 @@ def check_scripts_and_config(errors: list[str]) -> None:
             [pwsh, "-NoProfile", "-NonInteractive", "-Command", cmd],
             capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=60,
         )
-        for ligne in out.stdout.splitlines():
-            chemin, _, detail = ligne.rpartition(".ps1:")
-            rel = Path(chemin + ".ps1").relative_to(ROOT).as_posix()
+        for line in out.stdout.splitlines():
+            file_path, _, detail = line.rpartition(".ps1:")
+            rel = Path(file_path + ".ps1").relative_to(ROOT).as_posix()
             errors.append(f"{rel}:{detail} : erreur de syntaxe PowerShell")
 
 
@@ -490,20 +490,20 @@ def check_progress_tracking(errors: list[str]) -> None:
         if steps < PROGRESS_MIN_STEPS and not mentions:
             continue
 
-        raison = (
+        reason = (
             f"deroule de {steps} etapes numerotees"
             if steps >= PROGRESS_MIN_STEPS
             else "le corps evoque le suivi des taches"
         )
         if not PROGRESS_HEADING_RE.search(body):
             errors.append(
-                f"{label} : {raison}, en-tete '**Taches**' absent du bloc de suivi"
+                f"{label} : {reason}, en-tete '**Taches**' absent du bloc de suivi"
             )
-        manquants = [mk for mk in PROGRESS_MARKERS if mk not in body]
-        if manquants:
+        missing = [mk for mk in PROGRESS_MARKERS if mk not in body]
+        if missing:
             errors.append(
-                f"{label} : {raison}, marqueur(s) d'etat absent(s) "
-                f"{' '.join(manquants)} — les quatre sont obligatoires"
+                f"{label} : {reason}, marqueur(s) d'etat absent(s) "
+                f"{' '.join(missing)} — les quatre sont obligatoires"
             )
 
 
@@ -511,10 +511,10 @@ def markdown_links(text: str) -> list[str]:
     return LINK_RE.findall(text) + REF_DEF_RE.findall(text)
 
 
-def markdown_links_lignes(text: str) -> list[tuple[int, str]]:
+def markdown_links_with_lines(text: str) -> list[tuple[int, str]]:
     """Liens relatifs avec leur numero de ligne, pour situer un ecart."""
-    trouves = [m for r in (LINK_RE, REF_DEF_RE) for m in r.finditer(text)]
-    return [(text.count("\n", 0, m.start()) + 1, m.group(1)) for m in trouves]
+    found = [m for r in (LINK_RE, REF_DEF_RE) for m in r.finditer(text)]
+    return [(text.count("\n", 0, m.start()) + 1, m.group(1)) for m in found]
 
 
 def slugify(heading: str) -> str:
@@ -546,23 +546,23 @@ def check_relative_links(errors: list[str]) -> None:
         if text is None:
             continue
         rel = path.relative_to(ROOT).as_posix()
-        for ligne, target in markdown_links_lignes(text):
+        for line, target in markdown_links_with_lines(text):
             if EXTERNAL_LINK_RE.match(target) and not target.startswith("#"):
                 continue
             # Separer une ancre eventuelle : chemin.md#section
-            cible, _, anchor = target.partition("#")
-            if not cible:
+            link_path, _, anchor = target.partition("#")
+            if not link_path:
                 if anchor not in heading_anchors(text):
-                    errors.append(f"{rel}:{ligne} : ancre interne introuvable '{target}'")
+                    errors.append(f"{rel}:{line} : ancre interne introuvable '{target}'")
                 continue
-            resolved = (path.parent / cible).resolve()
+            resolved = (path.parent / link_path).resolve()
             if not resolved.exists():
-                errors.append(f"{rel}:{ligne} : lien relatif mort '{target}'")
+                errors.append(f"{rel}:{line} : lien relatif mort '{target}'")
                 continue
             if anchor:
                 target_text = read(resolved)
                 if target_text is not None and anchor not in heading_anchors(target_text):
-                    errors.append(f"{rel}:{ligne} : ancre introuvable '{target}'")
+                    errors.append(f"{rel}:{line} : ancre introuvable '{target}'")
 
 
 def check_doc_map(errors: list[str]) -> None:
@@ -585,10 +585,10 @@ def check_doc_map(errors: list[str]) -> None:
     for target in markdown_links(map_text):
         if EXTERNAL_LINK_RE.match(target):
             continue
-        cible = target.split("#", 1)[0]
-        if not cible.endswith(".md"):
+        link_path = target.split("#", 1)[0]
+        if not link_path.endswith(".md"):
             continue
-        registered.add((doc_map.parent / cible).resolve())
+        registered.add((doc_map.parent / link_path).resolve())
 
     for doc in sorted(docs_dir.rglob("*.md")):
         rel = doc.relative_to(ROOT).as_posix()
@@ -618,10 +618,10 @@ def check_orphan_docs(errors: list[str]) -> None:
         for target in markdown_links(text):
             if EXTERNAL_LINK_RE.match(target):
                 continue
-            cible = target.split("#", 1)[0]
-            if not cible or not cible.endswith(".md"):
+            link_path = target.split("#", 1)[0]
+            if not link_path or not link_path.endswith(".md"):
                 continue
-            referenced.add((path.parent / cible).resolve())
+            referenced.add((path.parent / link_path).resolve())
 
     for path in md_files:
         rel = path.relative_to(ROOT).as_posix()
@@ -635,8 +635,8 @@ def check_entry_redirects(errors: list[str]) -> None:
     """Chaque agent hote lit son propre fichier d'entree : ce fichier doit mener
     a AGENTS.md par un lien relatif, sans quoi l'agent ne voit pas les
     instructions."""
-    canonique = (ROOT / CANONICAL_INSTRUCTIONS).resolve()
-    if not canonique.is_file():
+    canonical = (ROOT / CANONICAL_INSTRUCTIONS).resolve()
+    if not canonical.is_file():
         errors.append(f"{CANONICAL_INSTRUCTIONS} manquant")
         return
     for rel in ENTRY_REDIRECTS:
@@ -645,12 +645,12 @@ def check_entry_redirects(errors: list[str]) -> None:
         if text is None:
             errors.append(f"{rel} manquant ou illisible : renvoi vers {CANONICAL_INSTRUCTIONS} attendu")
             continue
-        cibles = {
+        link_paths = {
             (path.parent / t.split("#", 1)[0]).resolve()
             for t in markdown_links(text)
             if not EXTERNAL_LINK_RE.match(t) and t.split("#", 1)[0]
         }
-        if canonique not in cibles:
+        if canonical not in link_paths:
             errors.append(f"{rel} : aucun lien relatif vers {CANONICAL_INSTRUCTIONS}")
 
 
@@ -670,25 +670,25 @@ def check_no_hardcoded_paths(errors: list[str]) -> None:
 
 
 # Prefixe commun des messages d'ecart : '<chemin>[:<ligne>] : ...' ou '<chemin> manquant'.
-ECART_RE = re.compile(r"^(?P<fichier>[\w./-]+?)(?::(?P<ligne>\d+))?(?= :| manquant)")
+ISSUE_PREFIX_RE = re.compile(r"^(?P<file>[\w./-]+?)(?::(?P<line>\d+))?(?= :| manquant)")
 
 
-def echapper(texte: str, propriete: bool = False) -> str:
+def escape(text: str, is_property: bool = False) -> str:
     """Echappement des commandes de workflow GitHub."""
-    texte = texte.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
-    return texte.replace(":", "%3A").replace(",", "%2C") if propriete else texte
+    text = text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    return text.replace(":", "%3A").replace(",", "%2C") if is_property else text
 
 
-def annotation(ecart: str) -> str:
+def annotation(issue: str) -> str:
     """Annotation GitHub d'un ecart, rattachee a son fichier quand il en cite un."""
-    proprietes = []
-    m = ECART_RE.match(ecart)
+    props = []
+    m = ISSUE_PREFIX_RE.match(issue)
     if m:
-        proprietes.append(f"file={echapper(m['fichier'], True)}")
-        if m["ligne"]:
-            proprietes.append(f"line={m['ligne']}")
-    proprietes.append("title=validate.py")
-    return f"::error {','.join(proprietes)}::{echapper(ecart)}"
+        props.append(f"file={escape(m['file'], True)}")
+        if m["line"]:
+            props.append(f"line={m['line']}")
+    props.append("title=validate.py")
+    return f"::error {','.join(props)}::{escape(issue)}"
 
 
 def main() -> int:

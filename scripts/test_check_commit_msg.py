@@ -16,9 +16,9 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent / "check_commit_msg.py"
 sys.path.insert(0, str(SCRIPT.parent))
-from check_commit_msg import ecarts  # noqa: E402
+from check_commit_msg import issues  # noqa: E402
 
-CONFORMES = [
+VALID = [
     "fix: corrige le hook",
     "docs: met à jour SETUP\n\nLe pourquoi du changement.",
     "build: PDF généré par pandoc",
@@ -26,7 +26,7 @@ CONFORMES = [
     "feat: ajout\n\n# ligne de commentaire ignoree par git",
 ]
 
-ECARTS = [
+BROKEN = [
     ("sans prefixe", "Corrige le hook", "prefixe"),
     ("prefixe hors liste", "style: espaces", "prefixe"),
     ("point final", "fix: corrige le hook.", "point"),
@@ -39,25 +39,25 @@ ECARTS = [
 
 
 class TestCheckCommitMsg(unittest.TestCase):
-    def test_conformes(self):
-        for message in CONFORMES:
+    def test_valid_messages(self):
+        for message in VALID:
             with self.subTest(message=message):
-                texte = "\n".join(l for l in message.splitlines() if not l.startswith("#"))
-                self.assertEqual(ecarts(texte.strip()), [])
+                text = "\n".join(l for l in message.splitlines() if not l.startswith("#"))
+                self.assertEqual(issues(text.strip()), [])
 
-    def test_ecarts(self):
-        for nom, message, attendu in ECARTS:
-            with self.subTest(nom):
-                trouves = ecarts(message)
-                self.assertTrue(any(attendu in e for e in trouves), f"{nom} : {trouves}")
+    def test_broken_messages(self):
+        for name, message, expected in BROKEN:
+            with self.subTest(name):
+                found = issues(message)
+                self.assertTrue(any(expected in e for e in found), f"{name} : {found}")
 
 
-def lancer(*args: str, cwd: Path | None = None, env: dict | None = None) -> subprocess.CompletedProcess:
+def run(*args: str, cwd: Path | None = None, env: dict | None = None) -> subprocess.CompletedProcess:
     # GITHUB_ACTIONS est fixe par le test, pas herite : meme resultat en local et en CI.
-    base = {k: v for k, v in os.environ.items() if k != "GITHUB_ACTIONS"}
+    base_env = {k: v for k, v in os.environ.items() if k != "GITHUB_ACTIONS"}
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args],
-        cwd=cwd, env={**base, **(env or {})},
+        cwd=cwd, env={**base_env, **(env or {})},
         capture_output=True, text=True, stdin=subprocess.DEVNULL,
     )
 
@@ -84,18 +84,18 @@ class TestRange(unittest.TestCase):
         self.git("commit", "-q", "--allow-empty", "-m", message)
         return self.git("rev-parse", "HEAD")
 
-    def test_range_conforme(self):
-        r = lancer("--range", f"{self.shas[0]}..{self.shas[1]}", cwd=self.d)
+    def test_range_valid(self):
+        r = run("--range", f"{self.shas[0]}..{self.shas[1]}", cwd=self.d)
         self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_range_avec_ecart(self):
-        r = lancer("--range", f"{self.shas[0]}..{self.shas[2]}", cwd=self.d)
+    def test_range_with_issue(self):
+        r = run("--range", f"{self.shas[0]}..{self.shas[2]}", cwd=self.d)
         self.assertEqual(r.returncode, 1)
         self.assertIn(f"{self.shas[2][:7]} : sujet sans prefixe", r.stderr)
         self.assertNotIn(self.shas[1][:7], r.stderr)
 
-    def test_range_illisible(self):
-        r = lancer("--range", "nulle..part", cwd=self.d)
+    def test_range_unreadable(self):
+        r = run("--range", "nulle..part", cwd=self.d)
         self.assertEqual(r.returncode, 1)
         self.assertIn("plage illisible", r.stderr)
 
@@ -103,25 +103,25 @@ class TestRange(unittest.TestCase):
 class TestPr(unittest.TestCase):
     """--pr : seule l'attribution d'IA est controlee, dans le titre et la description."""
 
-    def test_pr_conforme(self):
-        r = lancer("--pr", env={"PR_TITLE": "docs: x", "PR_BODY": "## Contexte\n\nPDF genere par pandoc."})
+    def test_pr_valid(self):
+        r = run("--pr", env={"PR_TITLE": "docs: x", "PR_BODY": "## Contexte\n\nPDF genere par pandoc."})
         self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_pr_description_attribuee(self):
-        r = lancer("--pr", env={"PR_TITLE": "docs: x", "PR_BODY": "Generated with [Claude Code](https://claude.com)"})
+    def test_pr_body_attributed(self):
+        r = run("--pr", env={"PR_TITLE": "docs: x", "PR_BODY": "Generated with [Claude Code](https://claude.com)"})
         self.assertEqual(r.returncode, 1)
         self.assertIn("description de la pull request", r.stderr)
 
-    def test_pr_titre_attribue(self):
-        r = lancer("--pr", env={"PR_TITLE": "feat: x, genere par l'IA", "PR_BODY": ""})
+    def test_pr_title_attributed(self):
+        r = run("--pr", env={"PR_TITLE": "feat: x, genere par l'IA", "PR_BODY": ""})
         self.assertEqual(r.returncode, 1)
         self.assertIn("titre de la pull request", r.stderr)
 
     def test_annotations(self):
-        attribuee = {"PR_TITLE": "docs: x", "PR_BODY": "Generated with Claude Code"}
-        r = lancer("--pr", env=attribuee)
+        attributed = {"PR_TITLE": "docs: x", "PR_BODY": "Generated with Claude Code"}
+        r = run("--pr", env=attributed)
         self.assertNotIn("::error", r.stdout, "annotation emise hors CI")
-        r = lancer("--pr", env={**attribuee, "GITHUB_ACTIONS": "true"})
+        r = run("--pr", env={**attributed, "GITHUB_ACTIONS": "true"})
         self.assertIn("::error title=check_commit_msg.py::description de la pull request", r.stdout)
 
 

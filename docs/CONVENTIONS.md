@@ -456,6 +456,13 @@ reçoit son cas volontairement cassé.
   `ROOT = Path(__file__).resolve().parent.parent`. Aucun chemin local en dur
   ([§1.2](#12-aucun-chemin-local-en-dur)) ; une valeur propre à la machine est
   dérivée ou fournie par une option de ligne de commande.
+- **Identifiants en anglais, textes en français.** Fonctions, variables,
+  constantes, paramètres, options de ligne de commande et noms de test sont en
+  anglais ; messages affichés, docstrings et commentaires restent en français.
+  Les clés de la sortie `--json` d'`install.py` et ses valeurs énumérées (noms
+  de classe, états de la status line) font exception : interface publique,
+  elles ne changent qu'avec une version `MAJEUR`
+  ([CONTRIBUTING.md](CONTRIBUTING.md) §4.1).
 - **Messages sans accents.** La sortie s'affiche dans une console PowerShell,
   dont l'encodage par défaut corrompt les caractères accentués
   ([PREREQUIS.md](PREREQUIS.md)). Le vocabulaire reste celui de

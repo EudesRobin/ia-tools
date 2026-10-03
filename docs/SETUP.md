@@ -77,14 +77,14 @@ python scripts/install.py --apply             # écrit les cas sûrs
 python scripts/install.py --diff <chemin>     # écart d'un fichier en conflit
 python scripts/install.py --scope skills,agents
 python scripts/install.py --agent copilot
-python scripts/install.py --outil clean-android-tv --apply
+python scripts/install.py --tool clean-android-tv --apply
 python scripts/install.py --scope statusline --agent claude
 ```
 
 Le périmètre par défaut est `skills,agents,hooks,statusline`, tous outils
 compris, pour les agents hôtes `claude,copilot`. Le périmètre `statusline` n'est
 examiné que pour Claude Code, seul agent hôte doté de status lines. `--agent` restreint l'installation aux agents
-hôtes nommés. `--outil` restreint l'examen et l'écriture aux outils nommés,
+hôtes nommés. `--tool` restreint l'examen et l'écriture aux outils nommés,
 séparés par des virgules. `--target` permet de viser une autre racine que
 `{AGENT_DIR}` et n'est admis qu'avec un seul agent hôte. `--json` produit la
 même sortie au format JSON.

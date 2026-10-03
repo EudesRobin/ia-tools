@@ -91,7 +91,7 @@ Commandes de vérification et d'installation : [PREREQUIS.md](./docs/PREREQUIS.m
 python scripts/install.py                  # audit : n'écrit rien
 python scripts/install.py --apply          # installe ou met à jour, pour les deux agents hôtes
 python scripts/install.py --agent copilot --apply            # un seul agent hôte
-python scripts/install.py --outil clean-android-tv --apply   # un seul outil
+python scripts/install.py --tool clean-android-tv --apply    # un seul outil
 ```
 
 Une installation locale obsolète est remplacée par la version du dépôt. Un

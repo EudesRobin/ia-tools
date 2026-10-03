@@ -8,7 +8,16 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
-## [1.2.1] - 2026-10-03
+### 🔄 Modifications
+
+- `scripts/install.py` : l'option `--outil`, qui restreint l'installation aux
+  outils nommés, est renommée `--tool`.
+
+### ⏳ Obsolescences
+
+- `scripts/install.py` : l'option `--outil`, ancien nom de `--tool`, reste
+  acceptée avec un avertissement ; elle sera retirée dans une prochaine version
+  `MAJEUR`.
 
 ### 📝 Documentation
 
@@ -28,6 +37,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   une *pull request* qui modifie un outil ou `scripts/install.py` doit y
   ajouter une entrée, et le push d'un tag de version crée la Release GitHub avec
   la section de cette version.
+- Identifiants des scripts de `scripts/` en anglais, y compris les options
+  (`--range`, `--require-entry`) et les variables de l'intégration continue ;
+  les messages restent en français.
 
 ## [1.2.0] - 2026-10-02
 
@@ -63,8 +75,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `scripts/validate.py`, ses tests, l'intégration continue et les hooks git
   `pre-commit` et `commit-msg`, pour contribuer au dépôt.
 
-[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.2.1...HEAD
-[1.2.1]: https://github.com/EudesRobin/ia-tools/compare/1.2.0...1.2.1
+[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.2.0...HEAD
 [1.2.0]: https://github.com/EudesRobin/ia-tools/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/EudesRobin/ia-tools/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/EudesRobin/ia-tools/releases/tag/1.0.0
