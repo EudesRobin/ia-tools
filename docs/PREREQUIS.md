@@ -24,7 +24,7 @@ gestionnaire de paquets sur un autre système.
 | Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
 | Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions), `pull-request` | `git --version` | `winget install Git.Git` |
 | GitHub CLI (`gh`)  | `pull-request` (push et création de PR)     | `gh --version`, `gh auth status` | `winget install GitHub.cli`                  |
-| Bibliothèques Python | `scripts/validate.py`                     | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
+| Bibliothèques Python | `scripts/validate.py`, `zizmor` (modification d'un workflow, intégration continue) | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
 | `adb` (platform-tools) | `clean-android-tv`                      | `adb version`                    | `winget install Google.PlatformTools`        |
 | PowerShell 7 (`pwsh`) | hook `validate-tool` (contribution au dépôt) ; status line `usage-session`, à défaut de PowerShell 5.1 | `pwsh --version`             | `winget install Microsoft.PowerShell`        |
 
@@ -67,6 +67,7 @@ que l'intégration continue installe à l'identique et que Dependabot tient à j
 | Bibliothèque       | Usage                                              |
 |--------------------|----------------------------------------------------|
 | `pyyaml`           | `scripts/validate.py` — lecture stricte du front-matter. Requis pour **contribuer** à ce dépôt, pas pour utiliser les outils installés |
+| `zizmor`           | Analyse de sécurité des workflows de `.github/workflows/`, lancée par l'intégration continue. Requis pour **modifier un workflow**, pas pour utiliser les outils installés |
 
 ### adb (platform-tools)
 

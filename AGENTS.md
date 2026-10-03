@@ -117,6 +117,13 @@ tests, qui le rejouent à chaque exécution : pas terminé tant que
 **`python scripts/test_validate.py`** et
 **`python scripts/test_check_commit_msg.py`** ne sont pas au vert.
 
+### Workflows
+
+`.github/workflows/*.yml` : pas terminé tant que
+**`zizmor --offline .github/workflows`** n'est pas au vert, et que l'exécution
+de l'intégration continue sur la *pull request* n'a pas été observée au vert.
+Un workflow n'est réellement éprouvé que par son exécution sur GitHub.
+
 ### Ce qui n'est pas vérifié mécaniquement
 
 `validate.py` couvre le front-matter — clés admises, contraintes de chargement
@@ -132,11 +139,11 @@ tâches — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]` `[-]` — sans
 pouvoir dire de la façon dont une session s'y tient réellement.
 
 Trois mécanismes le lancent : le hook `validate-tool` en fin de tour, le hook
-git `pre-commit` à chaque commit, et l'intégration continue, qui lance aussi les
-tests, à chaque push sur `main` et à chaque *pull request*. Le hook git
-`commit-msg` contrôle le message de commit : préfixe, longueur, absence
-d'attribution d'IA. Les hooks git ne s'appliquent qu'une fois activés dans le
-clone (section [Git](#git)).
+git `pre-commit` à chaque commit, et l'intégration continue à chaque push sur
+`main` et à chaque *pull request* ; l'intégration continue lance en outre les
+tests et l'analyse des workflows par `zizmor`. Le hook git `commit-msg` contrôle
+le message de commit : préfixe, longueur, absence d'attribution d'IA. Les hooks
+git ne s'appliquent qu'une fois activés dans le clone (section [Git](#git)).
 
 Restent des règles en prose, que rien ne contrôle et qu'il faut donc appliquer
 délibérément : le **registre de rédaction**, le **vocabulaire**, l'**absence
@@ -144,9 +151,10 @@ d'attribution d'IA dans une description de *pull request***, la **qualité
 d'écriture d'un outil** (concision, latitude laissée à l'agent, pertinence de la
 liste de phases fournie par un outil multi-étapes), la **cohérence sémantique
 entre documents** (une affirmation d'un document contredite par un autre
-échappe au validateur), et le **DoD des scripts** ci-dessus — rien ne vérifie
+échappe au validateur), le **DoD des scripts** ci-dessus — rien ne vérifie
 qu'un script modifié a été lancé, ni qu'une vérification ajoutée a reçu son cas
-cassé dans les tests.
+cassé dans les tests —, et le **DoD des workflows** — rien ne vérifie que
+l'exécution de l'intégration continue a été observée au vert.
 
 ## Git
 
