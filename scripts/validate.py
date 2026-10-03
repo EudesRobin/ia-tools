@@ -45,12 +45,16 @@ Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 (voir docs/PREREQUIS.md, section « Encodage de la console »).
 
+Dans l'integration continue (GITHUB_ACTIONS=true), chaque ecart est aussi emis
+en annotation GitHub, rattachee au fichier et a la ligne qu'il cite.
+
 Usage : python scripts/validate.py
 Code de sortie : 0 si tout passe, 1 si un controle echoue, 2 sur anomalie
 d'environnement (dependance absente), que le hook validate-tool ne bloque pas.
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -484,6 +488,12 @@ def markdown_links(text: str) -> list[str]:
     return LINK_RE.findall(text) + REF_DEF_RE.findall(text)
 
 
+def markdown_links_lignes(text: str) -> list[tuple[int, str]]:
+    """Liens relatifs avec leur numero de ligne, pour situer un ecart."""
+    trouves = [m for r in (LINK_RE, REF_DEF_RE) for m in r.finditer(text)]
+    return [(text.count("\n", 0, m.start()) + 1, m.group(1)) for m in trouves]
+
+
 def slugify(heading: str) -> str:
     """Reproduit l'algorithme d'ancres de GitHub : retire la ponctuation,
     remplace chaque espace par un trait d'union sans fusionner les espaces
@@ -513,23 +523,23 @@ def check_relative_links(errors: list[str]) -> None:
         if text is None:
             continue
         rel = path.relative_to(ROOT).as_posix()
-        for target in markdown_links(text):
+        for ligne, target in markdown_links_lignes(text):
             if EXTERNAL_LINK_RE.match(target) and not target.startswith("#"):
                 continue
             # Separer une ancre eventuelle : chemin.md#section
             cible, _, anchor = target.partition("#")
             if not cible:
                 if anchor not in heading_anchors(text):
-                    errors.append(f"{rel} : ancre interne introuvable '{target}'")
+                    errors.append(f"{rel}:{ligne} : ancre interne introuvable '{target}'")
                 continue
             resolved = (path.parent / cible).resolve()
             if not resolved.exists():
-                errors.append(f"{rel} : lien relatif mort '{target}'")
+                errors.append(f"{rel}:{ligne} : lien relatif mort '{target}'")
                 continue
             if anchor:
                 target_text = read(resolved)
                 if target_text is not None and anchor not in heading_anchors(target_text):
-                    errors.append(f"{rel} : ancre introuvable '{target}'")
+                    errors.append(f"{rel}:{ligne} : ancre introuvable '{target}'")
 
 
 def check_doc_map(errors: list[str]) -> None:
@@ -636,6 +646,28 @@ def check_no_hardcoded_paths(errors: list[str]) -> None:
                 errors.append(f"{rel} : chemin local en dur '{match.group(0)}'")
 
 
+# Prefixe commun des messages d'ecart : '<chemin>[:<ligne>] : ...' ou '<chemin> manquant'.
+ECART_RE = re.compile(r"^(?P<fichier>[\w./-]+?)(?::(?P<ligne>\d+))?(?= :| manquant)")
+
+
+def echapper(texte: str, propriete: bool = False) -> str:
+    """Echappement des commandes de workflow GitHub."""
+    texte = texte.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    return texte.replace(":", "%3A").replace(",", "%2C") if propriete else texte
+
+
+def annotation(ecart: str) -> str:
+    """Annotation GitHub d'un ecart, rattachee a son fichier quand il en cite un."""
+    proprietes = []
+    m = ECART_RE.match(ecart)
+    if m:
+        proprietes.append(f"file={echapper(m['fichier'], True)}")
+        if m["ligne"]:
+            proprietes.append(f"line={m['ligne']}")
+    proprietes.append("title=validate.py")
+    return f"::error {','.join(proprietes)}::{echapper(ecart)}"
+
+
 def main() -> int:
     errors: list[str] = []
     check_skills(errors)
@@ -657,6 +689,9 @@ def main() -> int:
         print(f"validate.py : {len(errors)} probleme(s)\n")
         for e in errors:
             print(f"  - {e}")
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            for e in errors:
+                print(annotation(e))
         return 1
 
     print("validate.py : OK")

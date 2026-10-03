@@ -7,6 +7,7 @@ Usage : python scripts/test_validate.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -82,7 +83,11 @@ if shutil.which("pwsh"):
 
 
 class TestValidate(unittest.TestCase):
-    def lancer(self, alteration=None) -> subprocess.CompletedProcess:
+    def lancer(self, alteration=None, ci: bool = False) -> subprocess.CompletedProcess:
+        # GITHUB_ACTIONS est fixe par le test, pas herite : meme resultat en local et en CI.
+        env = {k: v for k, v in os.environ.items() if k != "GITHUB_ACTIONS"}
+        if ci:
+            env["GITHUB_ACTIONS"] = "true"
         with tempfile.TemporaryDirectory() as tmp:
             d = Path(tmp)
             copie_depot(d)
@@ -90,7 +95,7 @@ class TestValidate(unittest.TestCase):
                 alteration(d)
             return subprocess.run(
                 [sys.executable, str(d / "scripts" / "validate.py")],
-                cwd=d, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+                cwd=d, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL,
             )
 
     def test_depot_reel_vert(self):
@@ -103,6 +108,20 @@ class TestValidate(unittest.TestCase):
                 r = self.lancer(alteration)
                 self.assertEqual(r.returncode, 1, f"{nom} : reste vert")
                 self.assertIn(attendu, r.stdout, f"{nom} : message attendu absent")
+
+    def test_annotations(self):
+        """En CI, chaque ecart est emis en annotation rattachee a son fichier et a sa ligne."""
+        lien = ajouter("README.md", "\n[x](./absent.md)\n")
+        r = self.lancer(lien)
+        self.assertNotIn("::error", r.stdout, "annotation emise hors CI")
+        r = self.lancer(lien, ci=True)
+        attendue = len((ROOT / "README.md").read_text(encoding="utf-8").splitlines()) + 2
+        self.assertIn(
+            f"::error file=README.md,line={attendue},title=validate.py::README.md:{attendue} : lien relatif mort",
+            r.stdout,
+        )
+        r = self.lancer(ajouter("scripts/install.py", "\ndef (:\n"), ci=True)
+        self.assertRegex(r.stdout, r"::error file=scripts/install\.py,line=\d+,title=validate\.py::")
 
 
 if __name__ == "__main__":
