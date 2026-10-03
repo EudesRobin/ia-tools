@@ -183,3 +183,5 @@ python scripts/test_statusline.py
 ## Licence
 
 MIT : voir [LICENSE](./LICENSE).
+
+[essai](./absent.md)
