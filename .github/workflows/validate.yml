@@ -94,4 +94,4 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: python scripts/changelog.py --exige-entree "$BASE_SHA..$HEAD_SHA"
+        run: python scripts/changelog.py --require-entry "$BASE_SHA..$HEAD_SHA"

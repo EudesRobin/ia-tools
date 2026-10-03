@@ -19,26 +19,26 @@ ROOT = Path(__file__).resolve().parent.parent
 AGENTS = ("claude", "copilot")
 
 # Outil de plusieurs fichiers, distribue a chaque agent hote sous le meme chemin.
-OUTIL = "skills/clean-android-tv"
-EDITE = f"{OUTIL}/SKILL.md"
-SUPPRIME = f"{OUTIL}/paquets.md"
+TOOL = "skills/clean-android-tv"
+EDITED = f"{TOOL}/SKILL.md"
+DELETED = f"{TOOL}/paquets.md"
 
 
-def installer(agent: str, cible: Path, *options: str) -> tuple[int, dict]:
+def run_install(agent: str, target: Path, *options: str) -> tuple[int, dict]:
     r = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "install.py"),
-         "--agent", agent, "--target", str(cible), "--json", *options],
+         "--agent", agent, "--target", str(target), "--json", *options],
         cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
     )
     try:
-        rapport = json.loads(r.stdout)["agents"][agent]
+        report = json.loads(r.stdout)["agents"][agent]
     except (ValueError, KeyError):
         raise AssertionError(f"sortie --json illisible (code {r.returncode}) : {r.stdout}{r.stderr}")
-    return r.returncode, rapport
+    return r.returncode, report
 
 
-def nombres(rapport: dict) -> dict:
-    return {classe: len(sources) for classe, sources in rapport["classes"].items()}
+def counts(report: dict) -> dict:
+    return {status: len(sources) for status, sources in report["classes"].items()}
 
 
 class TestInstall(unittest.TestCase):
@@ -49,54 +49,71 @@ class TestInstall(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def test_cible_vide_puis_idempotence(self):
+    def test_empty_target_then_idempotent(self):
         for agent in AGENTS:
             with self.subTest(agent):
-                cible = self.tmp / agent
-                code, r = installer(agent, cible, "--apply")
+                target = self.tmp / agent
+                code, r = run_install(agent, target, "--apply")
                 self.assertEqual(code, 0, r)
                 self.assertTrue(r["ecrits"], f"{agent} : rien n'a ete ecrit")
                 self.assertEqual(sorted(r["ecrits"]), sorted(r["classes"]["absent"]))
                 # Le chemin cible depend de l'agent hote (agent .md ou .agent.md) :
                 # seul le nombre de fichiers presents est compare.
-                presents = [p for p in cible.rglob("*") if p.is_file()]
-                self.assertEqual(len(presents), len(r["ecrits"]), f"{agent} : {presents}")
-                code, r = installer(agent, cible)
+                present = [p for p in target.rglob("*") if p.is_file()]
+                self.assertEqual(len(present), len(r["ecrits"]), f"{agent} : {present}")
+                code, r = run_install(agent, target)
                 self.assertEqual(code, 0, r)
-                n = nombres(r)
+                n = counts(r)
                 self.assertGreater(n["identique"], 0)
                 self.assertEqual(sum(v for k, v in n.items() if k != "identique"), 0, n)
 
-    def test_conflit_bloque_l_outil(self):
+    def test_conflict_blocks_tool(self):
         for agent in AGENTS:
             with self.subTest(agent):
-                cible = self.tmp / agent
-                installer(agent, cible, "--apply")
-                edite, supprime = cible / EDITE, cible / SUPPRIME
-                self.assertTrue(edite.is_file() and supprime.is_file(), f"{agent} : {OUTIL} non installe")
-                edite.write_text("edition locale\n", encoding="utf-8")
-                supprime.unlink()
+                target = self.tmp / agent
+                run_install(agent, target, "--apply")
+                edited, deleted = target / EDITED, target / DELETED
+                self.assertTrue(edited.is_file() and deleted.is_file(), f"{agent} : {TOOL} non installe")
+                edited.write_text("edition locale\n", encoding="utf-8")
+                deleted.unlink()
 
-                code, r = installer(agent, cible, "--apply")
+                code, r = run_install(agent, target, "--apply")
                 self.assertEqual(code, 1, f"{agent} : un conflit doit sortir en 1")
-                self.assertIn(EDITE, r["classes"]["conflit"])
+                self.assertIn(EDITED, r["classes"]["conflit"])
                 self.assertIn("clean-android-tv", " ".join(r["outils_bloques"]))
-                self.assertEqual(edite.read_text(encoding="utf-8"), "edition locale\n",
+                self.assertEqual(edited.read_text(encoding="utf-8"), "edition locale\n",
                                  f"{agent} : edition locale ecrasee")
-                self.assertFalse(supprime.exists(), f"{agent} : fichier d'un outil bloque reecrit")
-                self.assertNotIn(SUPPRIME, r["ecrits"])
+                self.assertFalse(deleted.exists(), f"{agent} : fichier d'un outil bloque reecrit")
+                self.assertNotIn(DELETED, r["ecrits"])
 
-    def test_settings_json_jamais_ecrit(self):
+    def test_settings_json_never_written(self):
         for agent in AGENTS:
             with self.subTest(agent):
-                cible = self.tmp / agent
-                cible.mkdir()
-                settings = cible / "settings.json"
-                contenu = b'{\n  "model": "local"\n}\n'
-                settings.write_bytes(contenu)
-                code, r = installer(agent, cible, "--apply")
+                target = self.tmp / agent
+                target.mkdir()
+                settings = target / "settings.json"
+                content = b'{\n  "model": "local"\n}\n'
+                settings.write_bytes(content)
+                code, r = run_install(agent, target, "--apply")
                 self.assertEqual(code, 0, r)
-                self.assertEqual(settings.read_bytes(), contenu, f"{agent} : settings.json modifie")
+                self.assertEqual(settings.read_bytes(), content, f"{agent} : settings.json modifie")
+
+
+    def test_tool_option_and_deprecated_alias(self):
+        """--tool restreint l'installation ; --outil reste accepte et avertit."""
+        for option, warns in (("--tool", False), ("--outil", True)):
+            with self.subTest(option):
+                target = self.tmp / option.strip("-")
+                r = subprocess.run(
+                    [sys.executable, str(ROOT / "scripts" / "install.py"), "--agent", "claude",
+                     "--target", str(target), option, "clean-android-tv", "--apply", "--json"],
+                    cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+                )
+                self.assertEqual(r.returncode, 0, r.stderr)
+                written = json.loads(r.stdout)["agents"]["claude"]["ecrits"]
+                self.assertTrue(written)
+                self.assertTrue(all(s.startswith(TOOL + "/") for s in written), written)
+                self.assertEqual("obsolete" in r.stderr, warns, r.stderr)
 
 
 if __name__ == "__main__":

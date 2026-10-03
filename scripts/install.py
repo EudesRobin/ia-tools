@@ -42,7 +42,7 @@ console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 (voir docs/PREREQUIS.md, section « Encodage de la console »).
 
 Usage : python scripts/install.py [--apply] [--agent ...] [--scope ...]
-                                  [--outil ...] [--diff <chemin>]
+                                  [--tool ...] [--diff <chemin>]
                                   [--target <dossier>] [--json]
 Code de sortie : 0 si aucun conflit ne reste chez aucun agent hote, 1 sinon.
 """
@@ -198,20 +198,20 @@ def previous_renders(source: str, subs: dict[str, str]) -> list[bytes]:
     if not log:
         return []
     revisions: list[tuple[str, str]] = []
-    chemin = source
-    for ligne in log.decode("utf-8", errors="replace").splitlines():
-        if ligne.startswith("@"):
-            revisions.append((ligne[1:], chemin))
-        elif ligne.strip() and revisions:
-            chemin = ligne.strip()
-            revisions[-1] = (revisions[-1][0], chemin)
-    formes = []
-    for rev, chemin in revisions:
-        blob = git_bytes(["show", f"{rev}:{chemin}"])
+    path_at_rev = source
+    for line in log.decode("utf-8", errors="replace").splitlines():
+        if line.startswith("@"):
+            revisions.append((line[1:], path_at_rev))
+        elif line.strip() and revisions:
+            path_at_rev = line.strip()
+            revisions[-1] = (revisions[-1][0], path_at_rev)
+    renders = []
+    for rev, path_at_rev in revisions:
+        blob = git_bytes(["show", f"{rev}:{path_at_rev}"])
         if blob is None:
             continue
-        formes.append(normalize(render(blob, subs)))
-    return formes
+        renders.append(normalize(render(blob, subs)))
+    return renders
 
 
 def scope_pairs(agent: str, scope: str) -> list[tuple[str, str]]:
@@ -250,7 +250,7 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
     Les outils etrangers au depot (outils de l'utilisateur, skills synchronisees
     par l'agent hote) ne sont pas examines : ils ne relevent pas de ce merge.
     """
-    outils = {tool_of(rel) for rel, _, _ in pairs(agent, scopes, target_root)}
+    tools = {tool_of(rel) for rel, _, _ in pairs(agent, scopes, target_root)}
     out = []
     for scope in scopes:
         for src_rel, dst_rel in scope_pairs(agent, scope):
@@ -261,10 +261,10 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
                 if not path.is_file():
                     continue
                 rel = path.relative_to(dst)
-                if excluded(rel) or tool_of(f"{dst_rel}/{rel.as_posix()}") not in outils:
+                if excluded(rel) or tool_of(f"{dst_rel}/{rel.as_posix()}") not in tools:
                     continue
-                origine = source_rel(agent, src_rel, rel)
-                if origine is not None and (src / origine).is_file():
+                origin = source_rel(agent, src_rel, rel)
+                if origin is not None and (src / origin).is_file():
                     continue
                 out.append(f"{dst_rel}/{rel.as_posix()}")
     return out
@@ -274,24 +274,24 @@ def classify(source: str, src: Path, dst: Path, subs: dict[str, str]) -> tuple[s
     raw = read_bytes(src)
     if raw is None:
         return "illisible", b""
-    rendu = render(raw, subs)
+    rendered = render(raw, subs)
     local = read_bytes(dst)
     if local is None:
-        return "absent", rendu
-    if normalize(local) == normalize(rendu):
-        return "identique", rendu
+        return "absent", rendered
+    if normalize(local) == normalize(rendered):
+        return "identique", rendered
     if normalize(local) in previous_renders(source, subs):
-        return "obsolete", rendu
-    return "conflit", rendu
+        return "obsolete", rendered
+    return "conflit", rendered
 
 
 def unified(agent: str, source: str, src: Path, dst: Path, subs: dict[str, str]) -> str:
-    rendu = render(read_bytes(src) or b"", subs)
+    rendered = render(read_bytes(src) or b"", subs)
     local = read_bytes(dst) or b""
     return "".join(
         difflib.unified_diff(
             normalize(local).decode("utf-8", errors="replace").splitlines(True),
-            normalize(rendu).decode("utf-8", errors="replace").splitlines(True),
+            normalize(rendered).decode("utf-8", errors="replace").splitlines(True),
             fromfile=f"{agent}/local/{dst.name}",
             tofile=f"depot/{source}",
         )
@@ -307,48 +307,48 @@ def statusline_command(script: Path) -> str:
     """Commande attendue dans la cle statusLine. Barres obliques : Claude Code
     passe la commande a Git Bash quand il est installe. -ExecutionPolicy Bypass :
     la strategie par defaut de PowerShell 5.1 refuse les scripts."""
-    interprete = "pwsh" if shutil.which("pwsh") else "powershell"
+    interpreter = "pwsh" if shutil.which("pwsh") else "powershell"
     return (
-        f'{interprete} -NoProfile -NonInteractive -ExecutionPolicy Bypass '
+        f'{interpreter} -NoProfile -NonInteractive -ExecutionPolicy Bypass '
         f'-File "{script.as_posix()}"'
     )
 
 
-def statusline_state(agent: str, scopes: list[str], target_root: Path, outils: set[str] | None) -> dict | None:
+def statusline_state(agent: str, scopes: list[str], target_root: Path, tools: set[str] | None) -> dict | None:
     """Etat de la cle statusLine, en lecture seule : 'enregistree' si elle
     designe une status line du depot, 'absente', 'autre' si elle designe un
     autre script, 'illisible' si settings.json n'est pas du JSON valide."""
     if "statusline" not in scopes_of(agent, scopes):
         return None
-    noms = sorted(
+    names = sorted(
         p.name for p in (ROOT / "statuslines" / agent).glob("*/")
-        if (p / STATUSLINE_SCRIPT).is_file() and (outils is None or p.name in outils)
+        if (p / STATUSLINE_SCRIPT).is_file() and (tools is None or p.name in tools)
     )
-    if not noms:
+    if not names:
         return None
     settings = target_root / "settings.json"
-    cle = None
+    key = None
     if settings.is_file():
         try:
-            cle = json.loads(settings.read_text(encoding="utf-8-sig")).get("statusLine")
+            key = json.loads(settings.read_text(encoding="utf-8-sig")).get("statusLine")
         except (ValueError, AttributeError, OSError):
             return {"etat": "illisible", "fichier": str(settings), "fragments": {}}
-    commande = cle.get("command", "") if isinstance(cle, dict) else ""
-    commande = commande.replace("\\", "/").lower()
+    command = key.get("command", "") if isinstance(key, dict) else ""
+    command = command.replace("\\", "/").lower()
     fragments = {
-        nom: {
+        name: {
             "type": "command",
-            "command": statusline_command(target_root / "statuslines" / nom / STATUSLINE_SCRIPT),
+            "command": statusline_command(target_root / "statuslines" / name / STATUSLINE_SCRIPT),
         }
-        for nom in noms
+        for name in names
     }
-    for nom in noms:
-        if f"statuslines/{nom}/{STATUSLINE_SCRIPT}".lower() in commande:
-            return {"etat": "enregistree", "outil": nom, "fichier": str(settings), "fragments": {}}
+    for name in names:
+        if f"statuslines/{name}/{STATUSLINE_SCRIPT}".lower() in command:
+            return {"etat": "enregistree", "outil": name, "fichier": str(settings), "fragments": {}}
     return {
-        "etat": "absente" if cle is None else "autre",
+        "etat": "absente" if key is None else "autre",
         "fichier": str(settings),
-        "actuelle": cle,
+        "actuelle": key,
         "fragments": fragments,
     }
 
@@ -363,8 +363,8 @@ def hooks_notice(agent: str, scopes: list[str], target_root: Path) -> str | None
     )
 
 
-def parse_list(valeur: str) -> list[str]:
-    return [v.strip() for v in valeur.split(",") if v.strip()]
+def parse_list(value: str) -> list[str]:
+    return [v.strip() for v in value.split(",") if v.strip()]
 
 
 def parse_args() -> argparse.Namespace:
@@ -388,7 +388,9 @@ def parse_args() -> argparse.Namespace:
         help=f"perimetres separes par des virgules parmi {','.join(SCOPES)}",
     )
     p.add_argument(
-        "--outil",
+        "--tool",
+        "--outil",  # ancien nom, obsolete : retire dans une prochaine version MAJEUR
+        dest="tool",
         metavar="NOMS",
         help="n'examiner que ces outils, separes par des virgules (defaut : tous)",
     )
@@ -403,24 +405,27 @@ def parse_args() -> argparse.Namespace:
         help="racine cible a la place de {AGENT_DIR} ; un seul agent hote requis",
     )
     p.add_argument("--json", action="store_true", help="sortie machine")
-    return p.parse_args()
+    args = p.parse_args()
+    if any(a == "--outil" or a.startswith("--outil=") for a in sys.argv[1:]):
+        print("install.py : --outil est obsolete, employer --tool", file=sys.stderr)
+    return args
 
 
 def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
     """Classe, et ecrit si --apply, le perimetre d'un agent hote."""
     target_given = args.target is not None
-    racine = args.target if target_given else AGENTS[agent]["root"]
-    target_root = Path(racine).expanduser().resolve()
+    root_dir = args.target if target_given else AGENTS[agent]["root"]
+    target_root = Path(root_dir).expanduser().resolve()
     subs = variables(agent, target_root, target_given)
     ignores = [s for s in scopes if s not in scopes_of(agent, scopes)]
     scopes = scopes_of(agent, scopes)
-    couples = pairs(agent, scopes, target_root)
-    orphelins = local_only(agent, scopes, target_root)
-    voulus = set(parse_list(args.outil)) if args.outil else None
+    file_pairs = pairs(agent, scopes, target_root)
+    orphans = local_only(agent, scopes, target_root)
+    wanted = set(parse_list(args.tool)) if args.tool else None
 
-    if voulus is not None:
-        couples = [c for c in couples if tool_of(c[0]) in voulus]
-        orphelins = [o for o in orphelins if tool_of(o) in voulus]
+    if wanted is not None:
+        file_pairs = [c for c in file_pairs if tool_of(c[0]) in wanted]
+        orphans = [o for o in orphans if tool_of(o) in wanted]
 
     classes: dict[str, list[str]] = {
         "absent": [],
@@ -429,32 +434,32 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
         "conflit": [],
         "illisible": [],
     }
-    par_fichier = []
-    for source, src, dst in couples:
-        classe, rendu = classify(source, src, dst, subs)
-        classes[classe].append(source)
-        par_fichier.append((source, dst, classe, rendu))
+    per_file = []
+    for source, src, dst in file_pairs:
+        status, rendered = classify(source, src, dst, subs)
+        classes[status].append(source)
+        per_file.append((source, dst, status, rendered))
 
-    bloques = sorted({tool_of(rel) for rel in classes["conflit"]})
-    ecrits: list[str] = []
+    blocked = sorted({tool_of(rel) for rel in classes["conflit"]})
+    written: list[str] = []
     if args.apply:
-        for source, dst, classe, rendu in par_fichier:
-            if classe in ("absent", "obsolete") and tool_of(source) not in bloques:
+        for source, dst, status, rendered in per_file:
+            if status in ("absent", "obsolete") and tool_of(source) not in blocked:
                 dst.parent.mkdir(parents=True, exist_ok=True)
-                dst.write_bytes(rendu)
-                ecrits.append(source)
+                dst.write_bytes(rendered)
+                written.append(source)
 
     return {
         "cible": str(target_root),
         "classes": classes,
-        "local_seul": orphelins,
-        "outils_bloques": bloques,
-        "ecrits": ecrits,
-        "examines": len(couples),
+        "local_seul": orphans,
+        "outils_bloques": blocked,
+        "ecrits": written,
+        "examines": len(file_pairs),
         "notice": hooks_notice(agent, scopes, target_root),
         "ignores": ignores,
-        "statusline": statusline_state(agent, scopes, target_root, voulus),
-        "couples": couples,
+        "statusline": statusline_state(agent, scopes, target_root, wanted),
+        "file_pairs": file_pairs,
         "subs": subs,
     }
 
@@ -463,14 +468,14 @@ def print_report(agent: str, r: dict, apply: bool) -> None:
     classes = r["classes"]
     print(f"install.py [{agent}] : {r['examines']} fichier(s) examines -> {r['cible']}")
     print(f"  identiques   {len(classes['identique'])}")
-    for libelle, cle in (
+    for label, key in (
         ("absents", "absent"),
         ("obsoletes", "obsolete"),
         ("conflits", "conflit"),
         ("illisibles", "illisible"),
     ):
-        if classes[cle]:
-            print(f"  {libelle:<12} {len(classes[cle])}  {', '.join(classes[cle])}")
+        if classes[key]:
+            print(f"  {label:<12} {len(classes[key])}  {', '.join(classes[key])}")
     if r["local_seul"]:
         print(f"  local seul   {len(r['local_seul'])}  {', '.join(r['local_seul'])}")
     if r["notice"]:
@@ -484,12 +489,12 @@ def print_report(agent: str, r: dict, apply: bool) -> None:
         elif sl["etat"] == "illisible":
             print(f"  statusLine   {sl['fichier']} illisible (JSON invalide)")
         else:
-            libelle = "absente" if sl["etat"] == "absente" else "designe un autre script"
-            print(f"  statusLine   {libelle} dans {sl['fichier']} ; jamais ecrite par ce script.")
+            label = "absente" if sl["etat"] == "absente" else "designe un autre script"
+            print(f"  statusLine   {label} dans {sl['fichier']} ; jamais ecrite par ce script.")
             print("    Fragment a fusionner a la main, sans ecraser le reste du fichier :")
             for fragment in sl["fragments"].values():
-                texte = json.dumps({"statusLine": fragment}, indent=2)
-                print("\n".join("      " + ligne for ligne in texte.splitlines()))
+                text = json.dumps({"statusLine": fragment}, indent=2)
+                print("\n".join("      " + line for line in text.splitlines()))
     if apply:
         detail = f"  {', '.join(r['ecrits'])}" if r["ecrits"] else ""
         print(f"  ecrits : {len(r['ecrits'])}{detail}")
@@ -508,13 +513,13 @@ def main() -> int:
 
     agents = parse_list(args.agent)
     scopes = parse_list(args.scope)
-    for libelle, valeurs, connus in (
+    for label, values, known in (
         ("agent hote", agents, AGENTS),
         ("perimetre", scopes, SCOPES),
     ):
-        inconnus = [v for v in valeurs if v not in connus]
-        if inconnus:
-            print(f"install.py : {libelle} inconnu : {', '.join(inconnus)}", file=sys.stderr)
+        unknown = [v for v in values if v not in known]
+        if unknown:
+            print(f"install.py : {label} inconnu : {', '.join(unknown)}", file=sys.stderr)
             return 1
     if not agents:
         print("install.py : aucun agent hote demande", file=sys.stderr)
@@ -526,18 +531,18 @@ def main() -> int:
         )
         return 1
 
-    if args.outil:
-        voulus = set(parse_list(args.outil))
+    if args.tool:
+        wanted = set(parse_list(args.tool))
         # Outils connus de tout agent hote : une status line demandee pour
         # Copilot CLI est signalee comme non prise en charge, non comme inconnue.
-        connus = {
+        known = {
             tool_of(rel)
             for agent in AGENTS
             for rel, _, _ in pairs(agent, scopes_of(agent, scopes), ROOT)
         }
-        if voulus - connus:
+        if wanted - known:
             print(
-                f"install.py : outil inconnu : {', '.join(sorted(voulus - connus))}",
+                f"install.py : outil inconnu : {', '.join(sorted(wanted - known))}",
                 file=sys.stderr,
             )
             return 1
@@ -546,19 +551,19 @@ def main() -> int:
         # Le diff cite le contenu des fichiers, accents et symboles compris :
         # l'encodage par defaut de la console (cp1252) ferait echouer l'ecriture.
         sys.stdout.reconfigure(encoding="utf-8")
-        vise = args.diff.replace("\\", "/")
-        trouve = False
+        wanted_path = args.diff.replace("\\", "/")
+        found = False
         for agent in agents:
-            lecture = argparse.Namespace(**{**vars(args), "apply": False})
-            r = examine(agent, lecture, scopes)
-            for source, src, dst in r["couples"]:
-                if source == vise:
-                    trouve = True
+            read_only_args = argparse.Namespace(**{**vars(args), "apply": False})
+            r = examine(agent, read_only_args, scopes)
+            for source, src, dst in r["file_pairs"]:
+                if source == wanted_path:
+                    found = True
                     sys.stdout.write(
                         unified(agent, source, src, dst, r["subs"])
                         or f"[{agent}] {source} : aucun ecart\n"
                     )
-        if not trouve:
+        if not found:
             print(
                 f"install.py : '{args.diff}' hors du perimetre {','.join(scopes)}",
                 file=sys.stderr,
@@ -566,31 +571,31 @@ def main() -> int:
             return 1
         return 0
 
-    rapports = {agent: examine(agent, args, scopes) for agent in agents}
-    conflits = sum(len(r["classes"]["conflit"]) for r in rapports.values())
+    reports = {agent: examine(agent, args, scopes) for agent in agents}
+    conflicts = sum(len(r["classes"]["conflit"]) for r in reports.values())
 
     if args.json:
-        cles = ("cible", "classes", "local_seul", "outils_bloques", "ecrits", "statusline")
+        keys = ("cible", "classes", "local_seul", "outils_bloques", "ecrits", "statusline")
         print(
             json.dumps(
                 {
                     "perimetres": scopes,
                     "agents": {
-                        agent: {k: r[k] for k in cles} for agent, r in rapports.items()
+                        agent: {k: r[k] for k in keys} for agent, r in reports.items()
                     },
                 },
                 ensure_ascii=True,
                 indent=2,
             )
         )
-        return 1 if conflits else 0
+        return 1 if conflicts else 0
 
-    for agent, r in rapports.items():
+    for agent, r in reports.items():
         print_report(agent, r, args.apply)
 
-    if conflits:
+    if conflicts:
         print(
-            f"install.py : {conflits} conflit(s) a arbitrer (docs/SETUP.md section 2)."
+            f"install.py : {conflicts} conflit(s) a arbitrer (docs/SETUP.md section 2)."
         )
         print("  install.py --diff <chemin> [--agent <nom>] affiche l'ecart d'un fichier.")
         return 1

@@ -96,7 +96,7 @@ vue de l'utilisateur qui installe les outils :
 | Numéro | Incrémenté quand |
 |---|---|
 | `MAJEUR` | Une installation existante exige une action de l'utilisateur : un outil est supprimé ou renommé, ou le comportement d'un outil ou de `scripts/install.py` change de façon incompatible. |
-| `MINEUR` | Un outil est ajouté, acquiert une capacité nouvelle ou voit son comportement modifié, sans incompatibilité ; ou un outil ou une capacité sont déclarés obsolètes. |
+| `MINEUR` | Un outil est ajouté ; un outil ou `scripts/install.py` acquiert une capacité nouvelle ou voit son comportement modifié, sans incompatibilité ; un outil ou une capacité sont déclarés obsolètes. |
 | `CORRECTIF` | Tout autre changement : correction, documentation, outillage du dépôt. |
 
 Incrémenter un numéro remet à zéro ceux qui le suivent : `1.4.2` devient
@@ -115,7 +115,7 @@ installe les outils, sous les rubriques suivantes, dans cet ordre :
 |---|---|---|
 | `### 💥 Action requise` | changement incompatible : l'action qu'exige une installation existante (version `MAJEUR`) | — |
 | `### 🚀 Nouveautés` | outil ou capacité ajoutés | `feat` |
-| `### 🔄 Modifications` | comportement d'un outil existant modifié, sans incompatibilité | — |
+| `### 🔄 Modifications` | comportement d'un outil existant ou de `scripts/install.py` modifié, sans incompatibilité | — |
 | `### ⏳ Obsolescences` | outil ou capacité appelés à être retirés dans une version ultérieure | — |
 | `### 🔥 Suppressions` | outil ou capacité retirés | — |
 | `### 🐛 Corrections` | comportement corrigé | `fix` |
@@ -127,7 +127,7 @@ installe les outils, sous les rubriques suivantes, dans cet ordre :
   `hooks/`, `statuslines/` ou `scripts/install.py` ajoute une entrée sous
   `[Non publié]`. Aucune exemption n'est admise.
 - **Contrôles.** `scripts/validate.py` vérifie la structure du journal ; sur une
-  *pull request*, `scripts/changelog.py --exige-entree` vérifie la présence de
+  *pull request*, `scripts/changelog.py --require-entry` vérifie la présence de
   l'entrée.
 
 ### 4.3 Procédure
