@@ -88,6 +88,10 @@ que la rédaction s'écarte du registre ([CONVENTIONS.md](./docs/CONVENTIONS.md)
 Un nouveau fichier sous `docs/` est un **document de fond** : dérouler aussi la
 checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §6.
 
+Tout document nouveau ou modifié est relu par l'agent `relecture-fr`, et les
+écarts qu'il relève sont appliqués avant que la modification soit déclarée
+terminée.
+
 ### Skills, agents, hooks, status lines
 
 Pas terminé tant que **`python scripts/validate.py`** n'est pas au vert, et que
@@ -157,6 +161,10 @@ défaut les activer :
 ```powershell
 git config core.hooksPath .githooks
 ```
+
+Un outil modifié et testable localement (skill, hook, status line) est
+installé par `scripts/install.py` puis validé par l'utilisateur **avant** tout
+commit et tout push.
 
 ## Registre
 
