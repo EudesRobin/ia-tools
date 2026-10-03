@@ -41,6 +41,9 @@ git config core.hooksPath .githooks
 - **Skill `pull-request`.** Installée, elle mène la livraison — commit, branche,
   push, *pull request* — en appliquant ces règles. Sans elle, les appliquer à la
   main.
+- **Journal des modifications.** Une *pull request* qui modifie un outil ou
+  `scripts/install.py` y ajoute une entrée
+  ([§4.2](#42-journal-des-modifications)).
 - **Outil testable localement.** Une skill, un hook ou une status line modifiés
   sont installés par `scripts/install.py` ([SETUP.md](SETUP.md)) puis validés
   par l'utilisateur **avant** tout commit et tout push.
@@ -58,11 +61,16 @@ L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 
 - les tests `scripts/test_*.py` des scripts et des status lines ;
 - l'analyse de sécurité des workflows par `zizmor` ;
-- sur une *pull request*, le contrôle du message de chaque commit, et de
-  l'absence d'attribution d'IA dans le titre et la description.
+- sur une *pull request*, le contrôle du message de chaque commit, de
+  l'absence d'attribution d'IA dans le titre et la description, et de la
+  présence d'une entrée dans le journal des modifications
+  ([§4.2](#42-journal-des-modifications)).
 
 Chaque écart y est aussi émis en annotation GitHub, affichée sur le diff de la
 *pull request*.
+
+Au push d'un tag de version, le workflow `release` crée la Release GitHub
+([§4.3](#43-procédure)).
 
 Rien ne contrôle le registre de rédaction, le vocabulaire, la qualité d'écriture
 d'un outil (concision, latitude laissée à l'agent, pertinence de la liste de
@@ -73,8 +81,10 @@ continue a été observée au vert. Ces règles s'appliquent délibérément.
 
 ## 4. Publier une version
 
-Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`.
-Le numéro de version ne figure dans aucun fichier : le tag le porte seul.
+Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`, et
+une **Release** GitHub associée à ce tag. Le numéro de version figure dans le
+tag et dans le journal des modifications, [CHANGELOG.md](../CHANGELOG.md), dont
+la section de la version fournit les notes de la Release.
 
 ### 4.1 Numérotation
 
@@ -86,26 +96,64 @@ vue de l'utilisateur qui installe les outils :
 | Numéro | Incrémenté quand |
 |---|---|
 | `MAJEUR` | Une installation existante exige une action de l'utilisateur : un outil est supprimé ou renommé, ou le comportement d'un outil ou de `scripts/install.py` change de façon incompatible. |
-| `MINEUR` | Un outil est ajouté ou acquiert une capacité nouvelle, sans incompatibilité. |
+| `MINEUR` | Un outil est ajouté, acquiert une capacité nouvelle ou voit son comportement modifié, sans incompatibilité ; ou un outil ou une capacité sont déclarés obsolètes. |
 | `CORRECTIF` | Tout autre changement : correction, documentation, outillage du dépôt. |
 
 Incrémenter un numéro remet à zéro ceux qui le suivent : `1.4.2` devient
 `1.5.0` ou `2.0.0`.
 
-### 4.2 Procédure
+### 4.2 Journal des modifications
 
-Le tag est posé **après le merge** de la *pull request* qui clôt la version,
-jamais sur une branche de travail : le tag désigne l'état de `main` que les
-utilisateurs installent. Vérifier au préalable que la dernière exécution de
-l'intégration continue sur `main` est au vert, dans l'onglet *Actions* du dépôt
-GitHub.
+`CHANGELOG.md` suit le format
+[Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Sa première section,
+`## [Non publié]`, recueille les changements pas encore publiés ; chaque
+version publiée a sa section `## [X.Y.Z] - AAAA-MM-JJ`, de la plus récente à la
+plus ancienne, les dates ne croissant jamais. Les entrées sont rédigées pour qui
+installe les outils, sous les rubriques suivantes, dans cet ordre :
 
-```powershell
-git switch main
-git pull --ff-only
-git tag -a <version> -m "<version>"
-git push origin <version>
-```
+| Rubrique | Contenu | Préfixes de commit |
+|---|---|---|
+| `### 💥 Action requise` | changement incompatible : l'action qu'exige une installation existante (version `MAJEUR`) | — |
+| `### 🚀 Nouveautés` | outil ou capacité ajoutés | `feat` |
+| `### 🔄 Modifications` | comportement d'un outil existant modifié, sans incompatibilité | — |
+| `### ⏳ Obsolescences` | outil ou capacité appelés à être retirés dans une version ultérieure | — |
+| `### 🔥 Suppressions` | outil ou capacité retirés | — |
+| `### 🐛 Corrections` | comportement corrigé | `fix` |
+| `### 🔒 Sécurité` | correctif de sécurité | — |
+| `### 📝 Documentation` | documentation seule | `docs` |
+| `### 🧹 Maintenance` | intégration continue, tests, scripts du dépôt, entretien | `build`, `test`, `chore`, `refactor` |
+
+- **Entrée obligatoire.** Une *pull request* qui modifie `skills/`, `agents/`,
+  `hooks/`, `statuslines/` ou `scripts/install.py` ajoute une entrée sous
+  `[Non publié]`. Aucune exemption n'est admise.
+- **Contrôles.** `scripts/validate.py` vérifie la structure du journal ; sur une
+  *pull request*, `scripts/changelog.py --exige-entree` vérifie la présence de
+  l'entrée.
+
+### 4.3 Procédure
+
+1. **Clore la version** dans la *pull request* qui la termine : renommer
+   `## [Non publié]` en `## [X.Y.Z] - AAAA-MM-JJ`, ouvrir au-dessus une section
+   `## [Non publié]` vide, et mettre à jour les liens de comparaison en fin de
+   fichier. Vérifier que `python scripts/changelog.py --version X.Y.Z` affiche
+   les notes attendues.
+2. **Poser le tag après le merge**, jamais sur une branche de travail : le tag
+   désigne l'état de `main` que les utilisateurs installent. Vérifier au
+   préalable que l'exécution de l'intégration continue sur ce commit de `main`
+   est au vert, dans l'onglet *Actions* du dépôt GitHub.
+
+   ```powershell
+   git switch main
+   git pull --ff-only
+   git tag -a <version> -m "<version>"
+   git push origin <version>
+   ```
+
+3. **Contrôler la Release.** Le workflow `release` vérifie que le commit est sur
+   `main` et que l'exécution de l'intégration continue sur ce commit est au
+   vert, puis crée la Release avec la section de la version. S'il échoue, en
+   corriger la cause, puis le relancer depuis l'onglet *Actions*, sans toucher
+   au tag.
 
 - **Tag annoté** (`-a`) : il enregistre l'auteur et la date de publication, ce
   que ne fait pas un tag léger.

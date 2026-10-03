@@ -6,7 +6,8 @@
 Outils pour agents de code — **skills**, **agents**, **hooks** et **status
 lines** — rédigés en français et publiés sous licence MIT. Le dépôt les
 versionne ; un script les installe ou les met à jour pour **Claude Code**
-(`~/.claude/`) et pour **Copilot CLI** (`~/.copilot/`).
+(`~/.claude/`) et pour **Copilot CLI** (`~/.copilot/`). Les changements de
+chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md).
 
 ## Outils
 
@@ -47,6 +48,7 @@ ia-tools/
 ├── AGENTS.md            instructions de dépôt, seule autorité
 ├── CLAUDE.md            renvoi vers AGENTS.md (point d'entrée de Claude Code)
 ├── README.md            ce fichier
+├── CHANGELOG.md         journal des modifications, une section par version
 ├── LICENSE              licence MIT
 ├── requirements-dev.txt  dépendances Python épinglées pour contribuer
 ├── docs/                règles d'écriture, installation (SETUP.md), prérequis
@@ -58,6 +60,7 @@ ia-tools/
 │   ├── validate.py      validateur des sources
 │   ├── install.py       merge intelligent vers chaque agent hôte
 │   ├── check_commit_msg.py  contrôle des messages de commit
+│   ├── changelog.py     contrôle du journal des modifications, notes d'une version
 │   └── test_*.py        tests des scripts et des status lines
 ├── .githooks/           hooks git pre-commit et commit-msg (à activer dans chaque clone)
 ├── .claude/             config Claude Code du dépôt (enregistrement du hook local)
@@ -174,6 +177,7 @@ ouverte dans le dépôt. Lancement manuel :
 python scripts/validate.py
 python scripts/test_validate.py
 python scripts/test_check_commit_msg.py
+python scripts/test_changelog.py
 python scripts/test_install.py
 python scripts/test_statusline.py
 ```
