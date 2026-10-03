@@ -18,6 +18,9 @@ Trois modes :
                         variables d'environnement PR_TITLE et PR_BODY : seule
                         l'absence d'attribution d'IA y est controlee.
 
+Dans l'integration continue (GITHUB_ACTIONS=true), chaque ecart est aussi emis
+en annotation GitHub.
+
 Usage : python scripts/check_commit_msg.py <fichier> | --plage <base>..<tete> | --pr
 Code de sortie : 0 si tout est conforme, 1 sinon ou sur erreur d'usage, 2 si
 git est absent.
@@ -119,6 +122,10 @@ def main() -> int:
         return 1
     for e in erreurs:
         print(f"commit-msg : {e}", file=sys.stderr)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        for e in erreurs:
+            texte = e.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            print(f"::error title=check_commit_msg.py::{texte}")
     return 1 if erreurs else 0
 
 
