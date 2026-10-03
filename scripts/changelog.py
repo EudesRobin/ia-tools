@@ -6,7 +6,7 @@ Trois modes :
   (sans option)            controle la structure de CHANGELOG.md ;
   --version X.Y.Z          affiche la section de cette version (notes de la
                            Release GitHub) ;
-  --exige-entree BASE..TETE refuse une plage qui modifie skills/, agents/,
+  --exige-entree BASE..HEAD refuse une plage qui modifie skills/, agents/,
                            hooks/, statuslines/ ou scripts/install.py sans
                            modifier CHANGELOG.md
                            (integration continue, sur une pull request).
@@ -19,7 +19,7 @@ ordre, sans doublon, chacune avec au moins une entree '- '.
 Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell (docs/PREREQUIS.md, section « Encodage de la console »).
 
-Usage : python scripts/changelog.py [--version X.Y.Z | --exige-entree BASE..TETE]
+Usage : python scripts/changelog.py [--version X.Y.Z | --exige-entree BASE..HEAD]
 Code de sortie : 0 si conforme, 1 sinon ou sur erreur d'usage, 2 si git est
 absent.
 """
@@ -135,9 +135,9 @@ def section(texte: str, version: str) -> str | None:
 
 
 def fichiers_modifies(plage: str) -> list[str]:
-    base, _, tete = plage.partition("..")
+    base, _, head = plage.partition("..")
     return subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...{tete}"],
+        ["git", "diff", "--name-only", f"{base}...{head}"],
         cwd=ROOT, capture_output=True, text=True, check=True,
     ).stdout.split()
 
@@ -146,7 +146,7 @@ def main() -> int:
     p = argparse.ArgumentParser(prog="changelog.py")
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--version", metavar="X.Y.Z", help="afficher la section de cette version")
-    mode.add_argument("--exige-entree", metavar="BASE..TETE", help="plage d'une pull request")
+    mode.add_argument("--exige-entree", metavar="BASE..HEAD", help="plage d'une pull request")
     try:
         args = p.parse_args()
     except SystemExit as exc:  # argparse sort en 2 ; le code 2 est reserve a l'environnement

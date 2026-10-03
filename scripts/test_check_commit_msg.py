@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tests de scripts/check_commit_msg.py : messages conformes admis, chaque
-ecart vu en rouge, y compris par les modes --plage (depot git temporaire) et
+ecart vu en rouge, y compris par les modes --range (depot git temporaire) et
 --pr (variables d'environnement).
 
 Usage : python scripts/test_check_commit_msg.py
@@ -62,8 +62,8 @@ def lancer(*args: str, cwd: Path | None = None, env: dict | None = None) -> subp
     )
 
 
-class TestPlage(unittest.TestCase):
-    """--plage : un commit conforme passe, un commit non conforme est signale."""
+class TestRange(unittest.TestCase):
+    """--range : un commit conforme passe, un commit non conforme est signale."""
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -84,18 +84,18 @@ class TestPlage(unittest.TestCase):
         self.git("commit", "-q", "--allow-empty", "-m", message)
         return self.git("rev-parse", "HEAD")
 
-    def test_plage_conforme(self):
-        r = lancer("--plage", f"{self.shas[0]}..{self.shas[1]}", cwd=self.d)
+    def test_range_conforme(self):
+        r = lancer("--range", f"{self.shas[0]}..{self.shas[1]}", cwd=self.d)
         self.assertEqual(r.returncode, 0, r.stderr)
 
-    def test_plage_avec_ecart(self):
-        r = lancer("--plage", f"{self.shas[0]}..{self.shas[2]}", cwd=self.d)
+    def test_range_avec_ecart(self):
+        r = lancer("--range", f"{self.shas[0]}..{self.shas[2]}", cwd=self.d)
         self.assertEqual(r.returncode, 1)
         self.assertIn(f"{self.shas[2][:7]} : sujet sans prefixe", r.stderr)
         self.assertNotIn(self.shas[1][:7], r.stderr)
 
-    def test_plage_illisible(self):
-        r = lancer("--plage", "nulle..part", cwd=self.d)
+    def test_range_illisible(self):
+        r = lancer("--range", "nulle..part", cwd=self.d)
         self.assertEqual(r.returncode, 1)
         self.assertIn("plage illisible", r.stderr)
 

@@ -73,16 +73,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0  # historique complet : la plage base..tete doit etre lisible
+          fetch-depth: 0  # historique complet : la plage base..head doit etre lisible
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.10"
       # Les valeurs issues de la pull request passent par l'environnement, jamais
       # par une interpolation dans le script : elles sont fournies par l'auteur.
       - env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          TETE: ${{ github.event.pull_request.head.sha }}
-        run: python scripts/check_commit_msg.py --plage "$BASE..$TETE"
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python scripts/check_commit_msg.py --range "$BASE_SHA..$HEAD_SHA"
       - if: ${{ !cancelled() }}
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
@@ -92,6 +92,6 @@ jobs:
       # du journal des modifications (docs/CONTRIBUTING.md section 4.2).
       - if: ${{ !cancelled() }}
         env:
-          BASE: ${{ github.event.pull_request.base.sha }}
-          TETE: ${{ github.event.pull_request.head.sha }}
-        run: python scripts/changelog.py --exige-entree "$BASE..$TETE"
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python scripts/changelog.py --exige-entree "$BASE_SHA..$HEAD_SHA"

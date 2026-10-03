@@ -131,30 +131,30 @@ class TestExigeEntree(unittest.TestCase):
         self.git("commit", "-q", "-m", message)
         return self.git("rev-parse", "HEAD")
 
-    def lancer(self, tete: str) -> subprocess.CompletedProcess:
+    def lancer(self, head: str) -> subprocess.CompletedProcess:
         return subprocess.run(
-            [sys.executable, str(self.d / "scripts" / "changelog.py"), "--exige-entree", f"{self.base}..{tete}"],
+            [sys.executable, str(self.d / "scripts" / "changelog.py"), "--exige-entree", f"{self.base}..{head}"],
             cwd=self.d, env=os.environ.copy(), capture_output=True, text=True, stdin=subprocess.DEVNULL,
         )
 
     def test_outil_sans_entree(self):
-        tete = self.commit({"skills/x/SKILL.md": "x\n"}, "feat: x")
-        r = self.lancer(tete)
+        head = self.commit({"skills/x/SKILL.md": "x\n"}, "feat: x")
+        r = self.lancer(head)
         self.assertEqual(r.returncode, 1, r.stderr)
         self.assertIn("skills/x/SKILL.md", r.stderr)
 
     def test_install_sans_entree(self):
-        tete = self.commit({"scripts/install.py": "x\n"}, "fix: x")
-        self.assertEqual(self.lancer(tete).returncode, 1)
+        head = self.commit({"scripts/install.py": "x\n"}, "fix: x")
+        self.assertEqual(self.lancer(head).returncode, 1)
 
     def test_outil_avec_entree(self):
-        tete = self.commit({"skills/x/SKILL.md": "x\n", "CHANGELOG.md": "x\n"}, "feat: x")
-        r = self.lancer(tete)
+        head = self.commit({"skills/x/SKILL.md": "x\n", "CHANGELOG.md": "x\n"}, "feat: x")
+        r = self.lancer(head)
         self.assertEqual(r.returncode, 0, r.stderr)
 
     def test_hors_outil(self):
-        tete = self.commit({"docs/x.md": "x\n"}, "docs: x")
-        r = self.lancer(tete)
+        head = self.commit({"docs/x.md": "x\n"}, "docs: x")
+        r = self.lancer(head)
         self.assertEqual(r.returncode, 0, r.stderr)
 
 
