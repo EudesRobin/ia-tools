@@ -65,6 +65,8 @@ CAS = [
     ("script de status line manquant", lambda d: (d / "statuslines/claude/usage-session/statusline.ps1").unlink(), "statusline.ps1 manquant"),
     ("status line hors dossier d'agent hote", ajouter("statuslines/neuve/STATUSLINE.md", "# Status line\n"), "statuslines/neuve : pas un dossier d'agent hote"),
     ("document hors table", ajouter("docs/NOUVEAU.md", "# Nouveau\n"), "non enregistre"),
+    ("journal mal forme", remplacer("CHANGELOG.md", "### 🚀 Nouveautés", "### Divers"), "rubrique non prevue 'Divers'"),
+    ("journal manquant", lambda d: (d / "CHANGELOG.md").unlink(), "CHANGELOG.md manquant"),
     ("fichier non UTF-8", lambda d: (d / "README.md").write_text("# Titre\n", encoding="utf-16"), "illisible en UTF-8"),
 ]
 

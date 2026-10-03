@@ -440,7 +440,9 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 [SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit
 pour le hook git `commit-msg` et l'intégration continue, ainsi que le titre et
 la description d'une *pull request* pour cette dernière
-([CONTRIBUTING.md](CONTRIBUTING.md) §3).
+([CONTRIBUTING.md](CONTRIBUTING.md) §3), et `changelog.py` contrôle le journal
+des modifications et en extrait la section d'une version
+([CONTRIBUTING.md](CONTRIBUTING.md) §4.2).
 Les fichiers `test_*.py`, écrits avec la seule bibliothèque standard, testent
 ces contrôles, le merge intelligent d'`install.py` et l'affichage des status
 lines ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y

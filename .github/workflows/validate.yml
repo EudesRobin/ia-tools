@@ -1,7 +1,8 @@
 # Controle du depot a chaque push sur main et a chaque pull request :
 # validateur des sources puis tests du validateur (AGENTS.md, Definition of Done),
 # analyse de securite des workflows par zizmor et, sur une pull request,
-# controle des messages de commit, du titre et de la description.
+# controle des messages de commit, du titre, de la description et de l'entree
+# du journal des modifications.
 # Les noms de jobs sont ceux des checks requis par la protection de main.
 name: CI
 
@@ -15,7 +16,7 @@ on:
 permissions:
   contents: read
 
-# Une nouvelle poussee sur la meme branche annule l'execution devenue obsolete.
+# Un nouveau push sur la meme branche annule l'execution devenue obsolete.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -42,6 +43,8 @@ jobs:
         run: python scripts/test_validate.py
       - if: ${{ !cancelled() }}
         run: python scripts/test_check_commit_msg.py
+      - if: ${{ !cancelled() }}
+        run: python scripts/test_changelog.py
       - if: ${{ !cancelled() }}
         run: python scripts/test_install.py
       - if: ${{ !cancelled() }}
@@ -85,3 +88,10 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: python scripts/check_commit_msg.py --pr
+      # Toute modification d'un outil ou d'install.py porte une entree
+      # du journal des modifications (docs/CONTRIBUTING.md section 4.2).
+      - if: ${{ !cancelled() }}
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          TETE: ${{ github.event.pull_request.head.sha }}
+        run: python scripts/changelog.py --exige-entree "$BASE..$TETE"

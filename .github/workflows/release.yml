@@ -1,0 +1,50 @@
+# Publication d'une version (docs/CONTRIBUTING.md section 4) : au push d'un tag
+# X.Y.Z, verifie que le commit est sur main et que l'integration continue y
+# est au vert, puis cree la Release GitHub avec la section correspondante de
+# CHANGELOG.md.
+name: release
+
+on:
+  push:
+    tags: ['[0-9]+.[0-9]+.[0-9]+']
+
+permissions: {}
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write  # creation de la Release
+      actions: read    # lecture de l'execution de la CI sur le commit
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0  # main doit etre lisible pour verifier l'ascendance
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.10"
+      - name: commit sur main, integration continue au vert
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::$GITHUB_SHA n'est pas sur main"; exit 1; }
+          conclusion=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow validate.yml \
+            --branch main --event push --commit "$GITHUB_SHA" \
+            --json conclusion --jq '.[0].conclusion')
+          [ "$conclusion" = "success" ] \
+            || { echo "::error::CI de $GITHUB_SHA sur main : ${conclusion:-absente}"; exit 1; }
+      - name: notes de la version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: python scripts/changelog.py --version "$TAG" > "$RUNNER_TEMP/notes.md"
+      - name: Release GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag
+          --title "$TAG" --notes-file "$RUNNER_TEMP/notes.md"

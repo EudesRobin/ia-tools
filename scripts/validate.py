@@ -41,7 +41,8 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
   - les fichiers d'entree propres a chaque agent hote (CLAUDE.md,
     .github/copilot-instructions.md) existent et renvoient vers AGENTS.md ;
   - tout outil multi-etapes porte la regle de suivi des taches : en-tete
-    **Taches** et marqueurs [ ] [~] [x] [-] (docs/qualite-outils.md section 5).
+    **Taches** et marqueurs [ ] [~] [x] [-] (docs/qualite-outils.md section 5) ;
+  - CHANGELOG.md respecte la structure controlee par scripts/changelog.py.
 
 Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
@@ -336,6 +337,26 @@ def charger_install():
         sys.path.insert(0, str(ROOT / "scripts"))
     import install
     return install
+
+
+def check_changelog(errors: list[str]) -> None:
+    """Structure du journal des modifications (scripts/changelog.py)."""
+    chemin = ROOT / "CHANGELOG.md"
+    if not chemin.is_file():
+        errors.append("CHANGELOG.md manquant")
+        return
+    texte = read(chemin)
+    if texte is None:
+        errors.append("CHANGELOG.md : illisible en UTF-8")
+        return
+    if str(ROOT / "scripts") not in sys.path:
+        sys.path.insert(0, str(ROOT / "scripts"))
+    try:
+        import changelog
+    except Exception as exc:  # noqa: BLE001 - toute erreur d'import est un ecart
+        errors.append(f"scripts/changelog.py : inutilisable ({exc})")
+        return
+    errors.extend(changelog.ecarts_structure(texte))
 
 
 def check_statuslines(errors: list[str]) -> None:
@@ -683,6 +704,7 @@ def main() -> int:
     check_no_hardcoded_paths(errors)
     check_inventory(errors)
     check_statuslines(errors)
+    check_changelog(errors)
     check_placeholders(errors)
     check_scripts_and_config(errors)
 
