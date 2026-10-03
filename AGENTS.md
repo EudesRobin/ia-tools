@@ -115,7 +115,9 @@ un cas volontairement cassé.
 Pour `validate.py` et `check_commit_msg.py`, ce cas cassé s'inscrit dans leurs
 tests, qui le rejouent à chaque exécution : pas terminé tant que
 **`python scripts/test_validate.py`** et
-**`python scripts/test_check_commit_msg.py`** ne sont pas au vert.
+**`python scripts/test_check_commit_msg.py`** ne sont pas au vert. Une
+modification de `install.py` n'est pas terminée tant que
+**`python scripts/test_install.py`** n'est pas au vert.
 
 ### Workflows
 

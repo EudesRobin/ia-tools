@@ -43,6 +43,8 @@ jobs:
       - if: ${{ !cancelled() }}
         run: python scripts/test_check_commit_msg.py
       - if: ${{ !cancelled() }}
+        run: python scripts/test_install.py
+      - if: ${{ !cancelled() }}
         run: python scripts/test_statusline.py
 
   workflows:

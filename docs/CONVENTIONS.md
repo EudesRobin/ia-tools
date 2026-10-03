@@ -439,10 +439,10 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 [SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit pour
 le hook git `commit-msg` et, dans l'intégration continue, les messages des
 commits d'une *pull request*, ainsi que l'absence d'attribution d'IA dans son
-titre et sa description. Les fichiers `test_*.py` testent ces contrôles et
-l'affichage des status lines avec la seule bibliothèque standard ; toute
-vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y reçoit son cas
-volontairement cassé.
+titre et sa description. Les fichiers `test_*.py`, écrits avec la seule
+bibliothèque standard, testent ces contrôles, le merge intelligent
+d'`install.py` et l'affichage des status lines ; toute vérification ajoutée à
+`validate.py` ou à `check_commit_msg.py` y reçoit son cas volontairement cassé.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
   scripts de hook, où le contrat d'appel l'impose, et aux scripts de status
