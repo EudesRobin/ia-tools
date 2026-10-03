@@ -488,6 +488,12 @@ def markdown_links(text: str) -> list[str]:
     return LINK_RE.findall(text) + REF_DEF_RE.findall(text)
 
 
+def markdown_links_lignes(text: str) -> list[tuple[int, str]]:
+    """Liens relatifs avec leur numero de ligne, pour situer un ecart."""
+    trouves = [m for r in (LINK_RE, REF_DEF_RE) for m in r.finditer(text)]
+    return [(text.count("\n", 0, m.start()) + 1, m.group(1)) for m in trouves]
+
+
 def slugify(heading: str) -> str:
     """Reproduit l'algorithme d'ancres de GitHub : retire la ponctuation,
     remplace chaque espace par un trait d'union sans fusionner les espaces
@@ -517,23 +523,23 @@ def check_relative_links(errors: list[str]) -> None:
         if text is None:
             continue
         rel = path.relative_to(ROOT).as_posix()
-        for target in markdown_links(text):
+        for ligne, target in markdown_links_lignes(text):
             if EXTERNAL_LINK_RE.match(target) and not target.startswith("#"):
                 continue
             # Separer une ancre eventuelle : chemin.md#section
             cible, _, anchor = target.partition("#")
             if not cible:
                 if anchor not in heading_anchors(text):
-                    errors.append(f"{rel} : ancre interne introuvable '{target}'")
+                    errors.append(f"{rel}:{ligne} : ancre interne introuvable '{target}'")
                 continue
             resolved = (path.parent / cible).resolve()
             if not resolved.exists():
-                errors.append(f"{rel} : lien relatif mort '{target}'")
+                errors.append(f"{rel}:{ligne} : lien relatif mort '{target}'")
                 continue
             if anchor:
                 target_text = read(resolved)
                 if target_text is not None and anchor not in heading_anchors(target_text):
-                    errors.append(f"{rel} : ancre introuvable '{target}'")
+                    errors.append(f"{rel}:{ligne} : ancre introuvable '{target}'")
 
 
 def check_doc_map(errors: list[str]) -> None:

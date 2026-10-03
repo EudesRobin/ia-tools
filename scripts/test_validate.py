@@ -115,7 +115,11 @@ class TestValidate(unittest.TestCase):
         r = self.lancer(lien)
         self.assertNotIn("::error", r.stdout, "annotation emise hors CI")
         r = self.lancer(lien, ci=True)
-        self.assertIn("::error file=README.md,title=validate.py::README.md : lien relatif mort", r.stdout)
+        attendue = len((ROOT / "README.md").read_text(encoding="utf-8").splitlines()) + 2
+        self.assertIn(
+            f"::error file=README.md,line={attendue},title=validate.py::README.md:{attendue} : lien relatif mort",
+            r.stdout,
+        )
         r = self.lancer(ajouter("scripts/install.py", "\ndef (:\n"), ci=True)
         self.assertRegex(r.stdout, r"::error file=scripts/install\.py,line=\d+,title=validate\.py::")
 
