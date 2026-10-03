@@ -25,10 +25,12 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 | Ajouter ou modifier un script d'outillage du dépôt sous `scripts/`                | [CONVENTIONS.md](CONVENTIONS.md) §7 — **à suivre obligatoirement** |
 | Comprendre le hook du dépôt, son enregistrement pour chaque agent hôte et pourquoi il n'est pas distribué | [hooks/README.md](../hooks/README.md) |
 | Installer ou mettre à jour les outils vers `{AGENT_DIR}` (Claude Code, Copilot CLI) | [SETUP.md](SETUP.md) — **procédure à suivre** |
-| Publier une version du dépôt — choisir son numéro, poser son tag                  | [CONVENTIONS.md](CONVENTIONS.md) §8 — **procédure à suivre** |
+| Committer, ouvrir ou mettre à jour une *pull request*, activer les hooks git      | [CONTRIBUTING.md](CONTRIBUTING.md) — **à suivre obligatoirement** |
+| Savoir ce que contrôlent le validateur, les hooks git et l'intégration continue  | [CONTRIBUTING.md](CONTRIBUTING.md) §3 |
+| Publier une version du dépôt — choisir son numéro, poser son tag                  | [CONTRIBUTING.md](CONTRIBUTING.md) §4 — **procédure à suivre** |
 | Vérifier ou installer un prérequis système (Python, Git, bibliothèques, `adb`, `gh`, `pwsh`) | [PREREQUIS.md](PREREQUIS.md) |
 
-Sept lignes portent une règle à appliquer, pas du contexte. La ligne consacrée
+Huit lignes portent une règle à appliquer, pas du contexte. La ligne consacrée
 à l'écriture d'un outil est la plus dense : [CONVENTIONS.md](CONVENTIONS.md)
 fixe l'arborescence et le nommage, la structure de `SKILL.md`, de `HOOK.md`, de
 `STATUSLINE.md` et des fichiers d'agent, le front-matter, le moindre privilège

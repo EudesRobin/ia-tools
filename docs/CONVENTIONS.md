@@ -104,12 +104,11 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 
 | Contenu dupliqué | Copies |
 |---|---|
-| Dépôt source de vérité / arbitrage seulement sur conflit | [AGENTS.md](../AGENTS.md) et [SETUP.md](SETUP.md) |
-| Ne jamais écraser `settings.json` en bloc | [AGENTS.md](../AGENTS.md), [SETUP.md](SETUP.md), [hooks/README.md](../hooks/README.md) et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
+| Ne jamais écraser `settings.json` en bloc | [SETUP.md](SETUP.md), [hooks/README.md](../hooks/README.md) et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 | Consigne de lire `AGENTS.md` avant toute action | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) et [.github/copilot-instructions.md](../.github/copilot-instructions.md) |
 | Règle de suivi des tâches — déclencheur, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral, équivalence des deux suivis | [docs/qualite-outils.md](qualite-outils.md) §5 et chaque outil multi-étapes de `skills/` et `agents/` |
 | Conventions de commit — préfixes admis, 50 mots au plus, sujet sans point final, absence d'attribution d'IA | `scripts/check_commit_msg.py` et [skills/pull-request/conventions-defaut.md](../skills/pull-request/conventions-defaut.md), qui ajoute la langue, la forme du sujet et le rôle du corps, que le script ne contrôle pas |
-| Activation des hooks git (`git config core.hooksPath .githooks`) | [AGENTS.md](../AGENTS.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
+| Activation des hooks git (`git config core.hooksPath .githooks`) | [CONTRIBUTING.md](CONTRIBUTING.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
 | Commande d'enregistrement d'une status line — interpréteur, `-ExecutionPolicy Bypass`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 
@@ -414,8 +413,10 @@ tout ceci n'est pas fait :
 - [ ] Il est **atteint par la table**. `DOC_MAP.md` est le point de routage
       par intention, et tout nouveau document de fond y entre. `AGENTS.md` ne
       lie directement un document de fond que lorsqu'une de ses propres règles
-      en dépend — c'est le cas de `CONVENTIONS.md` et `VOCABULARY.md`, cités par
-      le DoD et par la règle de registre. **Ne pas ajouter à `AGENTS.md` de
+      en dépend — c'est le cas de `CONVENTIONS.md`, cité par le DoD et par la
+      règle de registre, de `VOCABULARY.md`, cité par le DoD, de `SETUP.md`,
+      cité par la règle d'installation, et de `CONTRIBUTING.md`, cité par la
+      règle git. **Ne pas ajouter à `AGENTS.md` de
       liste parallèle à celle de la table** : c'est ce que cette exigence
       prévient, pas le lien ponctuel et justifié.
 - [ ] Il porte son **lien de retour**, sous son introduction :
@@ -436,13 +437,14 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 `{AGENT_DIR}` et rien des §§1.1 à 4 ne s'y applique, hormis les règles d'or 1.2,
 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt lui-même —
 `validate.py` contrôle les sources, `install.py` porte le merge intelligent de
-[SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit pour
-le hook git `commit-msg` et, dans l'intégration continue, les messages des
-commits d'une *pull request*, ainsi que l'absence d'attribution d'IA dans son
-titre et sa description. Les fichiers `test_*.py`, écrits avec la seule
-bibliothèque standard, testent ces contrôles, le merge intelligent
-d'`install.py` et l'affichage des status lines ; toute vérification ajoutée à
-`validate.py` ou à `check_commit_msg.py` y reçoit son cas volontairement cassé.
+[SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit
+pour le hook git `commit-msg` et l'intégration continue, ainsi que le titre et
+la description d'une *pull request* pour cette dernière
+([CONTRIBUTING.md](CONTRIBUTING.md) §3).
+Les fichiers `test_*.py`, écrits avec la seule bibliothèque standard, testent
+ces contrôles, le merge intelligent d'`install.py` et l'affichage des status
+lines ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y
+reçoit son cas volontairement cassé.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
   scripts de hook, où le contrat d'appel l'impose, et aux scripts de status
@@ -475,53 +477,7 @@ reconstituer : il le signale et laisse l'utilisateur trancher.
 
 ---
 
-## 8. Publier une version
-
-Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`.
-Le numéro de version ne figure dans aucun fichier : le tag le porte seul.
-
-### 8.1 Numérotation
-
-Le tag suit la forme `MAJEUR.MINEUR.CORRECTIF` du versionnage sémantique, sans
-préfixe : `1.0.0`, jamais `v1.0.0`. Le numéro à incrémenter se choisit d'après
-l'ensemble des changements intervenus depuis la version précédente, du point de
-vue de l'utilisateur qui installe les outils :
-
-| Numéro | Incrémenté quand |
-|---|---|
-| `MAJEUR` | Une installation existante exige une action de l'utilisateur : un outil est supprimé ou renommé, ou le comportement d'un outil ou de `scripts/install.py` change de façon incompatible. |
-| `MINEUR` | Un outil est ajouté ou acquiert une capacité nouvelle, sans incompatibilité. |
-| `CORRECTIF` | Tout autre changement : correction, documentation, outillage du dépôt. |
-
-Incrémenter un numéro remet à zéro ceux qui le suivent : `1.4.2` devient
-`1.5.0` ou `2.0.0`.
-
-### 8.2 Procédure
-
-Le tag est posé **après le merge** de la *pull request* qui clôt la version,
-jamais sur une branche de travail : le tag désigne l'état de `main` que les
-utilisateurs installent. Vérifier au préalable que la dernière exécution de
-l'intégration continue sur `main` est au vert, dans l'onglet *Actions* du dépôt
-GitHub.
-
-```powershell
-git switch main
-git pull --ff-only
-git tag -a <version> -m "<version>"
-git push origin <version>
-```
-
-- **Tag annoté** (`-a`) : il enregistre l'auteur et la date de publication, ce
-  que ne fait pas un tag léger.
-- **Confirmation avant publication.** `git push` rend le tag visible sur le
-  dépôt public : l'agent obtient l'accord de l'utilisateur avant de lancer `git push`.
-- **Tag immuable.** Un tag publié n'est jamais déplacé ni supprimé : un clone
-  qui l'a déjà récupéré conserverait l'ancienne cible. Une erreur se corrige par
-  une nouvelle version.
-
----
-
-## 9. Référence rapide
+## 8. Référence rapide
 
 | Aspect | Skill | Agent | Hook | Status line |
 |---|---|---|---|---|
