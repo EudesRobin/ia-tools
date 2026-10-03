@@ -8,6 +8,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+## [1.2.1] - 2026-10-03
+
 ### 📝 Documentation
 
 - `AGENTS.md` ne porte plus que les règles utiles à presque toute session ; la
@@ -61,7 +63,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `scripts/validate.py`, ses tests, l'intégration continue et les hooks git
   `pre-commit` et `commit-msg`, pour contribuer au dépôt.
 
-[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.2.0...HEAD
+[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.2.1...HEAD
+[1.2.1]: https://github.com/EudesRobin/ia-tools/compare/1.2.0...1.2.1
 [1.2.0]: https://github.com/EudesRobin/ia-tools/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/EudesRobin/ia-tools/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/EudesRobin/ia-tools/releases/tag/1.0.0
