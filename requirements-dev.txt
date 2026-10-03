@@ -1,3 +1,4 @@
 # Dependances Python pour contribuer au depot (docs/PREREQUIS.md), lues par la CI
 # et tenues a jour par Dependabot (.github/dependabot.yml).
 pyyaml==6.0.3
+zizmor==1.30.0

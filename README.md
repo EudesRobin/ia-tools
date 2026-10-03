@@ -1,6 +1,6 @@
 # ia-tools
 
-[![validate](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml)
+[![CI](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/EudesRobin/ia-tools/actions/workflows/validate.yml)
 [![Dependabot](https://img.shields.io/badge/Dependabot-actif-025E8C?logo=dependabot)](./.github/dependabot.yml)
 
 Outils pour agents de code — **skills**, **agents**, **hooks** et **status
