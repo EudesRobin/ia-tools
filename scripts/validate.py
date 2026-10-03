@@ -39,7 +39,9 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     et de statuslines/ sont syntaxiquement corrects (controle saute si pwsh
     est absent) ;
   - les fichiers d'entree propres a chaque agent hote (CLAUDE.md,
-    .github/copilot-instructions.md) existent et renvoient vers AGENTS.md.
+    .github/copilot-instructions.md) existent et renvoient vers AGENTS.md ;
+  - tout outil multi-etapes porte la regle de suivi des taches : en-tete
+    **Taches** et marqueurs [ ] [~] [x] [-] (docs/qualite-outils.md section 5).
 
 Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues

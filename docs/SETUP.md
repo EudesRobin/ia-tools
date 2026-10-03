@@ -114,7 +114,8 @@ Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon
 ### Ce qui reste à la session
 
 1. **Confirmer le périmètre et les agents hôtes** avant la première écriture,
-   puis lancer `--apply`.
+   puis lancer `--apply`. Une demande qui ne les précise pas (« mets à jour mes
+   outils ») prend les valeurs par défaut du script.
 2. **Arbitrer chaque conflit** : afficher l'écart par `--diff <chemin>` (avec
    `--agent` pour ne viser qu'un seul agent hôte), puis demander à l'utilisateur
    de choisir — adopter la version du dépôt / garder la version locale /

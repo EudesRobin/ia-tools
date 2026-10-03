@@ -54,8 +54,9 @@ Rien à installer : il s'active à l'ouverture d'une session dans ce répertoire
 Ce choix est délibéré. Un enregistrement dans la configuration globale d'un
 agent hôte déclencherait ce hook dans **tous** les projets et y exécuterait le
 `scripts/validate.py` de n'importe quel dépôt ouvert. L'enregistrement local
-évite cela et laisse `{AGENT_DIR}/settings.json` intact, conformément au point
-non négociable d'[AGENTS.md](../../AGENTS.md) relatif à ce fichier.
+évite cela et laisse `{AGENT_DIR}/settings.json` intact, conformément à la règle
+de [SETUP.md](../../docs/SETUP.md#5-hooks) qui interdit d'écraser ce fichier en
+bloc.
 
 La procédure générale d'installation des outils est décrite dans
 [SETUP.md](../../docs/SETUP.md) ; elle ne s'applique pas à ce hook.
@@ -71,10 +72,10 @@ puis sur le répertoire courant.
 
 - **PowerShell 7 requis** (`pwsh`). Le script le déclare en tête ; sous
   PowerShell 5 il refusera de s'exécuter.
-- **Il ne couvre que ce que `validate.py` sait contrôler**, dont la liste fait
-  autorité dans [AGENTS.md](../../AGENTS.md), section « Ce qui n'est pas vérifié
-  mécaniquement ». Le registre de rédaction reste une règle en prose, non
-  vérifiable mécaniquement.
+- **Il ne couvre que ce que `validate.py` sait contrôler**, dont la liste, qui
+  fait autorité, figure dans le docstring de `scripts/validate.py`
+  ([CONTRIBUTING.md](../../docs/CONTRIBUTING.md) §3). Le registre de rédaction
+  reste une règle en prose, non vérifiable mécaniquement.
 - **Le suivi des tâches n'est contrôlé que sur le texte de l'outil.** Le
   validateur vérifie qu'un outil *porte* la règle — en-tête et marqueurs —
   jamais qu'une session s'y tient. Il repère les outils par leur déroulé
