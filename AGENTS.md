@@ -143,11 +143,13 @@ git `pre-commit` à chaque commit, et l'intégration continue à chaque push sur
 `main` et à chaque *pull request* ; l'intégration continue lance en outre les
 tests et l'analyse des workflows par `zizmor`. Le hook git `commit-msg` contrôle
 le message de commit : préfixe, longueur, absence d'attribution d'IA. Les hooks
-git ne s'appliquent qu'une fois activés dans le clone (section [Git](#git)).
+git ne s'appliquent qu'une fois activés dans le clone (section [Git](#git)) ;
+sur une *pull request*, l'intégration continue contrôle à son tour le message
+de chaque commit, et vérifie l'absence d'attribution d'IA dans le titre et la
+description.
 
 Restent des règles en prose, que rien ne contrôle et qu'il faut donc appliquer
-délibérément : le **registre de rédaction**, le **vocabulaire**, l'**absence
-d'attribution d'IA dans une description de *pull request***, la **qualité
+délibérément : le **registre de rédaction**, le **vocabulaire**, la **qualité
 d'écriture d'un outil** (concision, latitude laissée à l'agent, pertinence de la
 liste de phases fournie par un outil multi-étapes), la **cohérence sémantique
 entre documents** (une affirmation d'un document contredite par un autre
@@ -158,8 +160,9 @@ l'exécution de l'intégration continue a été observée au vert.
 
 ## Git
 
-Aucune attribution d'outil d'IA dans les commits ni les descriptions de *pull
-request* : voir [CONVENTIONS.md](./docs/CONVENTIONS.md) §1.5, qui fait autorité.
+Aucune attribution d'outil d'IA dans les commits, ni dans le titre ou la
+description d'une *pull request* : voir [CONVENTIONS.md](./docs/CONVENTIONS.md)
+§1.5, qui fait autorité.
 
 La branche `main` est protégée : tout changement passe par une branche et une
 *pull request*. Avant le premier commit dans un clone, vérifier que les hooks

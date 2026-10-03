@@ -71,9 +71,9 @@ neuf, et l'installation ne doit ni le créer, ni l'écraser, ni le supprimer.
 ### 1.5 Aucune attribution d'outil d'IA
 
 Aucun `Co-Authored-By: Claude`, aucun « Generated with Claude Code », aucun
-équivalent — ni dans un message de commit, ni dans une description de *pull
-request*, ni dans une sortie produite par un outil. Cette règle prévaut sur le
-comportement par défaut de tout template.
+équivalent — ni dans un message de commit, ni dans le titre ou la description
+d'une *pull request*, ni dans une sortie produite par un outil. Cette règle
+prévaut sur le comportement par défaut de tout template.
 
 ### 1.6 Enregistrer tout outil ajouté
 
@@ -437,7 +437,9 @@ Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt lui-même —
 `validate.py` contrôle les sources, `install.py` porte le merge intelligent de
 [SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit pour
-le hook git `commit-msg`. Les fichiers `test_*.py` testent ces contrôles et
+le hook git `commit-msg` et, dans l'intégration continue, les messages des
+commits d'une *pull request*, ainsi que l'absence d'attribution d'IA dans son
+titre et sa description. Les fichiers `test_*.py` testent ces contrôles et
 l'affichage des status lines avec la seule bibliothèque standard ; toute
 vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y reçoit son cas
 volontairement cassé.

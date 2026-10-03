@@ -159,7 +159,9 @@ Les instructions du dépôt sont dans [AGENTS.md](./AGENTS.md). Les règles
 d'écriture des outils sont dans [CONVENTIONS.md](./docs/CONVENTIONS.md) ;
 [DOC_MAP.md](./docs/DOC_MAP.md) rattache chaque tâche au document qui la régit.
 La branche `main` est protégée : toute modification passe par une *pull
-request*, dont l'intégration continue lance le validateur et les tests. Activer
+request*, dont l'intégration continue lance le validateur et les tests, et
+contrôle les messages de commit ainsi que l'absence d'attribution d'IA dans le
+titre et la description de la PR. Activer
 une fois par clone les hooks git, qui refusent un commit tant que le validateur
 est au rouge ou que le message de commit est non conforme :
 
