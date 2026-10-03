@@ -53,9 +53,11 @@ class TestCheckCommitMsg(unittest.TestCase):
 
 
 def lancer(*args: str, cwd: Path | None = None, env: dict | None = None) -> subprocess.CompletedProcess:
+    # GITHUB_ACTIONS est fixe par le test, pas herite : meme resultat en local et en CI.
+    base = {k: v for k, v in os.environ.items() if k != "GITHUB_ACTIONS"}
     return subprocess.run(
         [sys.executable, str(SCRIPT), *args],
-        cwd=cwd, env={**os.environ, **(env or {})},
+        cwd=cwd, env={**base, **(env or {})},
         capture_output=True, text=True, stdin=subprocess.DEVNULL,
     )
 
@@ -114,6 +116,13 @@ class TestPr(unittest.TestCase):
         r = lancer("--pr", env={"PR_TITLE": "feat: x, genere par l'IA", "PR_BODY": ""})
         self.assertEqual(r.returncode, 1)
         self.assertIn("titre de la pull request", r.stderr)
+
+    def test_annotations(self):
+        attribuee = {"PR_TITLE": "docs: x", "PR_BODY": "Generated with Claude Code"}
+        r = lancer("--pr", env=attribuee)
+        self.assertNotIn("::error", r.stdout, "annotation emise hors CI")
+        r = lancer("--pr", env={**attribuee, "GITHUB_ACTIONS": "true"})
+        self.assertIn("::error title=check_commit_msg.py::description de la pull request", r.stdout)
 
 
 if __name__ == "__main__":
