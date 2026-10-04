@@ -73,7 +73,7 @@ Pour le contrôle d'une intervention antérieure :
   retirer l'entrée surnuméraire.
 - **Débogage ADB activé sur le téléviseur**, poste et téléviseur sur le même
   réseau local. La procédure d'activation, et le cas des téléviseurs sans option
-  de débogage réseau, sont dans [reference-adb.md](reference-adb.md).
+  de débogage réseau, sont dans [reference-adb.md, § 1](reference-adb.md#1-activer-le-débogage-sur-le-téléviseur).
 
 ## Instructions
 
@@ -84,26 +84,28 @@ Pour le contrôle d'une intervention antérieure :
 2. **Connecter.** `adb connect <IP_TV>:5555`, puis `adb devices -l`. Le
    téléviseur affiche une demande d'autorisation de clé RSA : la faire accepter.
    Ne pas enchaîner tant que l'état n'est pas `device`. En cas d'échec, sonder
-   les ports avant toute hypothèse ([reference-adb.md](reference-adb.md)) : la
+   les ports avant toute hypothèse ([reference-adb.md, § 2](reference-adb.md#2-diagnostiquer-un-échec-de-connexion)) : la
    sonde distingue un démon inactif d'un problème de réseau et, sur un refus
    explicite, met hors de cause un VPN installé sur le téléviseur. Ne pas
    demander de redémarrage à ce stade : le réglage de débogage n'y survit pas
    toujours. Si le démon n'écoute pas et qu'aucune option de débogage réseau
    n'existe dans les menus, mettre adbd en écoute réseau depuis un shell local
-   sur le téléviseur — procédure dans le même document.
+   sur le téléviseur — procédure au [§ 3](reference-adb.md#3-mettre-adbd-en-écoute-réseau-depuis-un-shell-local).
 3. **Relever l'état initial.** Modèle, version d'Android, occupation de `/data`,
    pression mémoire, paquets installés, processus en fond. Annoncer le résultat
    avant toute modification : quand `/data` est occupé à plus de 85 %, c'est le
    stockage qui explique le ralentissement, et la désactivation d'applications
    n'y changera presque rien. Ne pas lire le classement de `dumpsys meminfo`
    comme une liste de coupables : vérifier l'état de chaque processus volumineux
-   avant de l'incriminer, car un processus en cache ne coûte rien.
+   avant de l'incriminer, car un processus en cache ne coûte rien
+   ([reference-adb.md, § 5](reference-adb.md#5-relevé-de-létat-initial) et
+   [§ 6](reference-adb.md#6-distinguer-un-processus-résident-dun-processus-en-cache)).
 4. **Consigner l'inventaire restaurable.** Écrire un journal
    `<appareil>-<AAAA-MM-JJ>.md`, `<appareil>` désignant le modèle en
    kebab-case (`tcl-percee-tv`, `shield`), pour que les journaux de deux
-   appareils traités le même jour ne se confondent pas. Le placer dans le dossier que l'utilisateur
-   désigne, à défaut dans le répertoire de travail courant, jamais dans le
-   dossier de la skill. Le journal contient la sortie
+   appareils traités le même jour ne se confondent pas. Le placer dans le
+   dossier que l'utilisateur désigne, à défaut dans le répertoire de travail
+   courant, jamais dans le dossier de la skill. Le journal contient la sortie
    brute de `pm list packages -e` **avant** toute modification, l'état initial
    de la phase 3, et un tableau « paquet ou réglage / action / restauration ».
    Ce journal est la garantie de réversibilité : ne pas passer à la phase
@@ -114,24 +116,26 @@ Pour le contrôle d'une intervention antérieure :
    l'utilisateur sur ses usages — diffusion Chromecast, assistant vocal, lecture
    de fichiers locaux, services de vidéo à la demande — plutôt que de les
    déduire. Ne jamais désactiver un paquet dont le rôle n'a pas été identifié :
-   le signaler comme inconnu et le laisser activé.
+   le signaler comme inconnu et le laisser activé ([paquets.md, § 4](paquets.md#4-classer-un-paquet-inconnu)).
 6. **Appliquer.** Après accord explicite, par groupes de risque homogène.
    Employer `pm disable-user --user 0`, jamais `pm uninstall` sauf demande
    expresse. Contrôler l'interface après chaque groupe par
-   `adb shell "dumpsys window | grep mCurrentFocus"`. Consigner chaque commande et sa
-   commande inverse dans le journal, à mesure.
+   `adb shell "dumpsys window | grep mCurrentFocus"`. Consigner chaque commande
+   et sa commande inverse dans le journal, à mesure
+   ([reference-adb.md, § 9](reference-adb.md#9-désactiver-et-restaurer)).
 7. **Redémarrer et vérifier.** Avertir d'abord que l'accès adb sera perdu s'il
    repose sur `service.adb.tcp.port`, propriété qui ne survit pas au
    redémarrage. Lancer ensuite `adb reboot`, attendre, reconnecter, et contrôler
    que le lanceur répond et que la télécommande pilote l'interface. Toute
    anomalie → réactiver le dernier groupe depuis le journal et reprendre à la
    phase 5 avec un lot plus étroit. Ne pas enchaîner sur la phase 8 tant que ce
-   contrôle n'est pas concluant.
+   contrôle n'est pas concluant ([reference-adb.md, § 12](reference-adb.md#12-redémarrage-et-contrôle)).
 8. **Finir.** Réglages de fluidité, vidage des caches, puis les leviers qui ne
    passent pas par la désactivation — travail de fond des applications
    conservées, démarrage automatique du lanceur tiers, mise à jour
    automatique du magasin, services de localisation
-   ([reference-adb.md](reference-adb.md)). Un réglage de travail de fond n'est
+   ([reference-adb.md, § 10](reference-adb.md#10-caches-et-réglages-de-fluidité) et [§ 11](reference-adb.md#11-leviers-au-delà-de-la-désactivation)). Un réglage de
+   travail de fond n'est
    acquis qu'une fois son effet mesuré après redémarrage : à défaut, le
    consigner comme non vérifié. Écrire dans le journal la marche à suivre pour
    tout réactiver, y compris depuis les menus du téléviseur seul. Conseiller
@@ -143,23 +147,24 @@ Pour le contrôle d'une intervention antérieure :
 
 Vérifier, sans rien modifier, qu'une intervention consignée tient toujours.
 Les commandes et les repères de lecture sont dans
-[reference-adb.md](reference-adb.md), § 13.
+[reference-adb.md, § 13](reference-adb.md#13-contrôle-dune-intervention-antérieure).
 
 1. **Lire le journal.** En demander l'emplacement à l'utilisateur. Relever la
    liste des paquets désactivés, l'inventaire initial, l'accueil déclaré et
    chaque réglage consigné avec sa valeur.
 2. **Reconnecter.** Comme à la phase 2. Un appareil `unauthorized` a perdu son
-   autorisation, ou ne l'a jamais reçue ; une expiration du délai de connexion peut signaler un
-   changement d'adresse ([reference-adb.md](reference-adb.md), § 2 et § 4).
+   autorisation, ou ne l'a jamais reçue ; une expiration du délai de connexion
+   peut signaler un changement d'adresse ([reference-adb.md, § 2](reference-adb.md#2-diagnostiquer-un-échec-de-connexion) et
+   [§ 4](reference-adb.md#4-connexion)).
 3. **Comparer au journal.** Paquets désactivés, paquets disparus ou nouveaux,
    accueil, services d'accessibilité, réglages `settings` et `appops`,
    applications mises à jour depuis l'intervention. Tout écart dont l'origine
    n'est pas établie est soumis à l'utilisateur, sans en supposer l'origine.
 4. **Mesurer.** `dumpsys procstats --hours 24` après une journée d'usage :
-   les processus résidents retirés doivent rester absents, et chaque réglage de travail
-   de fond doit montrer son effet. Relever en complément `dumpsys meminfo` et
-   `uptime`, et ne comparer que des relevés pris à durée de fonctionnement
-   voisine.
+   les processus résidents retirés doivent rester absents, et chaque réglage
+   de travail de fond doit montrer son effet. Relever en complément
+   `dumpsys meminfo` et `uptime`, et ne comparer que des relevés pris à durée
+   de fonctionnement voisine.
 5. **Consigner.** Ajouter au journal une section datée : écarts, mesures et
    décisions de l'utilisateur. Ne pas réécrire les sections antérieures, sauf
    pour corriger une commande devenue fausse ou une affirmation démentie ; la
@@ -185,7 +190,7 @@ et de sa commande inverse.
   `pm enable`. Réserver `pm uninstall -k --user 0` à une demande expresse, après
   avoir signalé qu'une mise à jour du système peut réinstaller le paquet.
 - **Ne jamais toucher aux paquets critiques** recensés dans
-  [paquets.md](paquets.md) — interface système, services Google Play,
+  [paquets.md, § 1](paquets.md#1-paquets-critiques--ne-jamais-désactiver) — interface système, services Google Play,
   fournisseurs de contenu, méthode de saisie, moteur de rendu web, chaîne vidéo
   du constructeur.
 - **Ne présenter aucun gain de performance sans mesure** fondée sur des relevés
@@ -217,7 +222,7 @@ et de sa commande inverse.
   toujours pas, une application de la catégorie « ADB » installée sur le
   téléviseur peut fournir un shell en UID 2000, depuis lequel la propriété
   `service.adb.tcp.port` se définit à la main
-  ([reference-adb.md](reference-adb.md)). Ce contournement échoue si la console
+  ([reference-adb.md, § 3](reference-adb.md#3-mettre-adbd-en-écoute-réseau-depuis-un-shell-local)). Ce contournement échoue si la console
   de l'application ne tourne pas en UID 2000 ; il reste alors les menus du
   téléviseur.
 - **Hors périmètre** : le root, l'installation d'applications tierces, et toute
