@@ -5,6 +5,18 @@ varient selon le constructeur et la version d'Android : confirmer chaque paquet
 sur l'appareil par `pm list packages -e` avant d'agir, sans jamais présumer sa
 présence.
 
+**Sommaire**
+
+1. [Paquets critiques — ne jamais désactiver](#1-paquets-critiques--ne-jamais-désactiver)
+2. [Couche constructeur](#2-couche-constructeur)
+   - [Exemple : téléviseur TCL sous Android 8](#exemple--téléviseur-tcl-sous-android-8)
+   - [Vérificateur de mises à jour du constructeur](#vérificateur-de-mises-à-jour-du-constructeur)
+   - [Paquets restés sous un nom de développement](#paquets-restés-sous-un-nom-de-développement)
+   - [Exemple : NVIDIA Shield sous Android 11](#exemple--nvidia-shield-sous-android-11)
+3. [Candidats courants — effet à annoncer](#3-candidats-courants--effet-à-annoncer)
+4. [Classer un paquet inconnu](#4-classer-un-paquet-inconnu)
+5. [Ce que la désactivation ne fait pas](#5-ce-que-la-désactivation-ne-fait-pas)
+
 ## 1. Paquets critiques — ne jamais désactiver
 
 Désactiver l'un de ces paquets rend le téléviseur inutilisable ou le prive de
@@ -43,7 +55,9 @@ désactivables. Désactiver le lanceur d'origine libère une part notable de la
 mémoire sur un appareil à mémoire limitée. Procédure dans
 [reference-adb.md](reference-adb.md), qui traite aussi l'exception du NVIDIA
 Shield, où la désactivation du lanceur d'origine précède le contrôle par la
-touche HOME.
+touche HOME, et le cas des constructeurs qui, comme TCL, redéclarent le
+lanceur d'origine à chaque démarrage : il reste alors désactivé, et sa
+réactivation impose de relancer `set-home-activity`.
 
 ## 2. Couche constructeur
 
@@ -56,10 +70,12 @@ des applications d'accompagnement.
 La répartition est toujours la même : **couche matérielle critique — chaîne
 vidéo et entrées sur un téléviseur, télécommande et audio sur un boîtier —,
 applications d'accompagnement désactivables, reste non identifié laissé
-activé.** Deux exemples servent de modèles de transposition : le tableau TCL
-ci-dessous, pour un téléviseur sous Android 8, et celui du NVIDIA Shield plus
-bas, pour un boîtier sous Android 11. Les identifiants d'un autre constructeur
+activé.** Deux exemples servent de modèles de transposition : le
+[téléviseur TCL sous Android 8](#exemple--téléviseur-tcl-sous-android-8) et le
+[NVIDIA Shield sous Android 11](#exemple--nvidia-shield-sous-android-11), un boîtier. Les identifiants d'un autre constructeur
 diffèrent.
+
+### Exemple : téléviseur TCL sous Android 8
 
 | Paquet TCL | Classement |
 |---|---|
@@ -71,8 +87,10 @@ diffèrent.
 | `com.tcl.MultiScreenInteraction_TV` | Partage d'écran TCL, distinct de la diffusion Chromecast |
 | `com.tcl.appmarket2`, `com.tcl.esticker`, `com.tcl.partnercustomizer`, `android.autoinstalls.config.tcl.device` | Magasin et personnalisation d'usine |
 | `com.tcl.smartalexa` | Assistant vocal Alexa |
-| `com.tcl.versionUpdateApp` | Arbitrage — voir ci-dessous |
+| `com.tcl.versionUpdateApp` | Arbitrage — voir [le vérificateur de mises à jour du constructeur](#vérificateur-de-mises-à-jour-du-constructeur) |
 | `com.tcl.tvweishi`, `com.tcl.m`, `com.tcl.xian.StartandroidService`, `com.tcl.eletronicpolicy`, `com.tcl.factory.view`, `com.tcl.virtualkey` | Rôle non établi — laissé activé |
+
+### Vérificateur de mises à jour du constructeur
 
 **Le vérificateur de mises à jour du constructeur demande un arbitrage
 explicite.** Sur TCL, `com.tcl.versionUpdateApp` est marqué persistant et occupe
@@ -83,9 +101,10 @@ cet arrêt depuis l'appareil. Poser la question à l'utilisateur, consigner sa
 réponse, et rappeler que `pm enable` le réactive le jour où une mise à jour est
 attendue.
 
-**Paquets restés sous un nom de développement.** Un appareil peut embarquer des
-paquets nommés `com.example.*`, signés avec la clé de plateforme et portant le
-flag `PERSISTENT`. Ce nommage résulte d'une négligence du constructeur : ces
+### Paquets restés sous un nom de développement
+
+Un appareil peut embarquer des paquets nommés `com.example.*`, signés avec la
+clé de plateforme et portant le flag `PERSISTENT`. Ce nommage résulte d'une négligence du constructeur : ces
 paquets appartiennent au système d'origine. Leur rôle n'étant pas établi et le
 système les maintenant délibérément actifs, les laisser activés : le gain de
 mémoire attendu ne justifie pas le risque. `dumpsys package <PAQUET>` confirme
@@ -99,7 +118,7 @@ ensemble d'applications d'accompagnement.
 
 | Paquet NVIDIA | Classement |
 |---|---|
-| `com.nvidia.ota` | Arbitrage — mises à jour du système ; même règle que le vérificateur TCL ci-dessus |
+| `com.nvidia.ota` | Arbitrage — mises à jour du système ; même règle que le [vérificateur TCL](#vérificateur-de-mises-à-jour-du-constructeur) |
 | `com.nvidia.blakepairing`, `com.nvidia.bluetooth.ShieldBluetoothManager`, `com.android.bluetooth` | Critique — appairage et pilotage de la télécommande Bluetooth d'origine |
 | `com.nvidia.nvaudiosvc`, `com.nvidia.NvCPLSvc`, `com.nvidia.shieldtech.*`, `com.dolby.android.audio.service` | Critique — audio, réglages matériels et services système du constructeur |
 | `com.nvidia.shield.nas`, `com.nvidia.shield.smbauth` | À conserver quand le boîtier accède à des partages réseau distants |
@@ -108,10 +127,10 @@ ensemble d'applications d'accompagnement.
 | `com.nvidia.shieldbeta`, `com.nvidia.shield.beta` | Désactivable hors inscription au programme bêta |
 | `com.nvidia.developerwidget`, `com.nvidia.tegraprofiler.security` | Désactivable — outils de développement |
 | `com.nvidia.nvgamecast`, `com.nvidia.tegrazone3`, `com.nvidia.ControllerMapper`, `com.nvidia.bluetooth.ps3usbpairer` | Désactivable quand le boîtier ne sert pas au jeu — NVIDIA a arrêté GameStream en 2023 |
-| `com.nvidia.shield.ask`, `com.nvidia.hotwordsetup` | Assistant vocal NVIDIA — désactivable dans le même groupe que `com.google.android.katniss` (§3) |
+| `com.nvidia.shield.ask`, `com.nvidia.hotwordsetup` | Assistant vocal NVIDIA — désactivable dans le même groupe que `com.google.android.katniss` ([§ 3](#3-candidats-courants--effet-à-annoncer)) |
 | `com.nvidia.shield.smbserver` | Serveur SMB qui partage le stockage du boîtier sur le réseau — désactivable s'il n'est pas utilisé |
 | `com.nvidia.irtuner` | Récepteur infrarouge — désactivable quand seule la télécommande Bluetooth est employée ; HDMI-CEC n'en dépend pas |
-| `com.amazon.amazonvideo.livingroom.nvidia` | Prime Video préinstallé — candidat courant (§3) |
+| `com.amazon.amazonvideo.livingroom.nvidia` | Prime Video préinstallé — candidat courant ([§ 3](#3-candidats-courants--effet-à-annoncer)) |
 | `com.nvidia.benchmarkblocker` | Désactivé d'origine |
 | `com.nvidia.packagemanagerservice`, `com.nvidia.KeyComboOta`, `com.nvidia.NvCPLUpdater`, `com.nvidia.app.messaging`, `com.nvidia.avsync`, `com.nvidia.inputviewer`, `com.nvidia.osc`, `com.nvidia.overscancomp`, `com.nvidia.remotelocator`, `com.nvidia.shield.appselector`, `com.nvidia.shield.nvcustomize`, `com.nvidia.shield.remote.server`, `com.nvidia.shieldservice`, `com.nvidia.wifi.countrycode` | Rôle non établi ou lié au matériel — laissé activé |
 
@@ -121,7 +140,10 @@ Deux particularités du Shield modifient le déroulé :
   contrôle par la touche HOME ne peut donc pas précéder la désactivation du
   lanceur d'origine : procédure dans [reference-adb.md](reference-adb.md).
 - **Le débogage réseau survit au redémarrage.** C'est une option de menu
-  persistante : l'accès adb n'est pas perdu à la phase 7.
+  persistante : l'accès adb n'est pas perdu à la phase 7. L'autorisation du
+  poste expire en revanche après sept jours sans connexion, comme sur tout
+  appareil sous Android 11 ou une version ultérieure : au contrôle suivant, la clé RSA est à
+  réaccepter.
 
 ## 3. Candidats courants — effet à annoncer
 

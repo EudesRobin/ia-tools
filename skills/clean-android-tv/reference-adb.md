@@ -8,6 +8,23 @@ d'`adb shell` : il s'exécute alors sur le téléviseur, qui le fournit, et la
 commande fonctionne quel que soit le shell du poste. Hors des guillemets, il est
 confié au shell du poste, et PowerShell ne le connaît pas.
 
+**Sommaire**
+
+1. [Activer le débogage sur le téléviseur](#1-activer-le-débogage-sur-le-téléviseur)
+2. [Diagnostiquer un échec de connexion](#2-diagnostiquer-un-échec-de-connexion)
+3. [Mettre adbd en écoute réseau depuis un shell local](#3-mettre-adbd-en-écoute-réseau-depuis-un-shell-local)
+4. [Connexion](#4-connexion)
+5. [Relevé de l'état initial](#5-relevé-de-létat-initial)
+6. [Distinguer un processus résident d'un processus en cache](#6-distinguer-un-processus-résident-dun-processus-en-cache)
+7. [Identifier un paquet inconnu](#7-identifier-un-paquet-inconnu)
+8. [Remplacer le lanceur](#8-remplacer-le-lanceur)
+   - [Touche qu'aucun réglage système ne réaffecte](#touche-quaucun-réglage-système-ne-réaffecte)
+9. [Désactiver et restaurer](#9-désactiver-et-restaurer)
+10. [Caches et réglages de fluidité](#10-caches-et-réglages-de-fluidité)
+11. [Leviers au-delà de la désactivation](#11-leviers-au-delà-de-la-désactivation)
+12. [Redémarrage et contrôle](#12-redémarrage-et-contrôle)
+13. [Contrôle d'une intervention antérieure](#13-contrôle-dune-intervention-antérieure)
+
 ## 1. Activer le débogage sur le téléviseur
 
 Le démon adb est déjà présent dans le système : il suffit de l'activer, sans
@@ -36,7 +53,9 @@ port en mode périphérique.
 **Le réglage de débogage ne survit pas toujours au redémarrage.** Activer le
 débogage, puis tester aussitôt la connexion, et revérifier l'état du réglage
 avant de conclure à un échec. Sur le NVIDIA Shield, le débogage réseau est au
-contraire une option de menu persistante : l'accès adb survit au redémarrage.
+contraire une option de menu persistante : l'accès adb survit au redémarrage,
+mais l'autorisation du poste expire au bout de sept jours sans connexion
+([§4](#4-connexion)).
 
 ## 2. Diagnostiquer un échec de connexion
 
@@ -58,7 +77,10 @@ foreach ($p in $ports) {
   TCP. Le réseau est hors de cause, un VPN installé sur le téléviseur aussi : un
   refus suppose un aller-retour complet.
 - **Expiration du délai sur 5555** — le paquet réseau n'atteint pas l'hôte :
-  adresse erronée, segment réseau distinct ou filtrage.
+  adresse erronée, segment réseau distinct ou filtrage. Une adresse attribuée
+  dynamiquement par la box a pu changer depuis la dernière connexion : relever
+  la table ARP du poste (`arp -a`), repérer l'adresse matérielle dont le
+  préfixe désigne le constructeur, et sonder l'adresse IP qui lui est associée.
 - **6466 et 6467 ouverts** — un appareil Android TV répond bien à cette
   adresse ; ce sont les ports du service de télécommande.
 
@@ -124,7 +146,13 @@ adb kill-server              # reinitialise le serveur local en cas d'anomalie
 ```
 
 Un appareil signalé `unauthorized` n'a pas reçu l'autorisation de la clé RSA sur
-le téléviseur. Un appareil `offline` se rétablit rarement par une simple
+le téléviseur. Depuis Android 11, le système révoque en outre l'autorisation
+d'un poste qui ne s'est pas connecté depuis sept jours : lors d'un contrôle
+ultérieur, un appareil autorisé lors de l'intervention répond `unauthorized`
+et la clé RSA est à réaccepter. Un réglage des options pour les développeurs
+désactive ce délai d'expiration des autorisations adb ; ne le proposer que si
+des connexions espacées sont prévues, car il prolonge la confiance accordée au
+poste. Un appareil `offline` se rétablit rarement par une simple
 reconnexion : arrêter puis relancer le serveur local.
 
 ## 5. Relevé de l'état initial
@@ -154,11 +182,18 @@ Repères de lecture :
 
 - `/data` occupé au-delà de 85 % : le stockage est la cause dominante du
   ralentissement, et la désactivation d'applications n'y changera presque rien.
-- Le **statut** de la ligne `Total RAM` — `critical`, `moderate` ou `normal` —
-  résume la pression mémoire mieux que tout autre indicateur.
+- Le **statut** de la ligne `Total RAM` — `critical`, `low`, `moderate` ou
+  `normal` — résume la pression mémoire vue par le système. Selon la version,
+  Android le calcule d'après le nombre de processus en cache restants ou
+  d'après la pression mesurée par le noyau. Un statut `moderate` accompagné de beaucoup de
+  mémoire libre et de peu de swap signale que le système élague son cache, pas
+  que la mémoire manque : le lire avec la mémoire libre et le swap, jamais seul.
 - L'**occupation du swap** mesure la contrainte réelle : un système qui en
   arrive à compresser des pages pour libérer de la mémoire est un système dont
-  la mémoire est saturée.
+  la mémoire est saturée. Le swap croît toutefois avec la durée de
+  fonctionnement, car le système y range peu à peu les pages inutilisées : deux
+  relevés de swap ne se comparent qu'à durée de fonctionnement voisine
+  (`adb shell uptime`).
 - `procstats` désigne les paquets à examiner en priorité : ceux qui cumulent du
   temps d'exécution sans avoir été ouverts.
 
@@ -225,14 +260,43 @@ Inverser donc l'ordre : déclarer le nouvel accueil par `set-home-activity`,
 désactiver le lanceur d'origine dans un groupe isolé, puis contrôler la touche
 HOME ; en cas d'échec, `pm enable` rétablit le lanceur d'origine. Un service
 d'accessibilité installé pour capter la touche HOME devient alors superflu et se
-retire comme indiqué ci-dessous.
+retire comme l'indique [Touche qu'aucun réglage système ne réaffecte](#touche-quaucun-réglage-système-ne-réaffecte).
 
 `com.android.tv.settings/.system.FallbackHome` sert de solution de repli :
 l'appareil ne reste pas sans accueil si le lanceur tiers échoue.
 
-**Touche qu'aucun réglage système ne réaffecte.** Une application de remappage
-de touches fondée sur le service d'accessibilité rétablit alors le comportement
-voulu. Ce contournement a un coût : le service s'intercale en permanence dans la
+**Couper le démarrage automatique propre au lanceur tiers.** Un lanceur tiers
+installé avant d'être déclaré accueil propose souvent de se lancer lui-même au
+démarrage. Une fois l'accueil déclaré par `set-home-activity`, ce réglage
+devient nuisible : le système lance déjà l'accueil par `CATEGORY_HOME`, et le lanceur qui se relance
+par `LEANBACK_LAUNCHER` place son activité d'accueil hors de la pile d'accueil.
+Chaque retour par la touche HOME reconstruit alors cette activité, ce qui fige
+l'écran plus d'une seconde sur un appareil d'entrée de gamme. Le réglage
+est interne au lanceur : le faire passer sur « aucun » dans son interface, puis
+contrôler après redémarrage :
+
+```bash
+adb shell "logcat -d | grep -E 'START.*LEANBACK_LAUNCHER'"   # aucune relance par le lanceur
+adb shell "dumpsys activity activities | grep -E 'Stack #|Run #'"
+```
+
+Sous Android 8, l'activité d'accueil doit figurer seule dans `Stack #0`, la
+pile d'accueil.
+
+**Lanceur d'origine redéclaré à chaque démarrage.** Certains constructeurs
+redéclarent le lanceur d'origine comme accueil préféré à chaque démarrage — sur
+TCL sous Android 8, `logcat` montre `addPreferredActivity....tvlauncher`. Tant
+que le lanceur d'origine est désactivé, le gestionnaire de paquets retire cette
+déclaration quelques secondes plus tard (`Removing dangling preferred activity`).
+Dans l'intervalle, le système ou le lanceur tiers peut afficher une demande de
+confirmation de l'accueil par défaut : la faire accepter au profit du lanceur
+tiers. Le lanceur d'origine reste désactivé ; ne jamais le réactiver sans
+relancer ensuite `set-home-activity`.
+
+### Touche qu'aucun réglage système ne réaffecte
+
+Quand aucun réglage système ne réaffecte une touche, une application de
+remappage fondée sur le service d'accessibilité rétablit le comportement voulu. Ce contournement a un coût : le service s'intercale en permanence dans la
 chaîne d'événements de toute l'interface. Le réserver aux touches qu'aucun
 réglage système ne couvre, et vérifier d'abord `set-home-activity`, qui suffit
 dans le cas courant de la touche HOME. Retirer un tel service de la liste des
@@ -312,20 +376,40 @@ l'avance. Restauration par `allow`. Demander ensuite à l'utilisateur d'ouvrir
 l'application et de confirmer qu'elle fonctionne : c'est le seul contrôle qui
 vaille pour un usage conservé.
 
-**Désactiver un composant plutôt qu'un paquet — applications système
-uniquement.**
+**L'effet de `RUN_IN_BACKGROUND` n'est acquis qu'une fois mesuré.** Le réglage
+persiste, mais il n'arrête pas tout :
+
+- un récepteur `BOOT_COMPLETED` de l'application relance son service à chaque
+  démarrage ;
+- un service que l'application lie elle-même échappe à l'arrêt des services de
+  fond.
+
+Contrôler l'effet après un redémarrage, puis après une journée d'usage :
+
+```bash
+adb shell "dumpsys activity services <PAQUET> | grep -E 'ServiceRecord|createTime|ConnectionRecord'"
+adb shell "dumpsys procstats --hours 24 | grep -A4 '<PAQUET> '"
+```
+
+Un `ServiceRecord` créé au démarrage, ou une ligne `Service` qui occupe la
+majeure partie des 24 heures, signale un réglage sans effet. Le consigner comme
+tel, sans annoncer de gain. Aucun autre levier ne s'offre alors à l'UID
+`shell` que la désactivation du paquet entier.
+
+**Désactiver un composant plutôt qu'un paquet : généralement refusé.**
 
 ```bash
 adb shell "pm disable --user 0 <PAQUET>/<CLASSE_DU_COMPOSANT>"
 adb shell "pm enable <PAQUET>/<CLASSE_DU_COMPOSANT>"
 ```
 
-L'UID `shell` ne peut modifier l'état d'un composant que sur une application
-portant le flag `SYSTEM`. Sur une application tierce, la commande échoue et renvoie
-`SecurityException: Shell cannot change component state`, et seul le basculement
-du paquet entier reste possible. Vérifier ce flag par
-`adb shell "dumpsys package <PAQUET> | grep pkgFlags"` avant de proposer la
-désactivation d'un composant.
+Android n'autorise l'UID `shell` à basculer que des paquets entiers. La
+commande échoue sur un composant et renvoie
+`SecurityException: Shell cannot change component state`, y compris sur une
+application portant le flag `SYSTEM` — refus vérifié sous Android 8. Le flag
+`SYSTEM` ne lève donc pas la restriction. La commande se tente sans risque :
+consigner le refus, et ne présenter la désactivation d'un composant comme une
+solution qu'après sa réussite.
 
 **Les récepteurs de recommandations ne demandent aucune action.** Les
 applications de diffusion déclarent des récepteurs visant
@@ -384,4 +468,44 @@ cache sous l'état `prev`. Comparer deux relevés pris dans des conditions
 différentes produit un chiffre faux. Signaler que les relevés ne sont pas
 comparables plutôt que d'annoncer l'écart, et s'en tenir alors aux indicateurs
 insensibles à l'activité en cours : le statut mémoire, l'occupation du swap, le
-nombre de paquets désactivés et l'occupation de `/data`.
+nombre de paquets désactivés et l'occupation de `/data`. Le statut et le swap
+dépendent eux-mêmes de la durée de fonctionnement : relever `uptime` avec
+chaque mesure et ne comparer que des relevés pris à durée de fonctionnement
+voisine. Après
+plusieurs jours de fonctionnement, la mesure qui fait foi est
+`dumpsys procstats --hours 24`, qui moyenne une journée d'usage.
+
+## 13. Contrôle d'une intervention antérieure
+
+Le contrôle est une lecture : il ne modifie rien sur l'appareil. Chaque relevé
+se confronte au journal de l'intervention.
+
+```bash
+adb shell uptime                                    # duree depuis le dernier demarrage
+adb shell "pm list packages -d"                     # a comparer a la liste du journal
+adb shell "pm list packages"                        # paquets disparus ou nouveaux
+adb shell "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME"
+adb shell "dumpsys package preferred-activities | grep -B8 category.HOME"
+adb shell "settings get secure enabled_accessibility_services"
+adb shell "cmd appops get <PAQUET> RUN_IN_BACKGROUND"
+adb shell "dumpsys package packages | grep -E '^  Package \[|lastUpdateTime'"
+adb shell "logcat -d -b all | grep -i -E 'preferred|HOME'"   # historique depuis le demarrage
+adb shell "dumpsys procstats --hours 24"
+```
+
+Repères de lecture :
+
+- **Paquet de l'inventaire du journal absent de l'appareil** — désinstallation postérieure à
+  l'intervention. En demander l'origine à l'utilisateur plutôt que de la
+  supposer.
+- **Application mise à jour depuis l'intervention** — vérifier qu'elle ne
+  déclare pas de nouvel accueil (`query-activities` ci-dessus) ni de nouveau
+  service résident.
+- **Réglage `settings` ou `appops` revenu à sa valeur initiale** — réglage
+  annulé, par une mise à jour du système ou depuis les menus.
+- **Résident retiré qui réapparaît dans `procstats`** — paquet réactivé, ou
+  réglage de travail de fond sans effet ([§11](#11-leviers-au-delà-de-la-désactivation)).
+
+L'historique de `logcat` ne remonte qu'au dernier démarrage, souvent moins : un
+événement antérieur, comme une demande de confirmation d'accueil, ne s'y lit
+plus. Signaler cette limite plutôt que d'affirmer la cause de l'écart constaté.

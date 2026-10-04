@@ -8,6 +8,24 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🚀 Nouveautés
+
+- `clean-android-tv` : contrôle d'une intervention antérieure, sans
+  modification de l'appareil — comparaison au journal, mesure sur 24 heures,
+  section datée ajoutée au journal. Le journal est nommé d'après l'appareil et
+  placé dans le dossier désigné par l'utilisateur.
+
+### 🐛 Corrections
+
+- `clean-android-tv` : la désactivation d'un composant isolé est refusée à
+  l'UID `shell` sous Android 8, même sur une application système ; l'effet de
+  `RUN_IN_BACKGROUND` se vérifie après redémarrage et sur 24 heures ; le statut
+  mémoire et le swap se lisent à durée de fonctionnement voisine.
+- `clean-android-tv` : prise en compte de l'expiration de l'autorisation adb
+  après sept jours à partir d'Android 11, du changement d'adresse du
+  téléviseur, du démarrage automatique du lanceur tiers et du lanceur d'origine
+  redéclaré par le constructeur.
+
 ## [1.3.0] - 2026-10-03
 
 ### 🔄 Modifications
