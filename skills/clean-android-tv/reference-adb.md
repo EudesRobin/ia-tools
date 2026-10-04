@@ -18,6 +18,7 @@ confié au shell du poste, et PowerShell ne le connaît pas.
 6. [Distinguer un processus résident d'un processus en cache](#6-distinguer-un-processus-résident-dun-processus-en-cache)
 7. [Identifier un paquet inconnu](#7-identifier-un-paquet-inconnu)
 8. [Remplacer le lanceur](#8-remplacer-le-lanceur)
+   - [Touche qu'aucun réglage système ne réaffecte](#touche-quaucun-réglage-système-ne-réaffecte)
 9. [Désactiver et restaurer](#9-désactiver-et-restaurer)
 10. [Caches et réglages de fluidité](#10-caches-et-réglages-de-fluidité)
 11. [Leviers au-delà de la désactivation](#11-leviers-au-delà-de-la-désactivation)
@@ -259,7 +260,7 @@ Inverser donc l'ordre : déclarer le nouvel accueil par `set-home-activity`,
 désactiver le lanceur d'origine dans un groupe isolé, puis contrôler la touche
 HOME ; en cas d'échec, `pm enable` rétablit le lanceur d'origine. Un service
 d'accessibilité installé pour capter la touche HOME devient alors superflu et se
-retire comme indiqué ci-dessous.
+retire comme l'indique [Touche qu'aucun réglage système ne réaffecte](#touche-quaucun-réglage-système-ne-réaffecte).
 
 `com.android.tv.settings/.system.FallbackHome` sert de solution de repli :
 l'appareil ne reste pas sans accueil si le lanceur tiers échoue.
@@ -267,8 +268,7 @@ l'appareil ne reste pas sans accueil si le lanceur tiers échoue.
 **Couper le démarrage automatique propre au lanceur tiers.** Un lanceur tiers
 installé avant d'être déclaré accueil propose souvent de se lancer lui-même au
 démarrage. Une fois l'accueil déclaré par `set-home-activity`, ce réglage
-devient nuisible : le
-système lance déjà l'accueil par `CATEGORY_HOME`, et le lanceur qui se relance
+devient nuisible : le système lance déjà l'accueil par `CATEGORY_HOME`, et le lanceur qui se relance
 par `LEANBACK_LAUNCHER` place son activité d'accueil hors de la pile d'accueil.
 Chaque retour par la touche HOME reconstruit alors cette activité, ce qui fige
 l'écran plus d'une seconde sur un appareil d'entrée de gamme. Le réglage
@@ -293,9 +293,10 @@ confirmation de l'accueil par défaut : la faire accepter au profit du lanceur
 tiers. Le lanceur d'origine reste désactivé ; ne jamais le réactiver sans
 relancer ensuite `set-home-activity`.
 
-**Touche qu'aucun réglage système ne réaffecte.** Une application de remappage
-de touches fondée sur le service d'accessibilité rétablit alors le comportement
-voulu. Ce contournement a un coût : le service s'intercale en permanence dans la
+### Touche qu'aucun réglage système ne réaffecte
+
+Quand aucun réglage système ne réaffecte une touche, une application de
+remappage fondée sur le service d'accessibilité rétablit le comportement voulu. Ce contournement a un coût : le service s'intercale en permanence dans la
 chaîne d'événements de toute l'interface. Le réserver aux touches qu'aucun
 réglage système ne couvre, et vérifier d'abord `set-home-activity`, qui suffit
 dans le cas courant de la touche HOME. Retirer un tel service de la liste des
