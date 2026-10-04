@@ -1,10 +1,12 @@
 ---
 name: clean-android-tv
-description: Réduire la consommation mémoire d'un téléviseur Android TV ou Google TV par adb, et le rendre plus réactif — relevé du stockage, de la mémoire et des paquets, désactivation réversible des applications préinstallées inutilisées, réglages de fluidité. À utiliser quand l'utilisateur demande d'optimiser, d'accélérer ou de nettoyer sa TV Android, se plaint qu'elle rame ou qu'elle est devenue lente, veut désactiver des applications préinstallées, ou veut connecter sa TV en adb.
+description: Réduire la consommation mémoire d'un téléviseur Android TV ou Google TV par adb, et le rendre plus réactif — relevé du stockage, de la mémoire et des paquets, désactivation réversible des applications préinstallées inutilisées, réglages de fluidité. À utiliser quand l'utilisateur demande d'optimiser, d'accélérer ou de nettoyer sa TV Android, se plaint qu'elle rame ou qu'elle est devenue lente, veut désactiver des applications préinstallées, veut connecter sa TV en adb, ou demande de vérifier qu'un nettoyage précédent est toujours en place.
 allowed-tools:
   - Bash(adb:*)
+  - Bash(arp:*)
   - Read
   - Write
+  - Edit
 ---
 
 # Accélérer un téléviseur Android TV par adb
@@ -26,8 +28,10 @@ recensement des paquets critiques, auxquels il ne faut jamais toucher.
 
 ## Suivi de progression — impératif
 
-Cette skill est une tâche en huit phases : la règle de suivi des tâches
-s'applique. Créer la liste ci-dessous **avant la phase 1**, et la ré-afficher en
+Cette skill couvre deux cas d'usage, qui demandent tous deux le suivi :
+l'**intervention**, en huit phases, et le **contrôle d'une intervention
+antérieure**, en cinq étapes. Créer la liste du cas traité **avant sa première
+étape**, et la ré-afficher en
 entier à chaque changement d'état, avec les marqueurs `[ ]` non commencée, `[~]`
 en cours, `[x]` terminée, `[-]` abandonnée. Plusieurs `[~]` simultanées
 seulement si les étapes sont réellement menées en parallèle. Quand la session
@@ -48,6 +52,15 @@ suivis n'est un repli.
 La phase 7 est un contrôle : elle ne passe à `[x]` qu'après un redémarrage réel
 suivi d'une reconnexion adb et de la vérification du lanceur, en nommant le
 résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationnels`).
+
+Pour le contrôle d'une intervention antérieure :
+
+**Tâches**
+- [ ] Contrôle 1 : lire le journal de l'intervention
+- [ ] Contrôle 2 : reconnecter le téléviseur et confirmer l'autorisation
+- [ ] Contrôle 3 : comparer paquets, accueil et réglages au journal
+- [ ] Contrôle 4 : mesurer la mémoire sur une journée d'usage
+- [ ] Contrôle 5 : consigner le contrôle dans le journal
 
 ## Prérequis (à vérifier, ne rien installer sans accord)
 
@@ -85,8 +98,12 @@ résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationne
    n'y changera presque rien. Ne pas lire le classement de `dumpsys meminfo`
    comme une liste de coupables : vérifier l'état de chaque processus volumineux
    avant de l'incriminer, car un processus en cache ne coûte rien.
-4. **Consigner l'inventaire restaurable.** Écrire un journal daté
-   `android-tv-<AAAA-MM-JJ>.md`, hors du dépôt d'outils, contenant la sortie
+4. **Consigner l'inventaire restaurable.** Écrire un journal
+   `<appareil>-<AAAA-MM-JJ>.md`, `<appareil>` désignant le modèle en
+   kebab-case (`tcl-percee-tv`, `shield`), pour que les journaux de deux
+   appareils traités le même jour ne se confondent pas. Le placer dans le dossier que l'utilisateur
+   désigne, à défaut dans le répertoire de travail courant, jamais dans le
+   dossier de la skill. Le journal contient la sortie
    brute de `pm list packages -e` **avant** toute modification, l'état initial
    de la phase 3, et un tableau « paquet ou réglage / action / restauration ».
    Ce journal est la garantie de réversibilité : ne pas passer à la phase
@@ -112,10 +129,45 @@ résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationne
    contrôle n'est pas concluant.
 8. **Finir.** Réglages de fluidité, vidage des caches, puis les leviers qui ne
    passent pas par la désactivation — travail de fond des applications
-   conservées, composants isolés, mise à jour automatique du magasin, services
-   de localisation ([reference-adb.md](reference-adb.md)). Écrire dans le
-   journal la marche à suivre pour tout réactiver, y compris depuis les menus du
-   téléviseur seul. Refermer l'accès adb et rappeler de couper le débogage.
+   conservées, démarrage automatique du lanceur tiers, mise à jour
+   automatique du magasin, services de localisation
+   ([reference-adb.md](reference-adb.md)). Un réglage de travail de fond n'est
+   acquis qu'une fois son effet mesuré après redémarrage : à défaut, le
+   consigner comme non vérifié. Écrire dans le journal la marche à suivre pour
+   tout réactiver, y compris depuis les menus du téléviseur seul. Conseiller
+   une réservation DHCP de l'adresse du téléviseur sur la box, pour que les
+   commandes du journal restent valables. Refermer l'accès adb et rappeler de
+   couper le débogage.
+
+## Contrôle d'une intervention antérieure
+
+Vérifier, sans rien modifier, qu'une intervention consignée tient toujours.
+Les commandes et les repères de lecture sont dans
+[reference-adb.md](reference-adb.md), § 13.
+
+1. **Lire le journal.** En demander l'emplacement à l'utilisateur. Relever la
+   liste des paquets désactivés, l'inventaire initial, l'accueil déclaré et
+   chaque réglage consigné avec sa valeur.
+2. **Reconnecter.** Comme à la phase 2. Un appareil `unauthorized` a perdu son
+   autorisation, ou ne l'a jamais reçue ; une expiration du délai de connexion peut signaler un
+   changement d'adresse ([reference-adb.md](reference-adb.md), § 2 et § 4).
+3. **Comparer au journal.** Paquets désactivés, paquets disparus ou nouveaux,
+   accueil, services d'accessibilité, réglages `settings` et `appops`,
+   applications mises à jour depuis l'intervention. Tout écart dont l'origine
+   n'est pas établie est soumis à l'utilisateur, sans en supposer l'origine.
+4. **Mesurer.** `dumpsys procstats --hours 24` après une journée d'usage :
+   les processus résidents retirés doivent rester absents, et chaque réglage de travail
+   de fond doit montrer son effet. Relever en complément `dumpsys meminfo` et
+   `uptime`, et ne comparer que des relevés pris à durée de fonctionnement
+   voisine.
+5. **Consigner.** Ajouter au journal une section datée : écarts, mesures et
+   décisions de l'utilisateur. Ne pas réécrire les sections antérieures, sauf
+   pour corriger une commande devenue fausse ou une affirmation démentie ; la
+   correction est alors signalée comme telle.
+
+Toute modification de l'appareil que le contrôle fait apparaître nécessaire
+relève de l'intervention : accord explicite, puis consignation de la commande
+et de sa commande inverse.
 
 ## Règles
 
@@ -146,8 +198,10 @@ résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationne
 ## Limites
 
 - **Sans root.** Les caches internes des applications, les partitions système et
-  les paquets non désactivables restent hors d'atteinte. L'état d'un composant
-  isolé ne se modifie que sur une application portant le flag `SYSTEM`.
+  les paquets non désactivables restent hors d'atteinte. L'UID `shell` ne peut en
+  général pas modifier l'état d'un composant isolé, même sur une application
+  portant le flag `SYSTEM` (refus vérifié sous Android 8) : seul un paquet
+  entier se désactive à coup sûr.
 - **Le gain est borné.** Un téléviseur limité par sa mémoire vive ou par un
   stockage saturé ne redevient pas fluide par la désactivation d'applications.
   Le dire, plutôt que de laisser croire à un gain.

@@ -5,6 +5,14 @@ varient selon le constructeur et la version d'Android : confirmer chaque paquet
 sur l'appareil par `pm list packages -e` avant d'agir, sans jamais présumer sa
 présence.
 
+**Sommaire**
+
+1. [Paquets critiques — ne jamais désactiver](#1-paquets-critiques--ne-jamais-désactiver)
+2. [Couche constructeur](#2-couche-constructeur), dont l'[exemple du NVIDIA Shield](#exemple--nvidia-shield-sous-android-11)
+3. [Candidats courants — effet à annoncer](#3-candidats-courants--effet-à-annoncer)
+4. [Classer un paquet inconnu](#4-classer-un-paquet-inconnu)
+5. [Ce que la désactivation ne fait pas](#5-ce-que-la-désactivation-ne-fait-pas)
+
 ## 1. Paquets critiques — ne jamais désactiver
 
 Désactiver l'un de ces paquets rend le téléviseur inutilisable ou le prive de
@@ -43,7 +51,9 @@ désactivables. Désactiver le lanceur d'origine libère une part notable de la
 mémoire sur un appareil à mémoire limitée. Procédure dans
 [reference-adb.md](reference-adb.md), qui traite aussi l'exception du NVIDIA
 Shield, où la désactivation du lanceur d'origine précède le contrôle par la
-touche HOME.
+touche HOME, et le cas des constructeurs qui, comme TCL, redéclarent le
+lanceur d'origine à chaque démarrage : il reste alors désactivé, et sa
+réactivation impose de relancer `set-home-activity`.
 
 ## 2. Couche constructeur
 
@@ -121,7 +131,10 @@ Deux particularités du Shield modifient le déroulé :
   contrôle par la touche HOME ne peut donc pas précéder la désactivation du
   lanceur d'origine : procédure dans [reference-adb.md](reference-adb.md).
 - **Le débogage réseau survit au redémarrage.** C'est une option de menu
-  persistante : l'accès adb n'est pas perdu à la phase 7.
+  persistante : l'accès adb n'est pas perdu à la phase 7. L'autorisation du
+  poste expire en revanche après sept jours sans connexion, comme sur tout
+  appareil sous Android 11 ou une version ultérieure : au contrôle suivant, la clé RSA est à
+  réaccepter.
 
 ## 3. Candidats courants — effet à annoncer
 
