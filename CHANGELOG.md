@@ -10,7 +10,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🚀 Nouveautés
 
-- `clean-android-tv` : contrôle d'une intervention antérieure, sans
+- `clean-android-tv` : vérification d'une intervention antérieure, sans
   modification de l'appareil — comparaison au journal, mesure sur 24 heures,
   section datée ajoutée au journal. Le journal est nommé d'après l'appareil et
   placé dans le dossier désigné par l'utilisateur.

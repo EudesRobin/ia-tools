@@ -29,7 +29,7 @@ recensement des paquets critiques, auxquels il ne faut jamais toucher.
 ## Suivi de progression — impératif
 
 Cette skill couvre deux cas d'usage, qui demandent tous deux le suivi :
-l'**intervention**, en huit phases, et le **contrôle d'une intervention
+l'**intervention**, en huit phases, et la **vérification d'une intervention
 antérieure**, en cinq étapes. Créer la liste du cas traité **avant sa première
 étape**, et la ré-afficher en
 entier à chaque changement d'état, avec les marqueurs `[ ]` non commencée, `[~]`
@@ -53,14 +53,14 @@ La phase 7 est un contrôle : elle ne passe à `[x]` qu'après un redémarrage r
 suivi d'une reconnexion adb et de la vérification du lanceur, en nommant le
 résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationnels`).
 
-Pour le contrôle d'une intervention antérieure :
+Pour la vérification d'une intervention antérieure :
 
 **Tâches**
-- [ ] Contrôle 1 : lire le journal de l'intervention
-- [ ] Contrôle 2 : reconnecter le téléviseur et confirmer l'autorisation
-- [ ] Contrôle 3 : comparer paquets, accueil et réglages au journal
-- [ ] Contrôle 4 : mesurer la mémoire sur une journée d'usage
-- [ ] Contrôle 5 : consigner le contrôle dans le journal
+- [ ] Vérification 1 : lire le journal de l'intervention
+- [ ] Vérification 2 : reconnecter le téléviseur et confirmer l'autorisation
+- [ ] Vérification 3 : comparer paquets, accueil et réglages au journal
+- [ ] Vérification 4 : mesurer la mémoire sur une journée d'usage
+- [ ] Vérification 5 : consigner la vérification dans le journal
 
 ## Prérequis (à vérifier, ne rien installer sans accord)
 
@@ -143,11 +143,11 @@ Pour le contrôle d'une intervention antérieure :
    commandes du journal restent valables. Refermer l'accès adb et rappeler de
    couper le débogage.
 
-## Contrôle d'une intervention antérieure
+## Vérification d'une intervention antérieure
 
 Vérifier, sans rien modifier, qu'une intervention consignée tient toujours.
 Les commandes et les repères de lecture sont dans
-[reference-adb.md, § 13](reference-adb.md#13-contrôle-dune-intervention-antérieure).
+[reference-adb.md, § 13](reference-adb.md#13-vérification-dune-intervention-antérieure).
 
 1. **Lire le journal.** En demander l'emplacement à l'utilisateur. Relever la
    liste des paquets désactivés, l'inventaire initial, l'accueil déclaré et
@@ -170,7 +170,7 @@ Les commandes et les repères de lecture sont dans
    pour corriger une commande devenue fausse ou une affirmation démentie ; la
    correction est alors signalée comme telle.
 
-Toute modification de l'appareil que le contrôle fait apparaître nécessaire
+Toute modification de l'appareil que la vérification fait apparaître nécessaire
 relève de l'intervention : accord explicite, puis consignation de la commande
 et de sa commande inverse.
 

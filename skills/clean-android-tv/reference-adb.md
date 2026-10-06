@@ -23,7 +23,7 @@ confié au shell du poste, et PowerShell ne le connaît pas.
 10. [Caches et réglages de fluidité](#10-caches-et-réglages-de-fluidité)
 11. [Leviers au-delà de la désactivation](#11-leviers-au-delà-de-la-désactivation)
 12. [Redémarrage et contrôle](#12-redémarrage-et-contrôle)
-13. [Contrôle d'une intervention antérieure](#13-contrôle-dune-intervention-antérieure)
+13. [Vérification d'une intervention antérieure](#13-vérification-dune-intervention-antérieure)
 
 ## 1. Activer le débogage sur le téléviseur
 
@@ -147,9 +147,9 @@ adb kill-server              # reinitialise le serveur local en cas d'anomalie
 
 Un appareil signalé `unauthorized` n'a pas reçu l'autorisation de la clé RSA sur
 le téléviseur. Depuis Android 11, le système révoque en outre l'autorisation
-d'un poste qui ne s'est pas connecté depuis sept jours : lors d'un contrôle
-ultérieur, un appareil autorisé lors de l'intervention répond `unauthorized`
-et la clé RSA est à réaccepter. Un réglage des options pour les développeurs
+d'un poste qui ne s'est pas connecté depuis sept jours : lors d'une
+vérification ultérieure, un appareil autorisé pendant l'intervention répond
+`unauthorized` et la clé RSA est à réaccepter. Un réglage des options pour les développeurs
 désactive ce délai d'expiration des autorisations adb ; ne le proposer que si
 des connexions espacées sont prévues, car il prolonge la confiance accordée au
 poste. Un appareil `offline` se rétablit rarement par une simple
@@ -475,10 +475,10 @@ voisine. Après
 plusieurs jours de fonctionnement, la mesure qui fait foi est
 `dumpsys procstats --hours 24`, qui moyenne une journée d'usage.
 
-## 13. Contrôle d'une intervention antérieure
+## 13. Vérification d'une intervention antérieure
 
-Le contrôle est une lecture : il ne modifie rien sur l'appareil. Chaque relevé
-se confronte au journal de l'intervention.
+La vérification est une lecture : elle ne modifie rien sur l'appareil. Chaque
+relevé se confronte au journal de l'intervention.
 
 ```bash
 adb shell uptime                                    # duree depuis le dernier demarrage
