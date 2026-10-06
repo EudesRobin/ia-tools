@@ -72,7 +72,7 @@ contenu narratif au-delà de ce qu'un correctif exige.
 Chaque critère ci-dessous est formulé en des termes valables pour n'importe
 quel projet — service Python, application web, dépôt d'outillage. **Ne jamais
 exiger un outil de compilation, un lanceur de tests ou une convention de nommage
-propres à une stack particulière**, ni dans un critère ni dans une proposition.
+propres à une stack particulière**, ni dans un constat ni dans une proposition.
 
 # Ce que l'agent examine
 
@@ -146,9 +146,9 @@ antérieur.** Relever les nouveaux documents non encore atteignables depuis la
 table de routage, les entrées de la table qui pointent vers des fichiers
 disparus, et les règles dupliquées apparues depuis cet audit.
 
-Sans ce rapport, le critère est sans objet : le rapport le mentionne comme non
-évalué, avec ce motif, dans la rubrique « Projet audité ». **Ne jamais fabriquer une comparaison « depuis la
-dernière fois ».**
+Sans rapport antérieur, le critère est sans objet : le présent rapport le
+mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité ».
+**Ne jamais fabriquer une comparaison « depuis la dernière fois ».**
 
 # Ce qui ne se signale jamais
 

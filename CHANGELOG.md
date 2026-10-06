@@ -30,7 +30,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `audit-docs` : déroulé ramené à sept phases, toutes menées en une seule
   exécution — le choix d'une structure de départ revient à l'utilisateur après
   le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
-  imposé, avec des critères de gravité ; dérive évaluée seulement sur un
+  imposé, avec une échelle de gravité définie ; dérive évaluée seulement sur un
   rapport d'audit antérieur fourni par l'appelant.
 
 ### 🐛 Corrections
@@ -47,8 +47,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 ### 📝 Documentation
 
 - `audit-docs` : les points qu'examine l'agent s'appellent désormais des
-  critères ; « contrôle » garde le seul sens de mécanisme qui rend un verdict
-  objectif.
+  critères ; « contrôle » n'y désigne plus un point examiné.
 
 ## [1.3.0] - 2026-10-03
 
