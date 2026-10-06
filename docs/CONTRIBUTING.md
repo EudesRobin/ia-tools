@@ -74,7 +74,10 @@ Au push d'un tag de version, le workflow `release` crée la Release GitHub
 
 Rien ne contrôle le registre de rédaction, le vocabulaire, la qualité d'écriture
 d'un outil (concision, latitude laissée à l'agent, pertinence de la liste de
-phases d'un outil multi-étapes), la cohérence sémantique entre documents, ni le
+phases d'un outil multi-étapes, délégation des étapes déterministes à un
+script), le maintien de toute donnée sensible hors du contexte de l'agent
+([CONVENTIONS.md](CONVENTIONS.md) §1.3), la cohérence sémantique entre
+documents, ni le
 respect du DoD des scripts et des workflows : qu'un script modifié a été lancé,
 qu'une vérification ajoutée a été vue en rouge, que l'exécution de l'intégration
 continue a été observée au vert. Ces règles s'appliquent délibérément.

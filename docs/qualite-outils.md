@@ -219,6 +219,15 @@ Un script préécrit est plus fiable que du code produit à la volée, ne consom
 aucun contexte tant qu'il n'a rien affiché, et garantit la constance d'une
 exécution à l'autre.
 
+- **Confier au script ce qui est déterministe.** Une étape dont le résultat ne
+  dépend d'aucun jugement — extraire, compter, comparer, filtrer une sortie
+  volumineuse, convertir un format, enchaîner une séquence fixe de commandes —
+  se confie à un script plutôt qu'à l'agent. Chaque lecture et chaque appel
+  d'outil évités sont autant de tokens épargnés, et le script n'affiche que la
+  synthèse dont l'agent a besoin pour décider. L'agent garde ce qui demande un
+  jugement : choisir, arbitrer, rédiger, interpréter un cas imprévu. Le script
+  n'est plus une option mais une obligation dès qu'une donnée sensible est en
+  jeu ([CONVENTIONS.md](CONVENTIONS.md) §1.3).
 - **Résoudre plutôt que reporter.** Traiter les cas d'erreur dans le script —
   fichier absent, autorisation refusée — au lieu de laisser remonter une
   exception que l'agent devra interpréter.
@@ -319,6 +328,10 @@ de la seule prose de ce document.
 
 **Scripts embarqués**
 
+- [ ] Les étapes déterministes sont confiées à un script, et l'agent ne garde
+      que ce qui demande un jugement.
+- [ ] Aucune donnée sensible ne transite par le contexte de l'agent : un script
+      la lit et l'emploie ([CONVENTIONS.md](CONVENTIONS.md) §1.3).
 - [ ] Le script traite ses propres cas d'erreur.
 - [ ] Chaque constante est justifiée par un commentaire.
 - [ ] Les dépendances sont déclarées.

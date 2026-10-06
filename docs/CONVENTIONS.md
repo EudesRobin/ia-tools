@@ -60,6 +60,16 @@ qui a besoin d'une valeur sensible la lit au moment de son exécution, ne
 l'affiche jamais, ne la consigne jamais dans un journal et ne la recopie jamais
 dans un message de commit ou une description de *pull request*.
 
+Une **donnée sensible** — jeton d'accès, mot de passe, clé privée, cookie de
+session, contenu d'un fichier d'identifiants — ne transite pas non plus par le
+contexte de l'agent. Un script la lit à sa source (variable d'environnement,
+gestionnaire d'identifiants, fichier hors du dépôt), l'emploie, et ne transmet à
+l'agent qu'un résultat non sensible : un statut, un code de sortie, une valeur
+masquée. L'outil ne prescrit jamais à l'agent de lire, d'afficher ou de recopier
+la valeur, ni de l'écrire dans une commande composée par l'agent : la commande
+comme sa sortie entrent dans le contexte, et de là dans l'historique de la
+session.
+
 ### 1.4 Aucun état produit à l'exécution n'est versionné
 
 Ce qu'un outil génère pendant son utilisation reste dans le dossier installé,
@@ -111,11 +121,14 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 | Activation des hooks git (`git config core.hooksPath .githooks`) | [CONTRIBUTING.md](CONTRIBUTING.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
 | Commande d'enregistrement d'une status line — interpréteur, `-ExecutionPolicy Bypass`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
+| Grille de qualité d'un outil — règles de [qualite-outils.md](qualite-outils.md) §§1 à 9, dont la délégation à un script, et checklist du §11 | [docs/qualite-outils.md](qualite-outils.md) et [agents/audit-outil.md](../agents/audit-outil.md) |
+| Donnée sensible tenue hors du contexte de l'agent | ce document [§1.3](#13-aucun-secret-dans-le-dépôt) et [agents/audit-outil.md](../agents/audit-outil.md) |
 
 La ligne relative à la lecture d'`AGENTS.md` tient au chargement : chaque
 agent hôte lit son propre fichier d'entrée, et `AGENTS.md` doit être atteint
 depuis chacun d'eux. Les lignes du suivi des tâches, des conventions de commit,
-du registre et de la commande d'enregistrement relèvent du
+du registre, de la commande d'enregistrement, de la grille de qualité et de la
+donnée sensible relèvent du
 [§1.7](#17-auto-suffisance-des-outils) :
 `skills/`, `agents/` et `statuslines/` sont distribués séparément et `docs/` ne
 l'est pas du tout — aucun de ces ensembles ne peut renvoyer vers un autre.
@@ -394,6 +407,8 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
       [§4](#4-agents-agentsnommd) — sans objet pour un hook ou une status
       line —, aucun chemin local en dur, moindre privilège respecté.
 - [ ] **Aucun secret ni fichier produit à l'exécution** n'est versionné.
+- [ ] **Aucune donnée sensible ne transite par le contexte de l'agent** : un
+      script la lit et l'emploie ([§1.3](#13-aucun-secret-dans-le-dépôt)).
 - [ ] **Protocole de suivi de progression** appliqué si le déroulé compte trois
       étapes ou plus — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]`
       `[-]`, contrôlés par `scripts/validate.py` — ou son omission délibérément
