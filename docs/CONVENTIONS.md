@@ -100,9 +100,9 @@ Un outil s'installe **isolément** : l'utilisateur peut copier
   côté d'elle. Ne référencer que son propre dossier ou un chemin
   `{AGENT_DIR}/…`.
   Un renvoi vers `../../docs/…` ne mène plus nulle part une fois l'outil
-  installé. `scripts/validate.py` refuse tout lien relatif d'une skill, d'un
-  agent ou d'une status line qui sort du dossier de l'outil — pour un agent,
-  de son fichier et de `agents/docs/<nom>/`.
+  installé. `scripts/validate.py` refuse, dans une skill, un agent ou une
+  status line, tout lien relatif qui sort du dossier de l'outil ; pour un
+  agent, le périmètre admis est son fichier et `agents/docs/<nom>/`.
 - **Répéter plutôt que renvoyer.** Si un outil a besoin d'une règle ou d'un
   template qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
   duplication est délibérée : elle garantit que l'outil fonctionne seul. Elle
