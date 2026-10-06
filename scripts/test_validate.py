@@ -50,6 +50,8 @@ CASES = [
     ("ancre externe morte", append_to("README.md", "\n[x](docs/SETUP.md#nulle-part)\n"), "ancre introuvable"),
     ("lien relatif mort", append_to("README.md", "\n[x](./absent.md)\n"), "lien relatif mort"),
     ("lien de reference mort", append_to("README.md", "\n[r]: ./absent.md\n"), "lien relatif mort"),
+    ("lien de skill hors de son dossier", append_to("skills/setup-harness/SKILL.md", "\n[x](../../docs/SETUP.md)\n"), "hors du dossier de l'outil"),
+    ("lien d'agent hors de son perimetre", append_to("agents/audit-docs.md", "\n[x](../docs/SETUP.md)\n"), "hors du dossier de l'outil"),
     ("chemin Windows", append_to("README.md", "\nC:\\Users\\quelquun\\x\n"), "chemin local en dur"),
     ("chemin a barres obliques", append_to("README.md", "\nC:/Users/quelquun/x\n"), "chemin local en dur"),
     ("chemin macOS", append_to("README.md", "\n/Users/quelquun/x\n"), "chemin local en dur"),
