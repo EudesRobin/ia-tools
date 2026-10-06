@@ -223,9 +223,10 @@ toute commande ou tout template à reproduire tel quel.
 
 Les scripts, feuilles de style et documents de référence sont placés à côté de
 `SKILL.md`, dans le dossier de la skill, et sont référencés par un chemin
-relatif à ce dossier. La skill appelle le script plutôt que de réimplanter sa
-logique dans ses instructions. Tout fichier embarqué doit figurer dans la table
-d'installation de [SETUP.md](SETUP.md), sans quoi la copie sera incomplète.
+relatif à ce dossier. La skill appelle le script plutôt que d'en réimplanter la
+logique dans ses instructions. L'installation copie le dossier entier, fichier
+par fichier ([SETUP.md](SETUP.md) §3) : aucune déclaration n'est nécessaire pour
+qu'un fichier embarqué soit installé.
 
 ---
 
@@ -387,8 +388,6 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
       l'arborescence, avec ses fichiers embarqués.
 - [ ] **Status line** — `STATUSLINE.md` et `statusline.ps1` présents, cas
       d'affichage ajoutés à `scripts/test_statusline.py`.
-- [ ] **[SETUP.md](SETUP.md)** — l'outil figure dans la table d'installation,
-      fichiers embarqués compris, pour que la copie soit complète.
 - [ ] **[AGENTS.md](../AGENTS.md)** — une règle d'usage est ajoutée **uniquement**
       si l'outil doit être déclenché dans des situations précises.
 - [ ] **Front-matter conforme** au [§2](#2-skills-skillsnomskillmd) ou au

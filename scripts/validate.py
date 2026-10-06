@@ -27,8 +27,8 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     admis ; un fichier texte illisible en UTF-8 est signale, non ignore ;
   - le front-matter ne porte que les cles prevues (CONVENTIONS.md 2.1 et 4.1),
     et tout agent declare 'tools' par des noms simples ;
-  - tout outil figure dans l'inventaire de README.md et, hors hooks, dans les
-    tables de docs/SETUP.md (CONVENTIONS.md section 5) ;
+  - tout outil figure dans l'inventaire de README.md (CONVENTIONS.md
+    section 5) ;
   - une status line vit sous statuslines/<agent hote>/<nom>/, pour un agent
     hote dote de status lines dans scripts/install.py (SCOPE_AGENTS), et
     contient STATUSLINE.md et statusline.ps1 ;
@@ -312,9 +312,8 @@ def check_keys(label: str, fm: dict, allowed: set[str], errors: list[str]) -> No
 
 
 def check_inventory(errors: list[str]) -> None:
-    """CONVENTIONS.md section 5 : tout outil figure au README et a SETUP.md."""
+    """CONVENTIONS.md section 5 : tout outil figure dans l'inventaire du README."""
     readme = read(ROOT / "README.md") or ""
-    setup = read(ROOT / "docs" / "SETUP.md") or ""
     tools = [("agents", p.stem) for p in sorted((ROOT / "agents").glob("*.md"))]
     for kind in ("skills", "hooks"):
         tools += [(kind, p.name) for p in sorted((ROOT / kind).glob("*/")) if p.is_dir()]
@@ -326,9 +325,6 @@ def check_inventory(errors: list[str]) -> None:
     for kind, name in tools:
         if f"[`{name}`]" not in readme:
             errors.append(f"{kind}/{name} : absent de l'inventaire de README.md")
-        line = re.compile(rf"^\|\s*`{re.escape(name)}`", re.MULTILINE)
-        if kind != "hooks" and not line.search(setup):
-            errors.append(f"{kind}/{name} : absent des tables de docs/SETUP.md")
 
 
 def load_install():
