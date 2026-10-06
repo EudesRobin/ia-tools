@@ -44,7 +44,7 @@ le bloc est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 6 : obtenir l'accord de l'utilisateur, puis pousser la branche et publier la PR
 - [ ] Phase 7 : contrôler la PR publiée
 
-La [phase 7](#7-contrôler-la-pr-publiée) est un contrôle : elle ne passe à `[x]`
+La [phase 7](#7-contrôler-la-pr-publiée) est une vérification : elle ne passe à `[x]`
 qu'après relecture de la PR par `gh pr view`, le résultat étant alors nommé
 (`[x] Phase 7 : contrôler la PR publiée — conforme, <URL>`).
 

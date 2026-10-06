@@ -48,6 +48,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 - `audit-docs` : les points qu'examine l'agent s'appellent désormais des
   critères ; « contrôle » n'y désigne plus un point examiné.
+- `audit-docs`, `audit-outil`, `relecture-fr`, `clean-android-tv`,
+  `pull-request`, `setup-harness` : la phase qui ne passe à `[x]` que sur une
+  preuve s'appelle désormais phase de vérification, et non plus contrôle.
 
 ## [1.3.0] - 2026-10-03
 

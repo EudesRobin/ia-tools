@@ -132,9 +132,10 @@ ce qui suit.
    - [ ] Étape non commencée
    ```
 
-3. **Faire de la vérification une étape comme les autres, et nommer le contrôle
-   auquel elle s'adosse.** Une étape ne passe à `[x]` que sur un contrôle réel,
-   jamais sur une simple déclaration :
+3. **Faire de la vérification une étape comme les autres, et nommer la preuve
+   à laquelle elle s'adosse.** Une étape ne passe à `[x]` que sur une preuve
+   réelle — un contrôle au vert, une ligne réellement lue, un accord explicite
+   de l'utilisateur —, jamais sur une simple déclaration :
    `[x] Valider les outils — validateur au vert` est adossé au validateur,
    `[x] Valider les outils` seul ne l'est pas.
 
@@ -168,7 +169,7 @@ après l'introduction, avant le déroulé. Elle se lit donc avant la première
 action au lieu d'être découverte au milieu des étapes. Elle porte, dans cet
 ordre : la déclaration du nombre de phases, les marqueurs et l'obligation de
 ré-affichage, le suivi applicable, la liste `**Tâches**`, puis la phase de
-contrôle et ce à quoi elle s'adosse.
+vérification et ce à quoi elle s'adosse.
 
 **Comment l'énoncer.** Dire dans l'outil si le suivi est **impératif**
 (« toujours suivre ce déroulé ») ou **indicatif** (§6). L'outil ne réénonce pas

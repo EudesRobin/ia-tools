@@ -37,7 +37,7 @@ suivis n'est un repli.
 - [ ] Phase 4 : écrire le bloc dans le fichier cible du projet
 - [ ] Phase 5 : rappeler que le harnais est local au projet
 
-La phase 3 est un contrôle : elle ne passe à `[x]` que sur l'accord explicite de
+La phase 3 est une vérification : elle ne passe à `[x]` que sur l'accord explicite de
 l'utilisateur, pas sur la présentation du bloc. Sans accord, ne pas passer à la
 phase 4.
 
