@@ -109,7 +109,24 @@ le laisse intact.
 | `conflit` | l'écart ne s'explique ni par les variables ni par une révision : **édition locale manuelle**, ou outil homonyme de l'utilisateur | **rien**, pour aucun fichier du même outil chez cet agent hôte |
 | `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
 
-Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon.
+### Ce que le script rapporte
+
+- **Validation préalable.** Le script lance `scripts/validate.py` avant tout
+  examen. Si la validation échoue, `--apply` n'écrit rien. Une anomalie
+  d'environnement (`pyyaml` absent) est signalée sans bloquer l'installation.
+- **État de chaque outil**, par agent hôte : l'état le plus défavorable parmi
+  ceux de ses fichiers — `a_jour`, `a_installer`, `a_mettre_a_jour`,
+  `conflit` ou `illisible`. Après `--apply`, un outil dont les fichiers ont
+  été écrits passe à `installe` ou `mis_a_jour`. Le détail par fichier n'est
+  affiché que pour ce qui demande une intervention : conflits, fichiers
+  illisibles, fichiers en `local seul`, échecs d'écriture.
+- **Écritures vérifiées.** Chaque fichier écrit par `--apply` est relu et
+  comparé au rendu. Une écriture impossible, ou un fichier relu qui diffère
+  du rendu, classe l'outil en `echec`, sans interrompre le traitement des
+  autres outils.
+
+Code de sortie : `0` si la validation passe et qu'aucun conflit ni échec
+d'écriture ne reste chez aucun agent hôte, `1` sinon.
 
 ### Ce qui reste à la session
 
@@ -124,12 +141,16 @@ Code de sortie : `0` si aucun conflit ne reste chez aucun agent hôte, `1` sinon
 3. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
-4. **Relancer l'audit** après `--apply` et les arbitrages : chaque fichier écrit
-   doit être classé `identique`, preuve que l'écriture a eu lieu. Le code de
-   sortie vaut `0`, sauf si un fichier en conflit a été gardé en version locale
-   ou fusionné écart par écart : il reste alors classé `conflit`.
-5. **Récapituler**, par agent hôte : installé / mis à jour (automatiquement) /
-   inchangé / arbitré.
+4. **Ne relancer l'audit qu'après un arbitrage** : `--apply` vérifie
+   lui-même ses écritures. Chaque fichier arbitré en faveur du dépôt doit être
+   classé `identique`. Un fichier gardé en version locale ou fusionné écart par
+   écart reste classé `conflit`, et le code de sortie vaut alors `1`.
+5. **Récapituler**, par agent hôte, en reprenant les lignes d'état par outil
+   que donne la sortie, complétées du résultat de chaque arbitrage.
+
+Un audit dont le code de sortie vaut `0` et qui ne signale aucun outil
+`a_installer` ni `a_mettre_a_jour` clôt la procédure : il n'y a rien à
+confirmer ni à écrire.
 
 ## 3. Skills
 
@@ -141,7 +162,7 @@ skills étrangères au dépôt — celles de l'utilisateur, ou celles que l'agen
 synchronise lui-même — ne sont pas examinées.
 
 La conformité du front-matter — `name` identique au nom du dossier — relève de
-`scripts/validate.py`, à lancer avant toute installation.
+`scripts/validate.py`, que `scripts/install.py` lance avant tout examen (§2).
 
 | Skill               | Fichiers embarqués                          |
 |---------------------|---------------------------------------------|

@@ -59,10 +59,10 @@ L'hypothèse par défaut est que **l'agent est déjà compétent**. N'ajouter qu
 qu'il ne sait pas. Pour chaque paragraphe : est-il nécessaire ? relève-t-il de
 la connaissance générale ? justifie-t-il son coût ?
 
-Une instruction concise nomme la bibliothèque retenue et montre l'appel. Une
-instruction verbeuse explique en plus ce qu'est le format de fichier, pourquoi
-cette bibliothèque a été choisie et comment l'installer — trois choses que
-l'agent sait déjà.
+Une instruction concise montre la commande : `clean-android-tv` écrit
+« `adb connect <IP_TV>:5555`, puis `adb devices -l` ». Une instruction verbeuse
+expliquerait en plus ce qu'est adb, à quoi sert le débogage réseau et comment
+installer les outils Android — trois choses que l'agent sait déjà.
 
 ## 3. Découpage : limiter la longueur du document canonique
 
@@ -78,9 +78,11 @@ n'est pas lu : c'est ce qui rend le découpage gratuit.
   et agir à partir d'une information incomplète.
 - **Sommaire au-delà de 100 lignes.** Un fichier de référence long s'ouvre par
   un sommaire, pour que sa portée reste visible même en lecture partielle.
-- **Organiser par domaine, pas par séquence.** `reference/finance.md`,
-  `reference/fiscalite.md` — jamais `doc1.md`, `doc2.md`. Une demande sur un
-  domaine ne charge alors que le fichier de ce domaine.
+- **Organiser par domaine, pas par séquence.** Chaque fichier embarqué couvre
+  un domaine que son nom désigne. Ainsi `pull-request` sépare
+  `conventions-defaut.md`, pour les commits et les branches, de
+  `template-pr.md`, pour la description de PR : ce dernier n'est ouvert que si
+  le projet n'a pas de template.
 - **Nommer les fichiers explicitement.**
 
 ## 4. Latitude laissée à l'agent
@@ -201,8 +203,9 @@ qu'une fois le contrôle au vert ») et le point de retour en cas d'échec
 - **Terminologie constante.** Choisir un terme et s'y tenir. C'est l'objet de
   [VOCABULARY.md](VOCABULARY.md) : un vocabulaire flottant dégrade la lecture.
 - **Ne pas offrir de catalogue d'options.** Donner une valeur par défaut, puis
-  nommer l'exception qui la remplace (« employer X ; pour un document scanné,
-  employer Y »), plutôt que cinq bibliothèques interchangeables.
+  nommer l'exception qui la remplace, plutôt qu'une liste de choix
+  équivalents. `pull-request` applique les conventions du projet et, à défaut,
+  celles de `conventions-defaut.md`.
 - **Templates.** Fournir le format de sortie explicitement, et le marquer
   **impératif** (« reproduire ce template tel quel ») ou **indicatif** (« une
   valeur par défaut raisonnable, à adapter »). Un template non marqué est ambigu.
@@ -210,9 +213,10 @@ qu'une fois le contrôle au vert ») et le point de retour en cas d'échec
   couples entrée/sortie concrets. Un exemple transmet la forme visée plus
   fidèlement qu'une description de cette forme.
 - **Branchements explicites.** Là où le déroulé bifurque, nommer le point de
-  décision (« s'agit-il d'une création ? suivre le déroulé de création
-  ci-dessous »). Quand une branche grossit, la déplacer dans son propre fichier
-  et prescrire de lire celui qui correspond à la tâche.
+  décision. `clean-android-tv` distingue l'intervention elle-même du contrôle
+  d'une intervention antérieure, et consacre à ce contrôle une section et une
+  liste de phases distinctes. Quand une branche grossit, la déplacer dans son propre
+  fichier et prescrire de lire celui qui correspond à la tâche.
 
 ## 7. Scripts embarqués
 
@@ -227,9 +231,9 @@ exécution à l'autre.
   chaque seuil porte un commentaire qui explique sa valeur. Une valeur que
   l'auteur ne sait pas justifier est une valeur sur laquelle l'agent ne peut pas
   raisonner non plus.
-- **Dire si le script se lance ou se lit.** « Lancer `export.py` pour produire
-  le rapport » ou « voir `export.py` pour l'algorithme ». Sans précision, c'est
-  qu'il se lance.
+- **Dire si le script se lance ou se lit.** Écrire « Lancer `install.py`
+  pour l'audit » ou « voir le docstring de `validate.py` pour la liste des
+  contrôles ». Sans précision, le script est à lancer.
 - **Déclarer les dépendances.** Ne pas supposer qu'un paquet est installé ;
   lister les dépendances, en renvoyant vers [PREREQUIS.md](PREREQUIS.md)
   plutôt qu'en recopiant une procédure.
@@ -237,10 +241,13 @@ exécution à l'autre.
   destructive ou à fort enjeu, employer *planifier → valider → appliquer* :
   faire écrire un plan dans un fichier, le valider par un script, et n'appliquer
   qu'ensuite. Les erreurs sont détectées avant toute modification, et le plan se
-  reprend sans toucher aux originaux.
-- **Rendre les messages de validation précis.** « Champ `date_signature`
-  introuvable. Champs disponibles : nom_client, total, date_signature_signee »
-  permet de corriger ; « échec de la validation » ne dit rien.
+  reprend sans toucher aux originaux. `install.py` suit ce principe : l'audit
+  établit ce qui sera écrit sans rien écrire, puis `--apply` n'applique que
+  les cas sûrs.
+- **Rendre les messages de validation précis.**
+  « `skills/setup-harness/SKILL.md : name='setup-harnais' != 'setup-harness'` »
+  désigne le fichier, le champ et la valeur attendue ; « front-matter
+  invalide » ne dit rien.
 
 ## 8. Références aux outils MCP
 

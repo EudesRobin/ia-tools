@@ -1,18 +1,23 @@
 #!/usr/bin/env python3
 """Tests de scripts/install.py sur une cible temporaire (--target), pour chaque
-agent hote : installation sur cible vide, idempotence, conflit sur edition
-locale sans ecriture de l'outil concerne, settings.json jamais ecrit
-(AGENTS.md, DoD des scripts ; docs/SETUP.md).
+agent hote : installation sur cible vide, idempotence, etat par outil, conflit
+sur edition locale sans ecriture de l'outil concerne, echec d'ecriture signale,
+validation prealable bloquant --apply, settings.json jamais ecrit (AGENTS.md,
+DoD des scripts ; docs/SETUP.md).
 
 Usage : python scripts/test_install.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
+import contextlib
+import importlib.util
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -57,6 +62,8 @@ class TestInstall(unittest.TestCase):
                 self.assertEqual(code, 0, r)
                 self.assertTrue(r["ecrits"], f"{agent} : rien n'a ete ecrit")
                 self.assertEqual(sorted(r["ecrits"]), sorted(r["classes"]["absent"]))
+                self.assertEqual(r["echecs"], [])
+                self.assertEqual(set(r["outils"].values()), {"installe"}, r["outils"])
                 # Le chemin cible depend de l'agent hote (agent .md ou .agent.md) :
                 # seul le nombre de fichiers presents est compare.
                 present = [p for p in target.rglob("*") if p.is_file()]
@@ -66,6 +73,7 @@ class TestInstall(unittest.TestCase):
                 n = counts(r)
                 self.assertGreater(n["identique"], 0)
                 self.assertEqual(sum(v for k, v in n.items() if k != "identique"), 0, n)
+                self.assertEqual(set(r["outils"].values()), {"a_jour"}, r["outils"])
 
     def test_conflict_blocks_tool(self):
         for agent in AGENTS:
@@ -85,6 +93,21 @@ class TestInstall(unittest.TestCase):
                                  f"{agent} : edition locale ecrasee")
                 self.assertFalse(deleted.exists(), f"{agent} : fichier d'un outil bloque reecrit")
                 self.assertNotIn(DELETED, r["ecrits"])
+                self.assertEqual(r["outils"]["clean-android-tv"], "conflit")
+
+    def test_write_failure_reported(self):
+        """Une ecriture impossible est signalee et sort en 1, sans arreter les autres outils."""
+        for agent in AGENTS:
+            with self.subTest(agent):
+                target = self.tmp / agent
+                (target / EDITED).mkdir(parents=True)  # un dossier a la place du fichier
+                code, r = run_install(agent, target, "--apply")
+                self.assertEqual(code, 1, f"{agent} : un echec d'ecriture doit sortir en 1")
+                self.assertIn(EDITED, r["echecs"])
+                self.assertNotIn(EDITED, r["ecrits"])
+                self.assertEqual(r["outils"]["clean-android-tv"], "echec")
+                others = [s for s in r["ecrits"] if not s.startswith(TOOL + "/")]
+                self.assertTrue(others, f"{agent} : les autres outils n'ont pas ete ecrits")
 
     def test_settings_json_never_written(self):
         for agent in AGENTS:
@@ -114,6 +137,25 @@ class TestInstall(unittest.TestCase):
                 self.assertTrue(written)
                 self.assertTrue(all(s.startswith(TOOL + "/") for s in written), written)
                 self.assertEqual("obsolete" in r.stderr, warns, r.stderr)
+
+    def test_validation_gates_apply(self):
+        """Validateur en echec : --apply n'ecrit rien ; anomalie d'environnement : avertit."""
+        spec = importlib.util.spec_from_file_location("install", ROOT / "scripts" / "install.py")
+        install = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(install)
+        for exit_code, expected, writes in ((1, 1, False), (2, 0, True)):
+            with self.subTest(exit_code):
+                validator = self.tmp / f"validator_{exit_code}.py"
+                validator.write_text(f"import sys\nsys.exit({exit_code})\n", encoding="utf-8")
+                target = self.tmp / f"target_{exit_code}"
+                install.VALIDATOR = validator
+                argv = ["install.py", "--agent", "claude", "--target", str(target), "--apply"]
+                out = io.StringIO()
+                with unittest.mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out):
+                    code = install.main()
+                self.assertEqual(code, expected, out.getvalue())
+                self.assertEqual(target.exists() and any(target.rglob("*")), writes, out.getvalue())
+                self.assertIn("validation", out.getvalue())
 
 
 if __name__ == "__main__":

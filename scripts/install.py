@@ -22,6 +22,16 @@ agent hote : si l'un de ses fichiers y est en conflit, aucun de ses fichiers n'y
 est ecrit. Un outil homonyme cree par l'utilisateur n'est donc jamais complete
 ni modifie. Chaque agent hote est traite separement.
 
+Le rapport donne l'etat de chaque outil, celui du plus en retard de ses
+fichiers : a_jour, a_installer, a_mettre_a_jour, conflit ou illisible ; apres
+--apply, installe, mis_a_jour ou echec a la place des etats ecrits. Chaque
+ecriture est relue et comparee au rendu : une ecriture impossible ou divergente
+est classee en echec, sans interrompre les autres outils.
+
+scripts/validate.py est lance avant tout examen : en echec, --apply n'ecrit
+rien ; une anomalie d'environnement (code 2, pyyaml absent) est signalee sans
+bloquer, l'installation n'exigeant que Python.
+
 Le rendu est la source apres substitution des placeholders {NOM_VARIABLE}
 (docs/SETUP.md section 1). La comparaison normalise les fins de ligne ; l'ecriture
 recopie les octets du rendu, ce qui preserve celles de l'arbre de travail.
@@ -44,7 +54,8 @@ console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 Usage : python scripts/install.py [--apply] [--agent ...] [--scope ...]
                                   [--tool ...] [--diff <chemin>]
                                   [--target <dossier>] [--json]
-Code de sortie : 0 si aucun conflit ne reste chez aucun agent hote, 1 sinon.
+Code de sortie : 0 si la validation passe et qu'aucun conflit ni echec
+d'ecriture ne reste chez aucun agent hote, 1 sinon.
 """
 
 import argparse
@@ -93,6 +104,22 @@ HOOK_REGISTRATION = {
 # Jamais classe ni ecrit, dans le depot comme en local.
 EXCLUDED_DIRS = {".idea", "__pycache__", "plugins", ".git"}
 EXCLUDED_NAMES = {"settings.json", "settings.local.json", ".gitignore"}
+
+# Validateur des sources, lance avant tout examen (docs/SETUP.md section 3).
+VALIDATOR = ROOT / "scripts" / "validate.py"
+
+# Etat d'un outil : celui du plus en retard de ses fichiers. Libelles affiches,
+# dans l'ordre d'affichage, de ce qui appelle une suite a ce qui est a jour.
+STATE_LABELS = {
+    "conflit": "conflit",
+    "echec": "echec ecriture",
+    "illisible": "illisible",
+    "a_installer": "a installer",
+    "a_mettre_a_jour": "a mettre a jour",
+    "installe": "installe",
+    "mis_a_jour": "mis a jour",
+    "a_jour": "a jour",
+}
 
 # Profondeur d'historique exploree pour reconnaitre une installation obsolete.
 HISTORY_MAX_REVS = 60
@@ -285,6 +312,56 @@ def classify(source: str, src: Path, dst: Path, subs: dict[str, str]) -> tuple[s
     return "conflit", rendered
 
 
+def write_checked(dst: Path, rendered: bytes) -> bool:
+    """Ecrit le rendu puis le relit : vrai seulement si la cible lui est identique."""
+    try:
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        dst.write_bytes(rendered)
+    except OSError:
+        return False
+    local = read_bytes(dst)
+    return local is not None and normalize(local) == normalize(rendered)
+
+
+def tool_states(per_file: list, failed: list[str], applied: bool) -> dict[str, str]:
+    """Etat de chaque outil, tire des classes de ses fichiers (STATE_LABELS)."""
+    by_tool: dict[str, list[str]] = {}
+    for source, _, status, _ in per_file:
+        by_tool.setdefault(tool_of(source), []).append(status)
+    failed_tools = {tool_of(source) for source in failed}
+    states = {}
+    for tool, statuses in by_tool.items():
+        if "conflit" in statuses:
+            state = "conflit"
+        elif tool in failed_tools:
+            state = "echec"
+        elif "illisible" in statuses:
+            state = "illisible"
+        elif all(s == "identique" for s in statuses):
+            state = "a_jour"
+        elif all(s == "absent" for s in statuses):
+            state = "installe" if applied else "a_installer"
+        else:
+            state = "mis_a_jour" if applied else "a_mettre_a_jour"
+        states[tool] = state
+    return states
+
+
+def run_validation() -> tuple[str, str]:
+    """(etat, sortie) de scripts/validate.py : ok, echec, ou indisponible (code 2)."""
+    try:
+        r = subprocess.run(
+            [sys.executable, str(VALIDATOR)],
+            cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+        )
+    except OSError as e:
+        return "indisponible", str(e)
+    output = (r.stdout + r.stderr).strip()
+    if r.returncode == 0:
+        return "ok", output
+    return ("indisponible" if r.returncode == 2 else "echec"), output
+
+
 def unified(agent: str, source: str, src: Path, dst: Path, subs: dict[str, str]) -> str:
     rendered = render(read_bytes(src) or b"", subs)
     local = read_bytes(dst) or b""
@@ -442,12 +519,11 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
 
     blocked = sorted({tool_of(rel) for rel in classes["conflit"]})
     written: list[str] = []
+    failed: list[str] = []
     if args.apply:
         for source, dst, status, rendered in per_file:
             if status in ("absent", "obsolete") and tool_of(source) not in blocked:
-                dst.parent.mkdir(parents=True, exist_ok=True)
-                dst.write_bytes(rendered)
-                written.append(source)
+                (written if write_checked(dst, rendered) else failed).append(source)
 
     return {
         "cible": str(target_root),
@@ -455,6 +531,8 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
         "local_seul": orphans,
         "outils_bloques": blocked,
         "ecrits": written,
+        "echecs": failed,
+        "outils": tool_states(per_file, failed, args.apply),
         "examines": len(file_pairs),
         "notice": hooks_notice(agent, scopes, target_root),
         "ignores": ignores,
@@ -464,20 +542,25 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
     }
 
 
-def print_report(agent: str, r: dict, apply: bool) -> None:
+def print_report(agent: str, r: dict, apply: bool, can_apply: bool) -> None:
     classes = r["classes"]
-    print(f"install.py [{agent}] : {r['examines']} fichier(s) examines -> {r['cible']}")
-    print(f"  identiques   {len(classes['identique'])}")
-    for label, key in (
-        ("absents", "absent"),
-        ("obsoletes", "obsolete"),
-        ("conflits", "conflit"),
-        ("illisibles", "illisible"),
-    ):
+    tools = r["outils"]
+    print(
+        f"install.py [{agent}] : {len(tools)} outil(s), {r['examines']} fichier(s) "
+        f"examines -> {r['cible']}"
+    )
+    for state, label in STATE_LABELS.items():
+        names = sorted(t for t, s in tools.items() if s == state)
+        if names:
+            print(f"  {label:<16} {len(names)}  {', '.join(names)}")
+    # Detail par fichier : seulement ce qui appelle une suite de la session.
+    for label, key in (("fichiers en conflit", "conflit"), ("illisibles", "illisible")):
         if classes[key]:
-            print(f"  {label:<12} {len(classes[key])}  {', '.join(classes[key])}")
+            print(f"  {label} : {', '.join(classes[key])}")
+    if r["echecs"]:
+        print(f"  ecriture impossible ou divergente : {', '.join(r['echecs'])}")
     if r["local_seul"]:
-        print(f"  local seul   {len(r['local_seul'])}  {', '.join(r['local_seul'])}")
+        print(f"  local seul : {', '.join(r['local_seul'])}")
     if r["notice"]:
         print(f"  {r['notice']}")
     for scope in r["ignores"]:
@@ -496,9 +579,8 @@ def print_report(agent: str, r: dict, apply: bool) -> None:
                 text = json.dumps({"statusLine": fragment}, indent=2)
                 print("\n".join("      " + line for line in text.splitlines()))
     if apply:
-        detail = f"  {', '.join(r['ecrits'])}" if r["ecrits"] else ""
-        print(f"  ecrits : {len(r['ecrits'])}{detail}")
-    elif classes["absent"] or classes["obsolete"]:
+        print(f"  ecrits et verifies : {len(r['ecrits'])} fichier(s)")
+    elif can_apply and (classes["absent"] or classes["obsolete"]):
         print("  relancer avec --apply pour ecrire les cas surs")
     if classes["conflit"]:
         print(
@@ -571,14 +653,27 @@ def main() -> int:
             return 1
         return 0
 
+    validation, validation_output = run_validation()
+    refused = args.apply and validation == "echec"
+    if refused:
+        args = argparse.Namespace(**{**vars(args), "apply": False})
+    if validation != "ok":
+        print(validation_output, file=sys.stderr)
+
     reports = {agent: examine(agent, args, scopes) for agent in agents}
     conflicts = sum(len(r["classes"]["conflit"]) for r in reports.values())
+    failures = sum(len(r["echecs"]) for r in reports.values())
+    red = bool(conflicts or failures or validation == "echec")
 
     if args.json:
-        keys = ("cible", "classes", "local_seul", "outils_bloques", "ecrits", "statusline")
+        keys = (
+            "cible", "outils", "classes", "local_seul", "outils_bloques",
+            "ecrits", "echecs", "statusline",
+        )
         print(
             json.dumps(
                 {
+                    "validation": validation,
                     "perimetres": scopes,
                     "agents": {
                         agent: {k: r[k] for k in keys} for agent, r in reports.items()
@@ -588,16 +683,33 @@ def main() -> int:
                 indent=2,
             )
         )
-        return 1 if conflicts else 0
+        return 1 if red else 0
+
+    if validation == "ok":
+        print("install.py : validation (scripts/validate.py) OK\n")
+    elif validation == "indisponible":
+        print("install.py : validation impossible (anomalie d'environnement, voir stderr) ;")
+        print("  installation poursuivie sans elle.\n")
+    else:
+        verdict = "--apply n'a rien ecrit" if refused else "--apply n'ecrira rien"
+        print(f"install.py : validation (scripts/validate.py) en echec : {verdict}.\n")
 
     for agent, r in reports.items():
-        print_report(agent, r, args.apply)
+        print_report(agent, r, args.apply, validation != "echec")
 
+    if validation == "echec":
+        print("install.py : corriger les sources (scripts/validate.py) avant d'installer.")
+    if failures:
+        print(
+            f"install.py : {failures} ecriture(s) impossible(s) ou divergente(s) ; "
+            "relancer apres correction."
+        )
     if conflicts:
         print(
             f"install.py : {conflicts} conflit(s) a arbitrer (docs/SETUP.md section 2)."
         )
         print("  install.py --diff <chemin> [--agent <nom>] affiche l'ecart d'un fichier.")
+    if red:
         return 1
 
     print("install.py : OK")

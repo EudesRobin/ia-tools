@@ -94,6 +94,11 @@ python scripts/install.py --agent copilot --apply            # un seul agent hô
 python scripts/install.py --tool clean-android-tv --apply    # un seul outil
 ```
 
+La sortie donne, pour chaque agent hôte, l'état de chaque outil : à jour, à
+installer, à mettre à jour ou en conflit. Le script valide d'abord les sources
+du dépôt et n'écrit rien si la validation échoue ; chaque fichier écrit est relu
+et comparé à la version du dépôt.
+
 Une installation locale obsolète est remplacée par la version du dépôt. Un
 fichier modifié à la main est signalé comme conflit et laissé intact. Le script
 ne supprime aucun fichier local et ne modifie jamais le `settings.json` d'un
