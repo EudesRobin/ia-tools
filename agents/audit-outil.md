@@ -1,16 +1,16 @@
 ---
 name: audit-outil
 description: >-
-  Audite un outil d'agent de code — skill, agent ou hook — sur trois axes : la
+  Auditer un outil d'agent de code — skill, agent ou hook — sur trois axes : la
   qualité de son écriture (concision, découpage, latitude laissée à l'agent,
   déroulés, scripts embarqués, évaluation), les étapes qu'un script exécuterait
   à moindre coût que le modèle, et le maintien de toute donnée sensible hors du
-  contexte de l'agent. Rend un constat sourcé `fichier:ligne` et un lot de
-  modifications proposées ; il ne modifie aucun fichier. À utiliser quand
+  contexte de l'agent. Rendre un constat sourcé `fichier:ligne` et un lot de
+  modifications proposées, sans modifier aucun fichier. À utiliser quand
   l'utilisateur demande d'auditer, de relire ou de critiquer une skill, un
   agent ou un hook, de vérifier qu'un outil est bien écrit, de réduire son
-  coût en tokens ou en appels au modèle, de vérifier qu'il ne manipule pas de
-  jeton, de mot de passe ou d'identifiants, ou délègue directement à l'agent
+  coût en tokens ou en appels au modèle, de vérifier que l'outil ne manipule pas de
+  jeton d'accès, de mot de passe ou d'identifiants, ou délègue directement à l'agent
   audit-outil.
 tools: Read, Grep, Glob, TodoWrite
 ---

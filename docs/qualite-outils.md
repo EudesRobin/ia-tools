@@ -289,7 +289,7 @@ autorité.
 
 | Règle générale | Position de ce dépôt |
 |---|---|
-| `description` à la troisième personne (« Convertit un document… ») | Ce dépôt écrit les `description` à l'**infinitif** (« Convertir un document Markdown… »), forme idiomatique en français pour désigner une capacité. `CONVENTIONS.md` §2.1 fait autorité |
+| `description` à la troisième personne (« Convertit un document… ») | Ce dépôt écrit les `description` des skills comme des agents à l'**infinitif** (« Convertir un document Markdown… »), forme idiomatique en français pour désigner une capacité. `CONVENTIONS.md` §2.1 et §4.1 font autorité |
 | Nom d'outil au gérondif (`processing-pdfs`) | Ce dépôt emploie le groupe nominal ou le verbe d'action — `clean-android-tv`, `setup-harness` |
 | `allowed-tools` obligatoire | `CONVENTIONS.md` §2.1 le rend facultatif ; le moindre privilège du §2.2 s'applique dès que le champ est renseigné |
 | Liste de déclencheurs incluant la forme `/nom` | `CONVENTIONS.md` §2.1 exige « À utiliser quand… », formulé avec les mots de l'utilisateur ; la forme `/nom` n'est pas requise |

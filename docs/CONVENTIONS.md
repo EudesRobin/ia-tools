@@ -345,8 +345,9 @@ tools: Read, Grep, Glob # OBLIGATOIRE — moindre privilège
 ```
 
 - **`description`** — c'est elle qui décide de la délégation automatique. Y
-  énoncer les conditions de déclenchement aussi explicitement que dans une skill
-  ([§2.1](#21-front-matter)).
+  énoncer les conditions de déclenchement aussi explicitement que dans une skill,
+  et, comme pour une skill, l'écrire **à l'infinitif** — « Auditer la structure
+  documentaire… », jamais « Audite… » ([§2.1](#21-front-matter)).
 - **`tools`** — noms d'outils simples (`Read`, `Grep`, `Glob`, `Edit`, `Write`,
   `Bash`), et non les motifs restreints à un préfixe `Bash(cmd:*)` des skills.
   Appliquer le moindre privilège : **omettre `Write`, `Edit` et `Bash` sauf

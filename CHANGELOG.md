@@ -25,6 +25,14 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   La sortie `--json` comporte désormais les clés `validation`, `outils` et
   `echecs`.
 
+### 🔄 Modifications
+
+- `audit-docs` : déroulé ramené à sept phases, toutes menées en une seule
+  exécution — le choix d'une structure de départ revient à l'utilisateur après
+  le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
+  imposé, avec des critères de gravité ; dérive évaluée seulement sur un
+  rapport d'audit antérieur fourni par l'appelant.
+
 ### 🐛 Corrections
 
 - `clean-android-tv` : la désactivation d'un composant isolé est refusée à
