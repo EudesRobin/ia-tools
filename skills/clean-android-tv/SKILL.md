@@ -49,11 +49,12 @@ suivis n'est un repli.
 - [ ] Phase 7 : redémarrer et vérifier que le téléviseur reste pilotable
 - [ ] Phase 8 : appliquer les derniers leviers, puis refermer l'accès
 
-La phase 7 est un contrôle : elle ne passe à `[x]` qu'après un redémarrage réel
-suivi d'une reconnexion adb et de la vérification du lanceur, en nommant le
-résultat (`[x] Phase 7 : redémarrer — lanceur et télécommande opérationnels`).
+La phase 7 est une vérification : elle ne passe à `[x]` qu'après un
+redémarrage réel suivi d'une reconnexion adb et d'un essai du lanceur, le
+résultat étant alors nommé
+(`[x] Phase 7 : redémarrer — lanceur et télécommande opérationnels`).
 
-Pour la vérification d'une intervention antérieure :
+Pour le second cas d'usage, la vérification d'une intervention antérieure :
 
 **Tâches**
 - [ ] Vérification 1 : lire le journal de l'intervention

@@ -49,7 +49,7 @@ suivis n'est un repli.
 - [ ] Phase 6 : nommer le mécanisme de l'audit documentaire du projet
 - [ ] Phase 7 : rendre le rapport
 
-La phase 4 est un contrôle : elle ne passe à `[x]` qu'une fois chaque constat
+La phase 4 est une vérification : elle ne passe à `[x]` qu'une fois chaque constat
 adossé à une ligne réellement lue et confronté à la section « Ce qui ne se
 signale jamais », le décompte des rejets étant alors nommé
 (`[x] Phase 4 : écarter les faux positifs — 2 constats retirés sur 14`).

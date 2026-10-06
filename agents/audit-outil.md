@@ -52,7 +52,7 @@ n'est un repli.
 - [ ] Phase 6 : écarter les faux positifs
 - [ ] Phase 7 : rendre le rapport
 
-La phase 6 est un contrôle : elle ne passe à `[x]` qu'une fois chaque constat
+La phase 6 est une vérification : elle ne passe à `[x]` qu'une fois chaque constat
 confronté à la section « Ce qui ne se signale jamais », le décompte des rejets
 étant alors nommé
 (`[x] Phase 6 : écarter les faux positifs — 3 constats retirés sur 17`). Les
@@ -148,7 +148,7 @@ laissée en prose, et un examen ouvert enfermé dans un script.
   phases, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral à chaque
   changement d'état, suivi applicable (outil de liste de la session, sinon bloc
   dans la réponse, à égalité), liste sous l'en-tête `**Tâches**`, phase de
-  contrôle et ce à quoi elle s'adosse.
+  vérification et ce à quoi elle s'adosse.
 - La liste de phases correspond réellement au déroulé ; l'omission du suivi,
   quand elle a lieu, est délibérée et énoncée.
 - Un outil qui couvre des cas d'ampleur inégale énumère ceux qui demandent le

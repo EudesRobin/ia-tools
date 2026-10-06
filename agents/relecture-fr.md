@@ -45,7 +45,7 @@ le bloc est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 4 : rendre le constat groupé par fichier
 - [ ] Phase 5 : signaler les récurrences qui appellent une règle
 
-La phase 3 est un contrôle : elle ne passe à `[x]` qu'une fois chaque entrée
+La phase 3 est une vérification : elle ne passe à `[x]` qu'une fois chaque entrée
 confrontée à la liste « Ce qui ne se signale jamais », le décompte des rejets
 étant alors nommé
 (`[x] Phase 3 : écarter les faux positifs — 4 entrées retirées sur 21`). Les
