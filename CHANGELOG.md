@@ -12,7 +12,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 - `audit-outil` : nouvel agent qui audite une skill, un agent ou un hook — qualité
   d'écriture, étapes à confier à un script pour réduire le coût en tokens,
-  données sensibles exposées au contexte du modèle. Il rend un constat sourcé
+  données sensibles exposées au contexte de l'agent. Il rend un constat sourcé
   et un lot de modifications proposées, sans modifier aucun fichier.
 - `clean-android-tv` : vérification d'une intervention antérieure, sans
   modification de l'appareil — comparaison au journal, mesure sur 24 heures,
