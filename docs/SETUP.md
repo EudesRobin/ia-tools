@@ -164,12 +164,6 @@ synchronise lui-même — ne sont pas examinées.
 La conformité du front-matter — `name` identique au nom du dossier — relève de
 `scripts/validate.py`, que `scripts/install.py` lance avant tout examen (§2).
 
-| Skill               | Fichiers embarqués                          |
-|---------------------|---------------------------------------------|
-| `clean-android-tv`  | `reference-adb.md`, `paquets.md`             |
-| `pull-request`      | `conventions-defaut.md`, `template-pr.md`    |
-| `setup-harness`    | —                                            |
-
 ## 4. Agents
 
 `--scope agents` couvre ensemble `agents/<nom>.md` et `agents/docs/<nom>/`.
@@ -177,11 +171,6 @@ Pour Copilot CLI, le fichier d'agent est installé sous le nom `<nom>.agent.md` 
 ses documents de référence gardent leur nom. En cas de conflit portant sur un
 fichier d'agent, examiner en priorité les champs `tools` et `model` : un écart
 sur ces champs change les droits de l'agent.
-
-| Agent          | Documents de référence |
-|----------------|------------------------|
-| `audit-docs`   | —                      |
-| `relecture-fr` | —                      |
 
 ## 5. Hooks
 
@@ -227,10 +216,6 @@ La commande du fragment se compose du chemin absolu de la cible, en barres
 obliques, de l'interpréteur — `pwsh` s'il est présent, sinon `powershell` — et
 de `-ExecutionPolicy Bypass`, sans lequel PowerShell 5.1 refuse le script. Une
 mise à jour du script ne demande aucune modification de la clé.
-
-| Status line     | Fichiers embarqués |
-|-----------------|--------------------|
-| `usage-session` | `statusline.ps1`   |
 
 ## 7. Après installation
 
