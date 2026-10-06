@@ -212,11 +212,12 @@ qu'une fois le contrôle au vert ») et le point de retour en cas d'échec
 - **Exemples.** Quand la qualité de la sortie dépend de la forme, donner des
   couples entrée/sortie concrets. Un exemple transmet la forme visée plus
   fidèlement qu'une description de cette forme.
-- **Branchements explicites.** Là où le déroulé bifurque, nommer le point de
-  décision. `clean-android-tv` distingue l'intervention elle-même du contrôle
-  d'une intervention antérieure, et consacre à ce contrôle une section et une
-  liste de phases distinctes. Quand une branche grossit, la déplacer dans son propre
-  fichier et prescrire de lire celui qui correspond à la tâche.
+- **Points de décision explicites.** Quand un outil couvre plusieurs cas qui
+  ne suivent pas les mêmes étapes, nommer le critère qui départage ces cas.
+  `clean-android-tv` distingue l'intervention elle-même du contrôle d'une
+  intervention antérieure, et consacre à ce contrôle une section à part, dotée
+  de sa liste de phases. Quand la partie propre à un cas grossit, la déplacer
+  dans un fichier dédié et prescrire de lire celui qui correspond à la tâche.
 
 ## 7. Scripts embarqués
 
