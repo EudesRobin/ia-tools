@@ -142,8 +142,8 @@ Deux particularités du Shield modifient le déroulé :
 - **Le débogage réseau survit au redémarrage.** C'est une option de menu
   persistante : l'accès adb n'est pas perdu à la phase 7. L'autorisation du
   poste expire en revanche après sept jours sans connexion, comme sur tout
-  appareil sous Android 11 ou une version ultérieure : au contrôle suivant, la clé RSA est à
-  réaccepter.
+  appareil sous Android 11 ou une version ultérieure : lors d'une vérification
+  ultérieure, passé ce délai, la clé RSA est à réaccepter.
 
 ## 3. Candidats courants — effet à annoncer
 

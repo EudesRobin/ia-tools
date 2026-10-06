@@ -10,10 +10,16 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🚀 Nouveautés
 
-- `clean-android-tv` : contrôle d'une intervention antérieure, sans
+- `clean-android-tv` : vérification d'une intervention antérieure, sans
   modification de l'appareil — comparaison au journal, mesure sur 24 heures,
   section datée ajoutée au journal. Le journal est nommé d'après l'appareil et
   placé dans le dossier désigné par l'utilisateur.
+- `install.py` : état de chaque outil par agent hôte — à jour, à installer, à
+  mettre à jour, en conflit —, validation des sources par `validate.py` avant
+  tout examen, `--apply` refusé si elle échoue, et relecture de chaque fichier
+  écrit. Une écriture impossible est signalée au lieu d'interrompre le script.
+  La sortie `--json` comporte désormais les clés `validation`, `outils` et
+  `echecs`.
 
 ### 🐛 Corrections
 

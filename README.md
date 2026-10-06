@@ -15,7 +15,7 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 
 | Skill | Ce qu'elle fait |
 |---|---|
-| [`clean-android-tv`](./skills/clean-android-tv/SKILL.md) | Rend un téléviseur Android TV plus réactif par adb : libère la mémoire vive en désactivant les applications préinstallées inutilisées, de façon réversible, et contrôle ensuite qu'une intervention tient toujours. Embarque `reference-adb.md` et `paquets.md`. |
+| [`clean-android-tv`](./skills/clean-android-tv/SKILL.md) | Rend un téléviseur Android TV plus réactif par adb : libère la mémoire vive en désactivant les applications préinstallées inutilisées, de façon réversible, et vérifie ensuite qu'une intervention tient toujours. Embarque `reference-adb.md` et `paquets.md`. |
 | [`pull-request`](./skills/pull-request/SKILL.md) | Committe des modifications, crée la branche de travail, la pousse et ouvre ou met à jour la *pull request* GitHub par `gh`, selon les conventions et le template de PR du projet. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet n'en déclare aucun. |
 | [`setup-harness`](./skills/setup-harness/SKILL.md) | Installe la section « Harnais » — lancer / tester / vérifier — dans le fichier d'instructions d'un projet tiers (`AGENTS.md`, à défaut celui de l'agent hôte). |
 
@@ -93,6 +93,11 @@ python scripts/install.py --apply          # installe ou met à jour, pour les d
 python scripts/install.py --agent copilot --apply            # un seul agent hôte
 python scripts/install.py --tool clean-android-tv --apply    # un seul outil
 ```
+
+La sortie donne, pour chaque agent hôte, l'état de chaque outil : à jour, à
+installer, à mettre à jour ou en conflit. Le script valide d'abord les sources
+du dépôt et n'écrit rien si la validation échoue ; chaque fichier écrit est relu
+et comparé à la version du dépôt.
 
 Une installation locale obsolète est remplacée par la version du dépôt. Un
 fichier modifié à la main est signalé comme conflit et laissé intact. Le script
