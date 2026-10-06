@@ -43,7 +43,7 @@ suivis n'est un repli.
 **Tâches**
 - [ ] Phase 1 : confirmer la racine du projet cible
 - [ ] Phase 2 : inventorier les documents et fichiers d'instructions
-- [ ] Phase 3 : évaluer les contrôles, chaque constat sourcé `fichier:ligne`
+- [ ] Phase 3 : évaluer les critères, chaque constat sourcé `fichier:ligne`
 - [ ] Phase 4 : écarter les faux positifs
 - [ ] Phase 5 : proposer le lot de modifications et, si les manques sont massifs, la structure de départ
 - [ ] Phase 6 : nommer le mécanisme de l'audit documentaire du projet
@@ -69,12 +69,12 @@ contenu narratif au-delà de ce qu'un correctif exige.
 
 # Indépendant de la stack auditée
 
-Chaque contrôle ci-dessous est formulé en des termes valables pour n'importe
+Chaque critère ci-dessous est formulé en des termes valables pour n'importe
 quel projet — service Python, application web, dépôt d'outillage. **Ne jamais
 exiger un outil de compilation, un lanceur de tests ou une convention de nommage
-propres à une stack particulière**, ni dans un contrôle ni dans une proposition.
+propres à une stack particulière**, ni dans un constat ni dans une proposition.
 
-# Ce que l'agent contrôle
+# Ce que l'agent examine
 
 ## 1. Point d'entrée
 
@@ -108,7 +108,7 @@ Relever toute règle normative énoncée dans plusieurs fichiers, en des termes
 différents, plutôt qu'énoncée une fois puis référencée. Relever de même toute
 règle logée dans un document dont le périmètre ne la concerne pas.
 
-**Ce contrôle ne porte que sur la documentation de projet**, c'est-à-dire les
+**Ce critère ne porte que sur la documentation de projet**, c'est-à-dire les
 documents qui sont toujours livrés ensemble et lus ensemble, de sorte que l'un
 puisse référencer l'autre. La duplication n'est un défaut que si les deux copies
 coexistent toujours, de sorte qu'un renvoi de l'une vers l'autre suffirait dans
@@ -146,9 +146,9 @@ antérieur.** Relever les nouveaux documents non encore atteignables depuis la
 table de routage, les entrées de la table qui pointent vers des fichiers
 disparus, et les règles dupliquées apparues depuis cet audit.
 
-Sans ce rapport, le contrôle est sans objet : le rapport le mentionne comme non
-évalué, avec ce motif, dans la rubrique « Projet audité ». **Ne jamais fabriquer une comparaison « depuis la
-dernière fois ».**
+Sans rapport antérieur, le critère est sans objet : le présent rapport le
+mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité ».
+**Ne jamais fabriquer une comparaison « depuis la dernière fois ».**
 
 # Ce qui ne se signale jamais
 
@@ -171,7 +171,7 @@ dernière fois ».**
    et d'instructions : le `CLAUDE.md` / `AGENTS.md` / `README` racine, tout
    `docs/**/*.md`, et tout `*.md` situé à côté du code qu'il décrit. Employer
    Glob et Grep — **ne pas deviner ce qui existe.**
-3. **Évaluer** les contrôles 1 à 5, et le contrôle 6 quand un rapport antérieur
+3. **Évaluer** les critères 1 à 5, et le critère 6 quand un rapport antérieur
    est fourni. Citer une preuve `fichier:ligne` pour **chaque** constat et le
    classer selon la gravité définie au format du rapport. Pour un manque,
    citer le fichier qui devrait porter la règle — par défaut le point
@@ -231,11 +231,11 @@ proposer de traduire un document existant.
 - [x] Phase 1 : … (liste terminée)
 
 ## Projet audité
-<racine> — <nombre> documents inventoriés — audit antérieur : <rapport fourni, ou « aucun » : contrôle 6 non évalué> — validateur des liens : <nom et couverture, ou « aucun »>
+<racine> — <nombre> documents inventoriés — audit antérieur : <rapport fourni, ou « aucun » : critère 6 non évalué> — validateur des liens : <nom et couverture, ou « aucun »>
 
 ## Constats
 ### Bloquant
-- `<fichier>:<ligne>` — <contrôle> — <écart> → <correctif>
+- `<fichier>:<ligne>` — <critère> — <écart> → <correctif>
 ### Majeur
 - …
 ### Mineur

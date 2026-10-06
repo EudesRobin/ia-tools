@@ -30,7 +30,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `audit-docs` : déroulé ramené à sept phases, toutes menées en une seule
   exécution — le choix d'une structure de départ revient à l'utilisateur après
   le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
-  imposé, avec des critères de gravité ; dérive évaluée seulement sur un
+  imposé, avec une échelle de gravité définie ; dérive évaluée seulement sur un
   rapport d'audit antérieur fourni par l'appelant.
 
 ### 🐛 Corrections
@@ -43,6 +43,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   après sept jours à partir d'Android 11, du changement d'adresse du
   téléviseur, du démarrage automatique du lanceur tiers et du lanceur d'origine
   redéclaré par le constructeur.
+
+### 📝 Documentation
+
+- `audit-docs` : les points qu'examine l'agent s'appellent désormais des
+  critères ; « contrôle » n'y désigne plus un point examiné.
 
 ## [1.3.0] - 2026-10-03
 
