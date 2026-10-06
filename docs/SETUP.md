@@ -170,7 +170,8 @@ La conformité du front-matter — `name` identique au nom du dossier — relèv
 Pour Copilot CLI, le fichier d'agent est installé sous le nom `<nom>.agent.md` ;
 ses documents de référence gardent leur nom. En cas de conflit portant sur un
 fichier d'agent, examiner en priorité les champs `tools` et `model` : un écart
-sur ces champs change les droits de l'agent.
+sur `tools` change les droits de l'agent, un écart sur `model` change le modèle
+qui l'exécute, donc son coût et la qualité de ses réponses.
 
 ## 5. Hooks
 
