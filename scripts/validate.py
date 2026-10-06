@@ -15,6 +15,10 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
   - tout lien Markdown relatif, en ligne ou de reference, mene a un fichier
     existant, et vers une ancre de section existante quand le lien en porte
     une ; une ancre seule (#section) doit exister dans le fichier lui-meme ;
+  - tout lien relatif d'un outil distribue (skill, agent, status line) reste
+    dans le dossier de l'outil — pour un agent, son fichier et
+    agents/docs/<nom>/ —, faute de quoi il ne mene nulle part une fois l'outil
+    installe (CONVENTIONS.md 1.7) ;
   - tout document de docs/ (recursif) est enregistre dans docs/DOC_MAP.md
     et porte son lien de retour ; toute entree de la table pointe vers un
     fichier existant ;
@@ -561,6 +565,70 @@ def check_relative_links(errors: list[str]) -> None:
                     errors.append(f"{rel}:{line} : ancre introuvable '{target}'")
 
 
+def tool_scope(rel: str, sources: list[str]) -> tuple[str, ...] | None:
+    """Chemins qu'un fichier d'outil distribue peut lier : son dossier, ou,
+    pour un agent, son fichier et agents/docs/<nom>/. None hors d'un outil."""
+    for src in sources:
+        if not rel.startswith(src + "/"):
+            continue
+        rest = rel[len(src) + 1:].split("/")
+        if src == "agents":
+            if rest[0] == "docs" and len(rest) > 2:
+                name = rest[1]
+            elif len(rest) == 1:
+                name = Path(rest[0]).stem
+            else:
+                return None
+            return (f"agents/{name}.md", f"agents/docs/{name}/")
+        # Un fichier pose directement sous la source (README) n'est pas un outil.
+        return (f"{src}/{rest[0]}/",) if len(rest) > 1 else None
+    return None
+
+
+def check_tool_links(errors: list[str]) -> None:
+    """Un outil s'installe isolement (CONVENTIONS.md 1.7) : un lien relatif qui
+    sort de son dossier mene a un fichier existant dans le depot, mais absent une
+    fois l'outil installe."""
+    try:
+        install = load_install()
+        sources = []
+        for scope, pairs in install.SCOPES.items():
+            hosts = install.SCOPE_AGENTS.get(scope, install.AGENTS)
+            for src, _ in pairs:
+                sources += sorted({src.format(agent=h) for h in hosts})
+    except Exception as exc:
+        errors.append(f"scripts/install.py : SCOPES inutilisable ({exc})")
+        return
+    for path in tracked_files():
+        if path.suffix.lower() != ".md":
+            continue
+        rel = path.relative_to(ROOT).as_posix()
+        allowed = tool_scope(rel, sources)
+        if allowed is None:
+            continue
+        text = read(path)
+        if text is None:
+            continue
+        for line, target in markdown_links_with_lines(text):
+            # Liens externes, ancres seules et placeholders {NOM} ne visent
+            # aucun fichier du depot.
+            if EXTERNAL_LINK_RE.match(target) or target.startswith("{"):
+                continue
+            link_path = target.partition("#")[0]
+            resolved = (path.parent / link_path).resolve()
+            try:
+                dest = resolved.relative_to(ROOT).as_posix()
+            except ValueError:
+                dest = None
+            if dest is None or not any(
+                dest == a or dest.startswith(a) for a in allowed
+            ):
+                errors.append(
+                    f"{rel}:{line} : lien '{target}' hors du dossier de l'outil, "
+                    f"introuvable une fois installe (CONVENTIONS.md 1.7)"
+                )
+
+
 def check_doc_map(errors: list[str]) -> None:
     docs_dir = ROOT / DOCS_DIR
     if not docs_dir.is_dir():
@@ -694,6 +762,7 @@ def main() -> int:
     check_body_size(errors)
     check_progress_tracking(errors)
     check_relative_links(errors)
+    check_tool_links(errors)
     check_doc_map(errors)
     check_orphan_docs(errors)
     check_entry_redirects(errors)
