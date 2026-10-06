@@ -1,10 +1,10 @@
 ---
 name: relecture-fr
 description: >-
-  Relit un document français et signale les formulations maladroites, les
+  Relire un document français et signaler les formulations maladroites, les
   anglicismes, les calques de l'anglais, les pronoms sans antécédent et les
-  fautes d'accord. Rend un constat sourcé `fichier:ligne` avec, pour chaque
-  écart, le remplacement proposé ; il ne modifie aucun fichier. À utiliser
+  fautes d'accord. Rendre un constat sourcé `fichier:ligne` avec, pour chaque
+  écart, le remplacement proposé, sans modifier aucun fichier. À utiliser
   quand l'utilisateur demande de relire un texte, de vérifier la langue ou la
   rédaction, signale des « formulations bizarres » ou des « tournures
   maladroites », ou délègue directement à l'agent relecture-fr.
@@ -32,11 +32,11 @@ pas pour autant.
 Cette relecture est une tâche en cinq phases : la règle de suivi des tâches
 s'applique. Créer la liste ci-dessous **avant la phase 1**, et la ré-afficher en
 entier à chaque changement d'état, avec les marqueurs `[ ]` non commencée, `[~]`
-en cours, `[x]` terminée, `[-]` abandonnée. Plusieurs `[~]` simultanées
-seulement si les étapes sont réellement menées en parallèle. Quand la session
-expose un outil de liste de tâches, c'est cet outil qui est employé et qui fait
-l'affichage ; sinon le bloc est écrit dans la réponse. Aucun des deux suivis
-n'est un repli.
+en cours, `[x]` terminée, `[-]` abandonnée — une étape abandonnée porte une
+raison courte sur la même ligne. Plusieurs `[~]` simultanées seulement si les
+étapes sont réellement menées en parallèle. Quand la session expose un outil de
+liste de tâches, c'est cet outil qui est employé et qui fait l'affichage ; sinon
+le bloc est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 
 **Tâches**
 - [ ] Phase 1 : établir le périmètre et le consigner

@@ -77,6 +77,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **payload** (masculin) | L'objet JSON que l'agent hôte transmet sur l'entrée standard d'un hook ou d'une status line (`cwd`, `stop_hook_active`, `context_window`…). | « charge utile » — traduction littérale, opaque hors du vocabulaire des réseaux |
 | **front-matter** | Le bloc YAML en tête de `SKILL.md` ou d'un fichier d'agent. | « en-tête », « métadonnées » |
 | **fichier embarqué** | Un script, une feuille de style ou un document de référence livré dans le dossier d'un outil. | « asset », « ressource » |
+| **donnée sensible** | Une valeur dont la divulgation ouvre un accès ou expose une personne : jeton d'accès, mot de passe, clé privée, cookie de session, contenu d'un fichier d'identifiants. Elle ne transite jamais par le contexte de l'agent ([CONVENTIONS.md §1.3](CONVENTIONS.md#13-aucun-secret-dans-le-dépôt)). « Secret » reste admis pour la même notion. | « credential » ; « token » pour un jeton d'accès — *token* désigne l'unité du modèle (§5) |
 
 ## 5. Installation et contexte
 

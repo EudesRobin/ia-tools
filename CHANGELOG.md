@@ -10,6 +10,10 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🚀 Nouveautés
 
+- `audit-outil` : nouvel agent qui audite une skill, un agent ou un hook — qualité
+  d'écriture, étapes à confier à un script pour réduire le coût en tokens,
+  données sensibles exposées au contexte de l'agent. Il rend un constat sourcé
+  et un lot de modifications proposées, sans modifier aucun fichier.
 - `clean-android-tv` : vérification d'une intervention antérieure, sans
   modification de l'appareil — comparaison au journal, mesure sur 24 heures,
   section datée ajoutée au journal. Le journal est nommé d'après l'appareil et
@@ -20,6 +24,14 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   écrit. Une écriture impossible est signalée au lieu d'interrompre le script.
   La sortie `--json` comporte désormais les clés `validation`, `outils` et
   `echecs`.
+
+### 🔄 Modifications
+
+- `audit-docs` : déroulé ramené à sept phases, toutes menées en une seule
+  exécution — le choix d'une structure de départ revient à l'utilisateur après
+  le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
+  imposé, avec des critères de gravité ; dérive évaluée seulement sur un
+  rapport d'audit antérieur fourni par l'appelant.
 
 ### 🐛 Corrections
 
