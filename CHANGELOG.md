@@ -44,6 +44,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   téléviseur, du démarrage automatique du lanceur tiers et du lanceur d'origine
   redéclaré par le constructeur.
 
+### 📝 Documentation
+
+- `audit-docs` : les points qu'examine l'agent s'appellent désormais des
+  critères ; « contrôle » garde le seul sens de mécanisme qui rend un verdict
+  objectif.
+
 ## [1.3.0] - 2026-10-03
 
 ### 🔄 Modifications

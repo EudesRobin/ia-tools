@@ -39,6 +39,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **harnais** | L'ensemble des règles, outils et boucles qui maintiennent l'agent ancré et lui permettent de savoir s'il a réussi. | — |
 | **le DoD** (masculin) | *Definition of Done* : ce que « terminé » signifie, énoncé comme une condition contrôlable. Introduire la forme longue au premier emploi dans un document, puis abréger. | « définition du fait », « la DoD » |
 | **contrôle** | Le mécanisme qui rend un verdict objectif : tests, compilation, validateur. | « barrière », « juge de paix », « gate » |
+| **critère** | Un des points qu'examine un agent d'audit et qu'il juge sur pièces — accessibilité des règles, duplication, solidité du harnais. Le critère relève du jugement ; le contrôle rend un verdict objectif. | « contrôle » pour désigner un critère d'audit |
 | **application des règles** | Ce qui fait qu'une règle est réellement respectée — instruction écrite, DoD, script, hook, intégration continue. Ces mécanismes ne se valent pas ; les nommer directement plutôt que les classer. | « échelle de contrainte », « échelle de garantie », « barreau », « enforcement » |
 | **ancrage** | Constater l'état réel avant d'agir, au lieu de le supposer. | « grounding » |
 | **boucle de vérification** | Lancer → observer → corriger → relancer, jusqu'à ce que le contrôle soit au vert. | « feedback loop » |

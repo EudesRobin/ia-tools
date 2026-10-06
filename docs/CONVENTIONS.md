@@ -332,7 +332,7 @@ fois.
 Préférer une **skill** quand la tâche est une suite d'étapes fixes avec une
 sortie unique — c'est le cas de la plupart des outils. Réserver l'**agent** au
 cas où c'est l'analyse elle-même qui est réutilisable : `audit-docs` examine des
-dépôts différents à chaque appel, mais applique toujours les mêmes contrôles.
+dépôts différents à chaque appel, mais applique toujours les mêmes critères.
 
 ### 4.1 Front-matter
 
