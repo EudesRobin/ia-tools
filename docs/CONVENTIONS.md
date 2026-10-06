@@ -377,7 +377,7 @@ tools: Read, Grep, Glob # OBLIGATOIRE — moindre privilège
 
 Un titre `#`, une introduction courte qui pose la persona, puis les sections qui
 décrivent **comment l'agent raisonne** : ses conventions, ses contrôles, ses
-garde-fous, et un déroulé numéroté. Le `description` du front-matter dit *quand*
+garde-fous, et un déroulé numéroté. La `description` du front-matter dit *quand*
 l'agent intervient ; le corps dit *comment* il procède.
 
 Un agent dont le déroulé compte **trois étapes ou plus** prescrit de suivre ce
