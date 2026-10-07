@@ -72,6 +72,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   fichier, et non plus passés entre guillemets doubles, où le shell altérait
   une apostrophe inversée ou un `$`. En cas de conflit, le rebase est
   annulé et les fichiers en conflit sont présentés à l'utilisateur.
+- `setup-harness` : l'écriture du bloc Harnais est vérifiée par relecture du
+  fichier cible, ou par `git diff` dans un projet versionné. Le fichier cible
+  est déterminé et lu avant la proposition, ce qui évite une section en double.
+  Les commandes que le projet déclare lui-même sont retenues en priorité, et
+  `allowed-tools` est renseigné.
 
 ### 🔒 Sécurité
 
