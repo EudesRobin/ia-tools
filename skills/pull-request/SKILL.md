@@ -6,7 +6,8 @@ allowed-tools:
   - Grep
   - Glob
   - Write
-  - Bash(python:*)
+  - Bash(python {AGENT_DIR}/skills/pull-request/etat_depot.py *)
+  - Bash(python --version)
   - Bash(git status:*)
   - Bash(git diff:*)
   - Bash(git log:*)
@@ -73,13 +74,15 @@ L'état du dépôt s'établit par [etat_depot.py](etat_depot.py), script à
 lecture seule, et n'affiche qu'une ligne `clé : valeur` par information.
 
 ```text
-python "<dossier-skill>/etat_depot.py"            # commit seul : git uniquement
-python "<dossier-skill>/etat_depot.py" --github   # livraison complète : git et gh
+python {AGENT_DIR}/skills/pull-request/etat_depot.py            # commit seul
+python {AGENT_DIR}/skills/pull-request/etat_depot.py --github   # livraison complète
 ```
 
-`<dossier-skill>` est le chemin absolu du dossier de cette skill,
-`{AGENT_DIR}/skills/pull-request`, une fois le `~` développé : entre
-guillemets, un `~` n'est développé ni par le shell ni par Python.
+Écrire la commande exactement telle qu'elle figure ci-dessus, sans guillemets
+et sans développer le chemin : Claude Code compare le texte de la commande à
+la règle d'`allowed-tools`, et toute autre écriture passe par une demande de
+confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
+Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé.
 
 Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
 d'environnement — git ou gh absent, gh non authentifié, dossier hors d'un dépôt

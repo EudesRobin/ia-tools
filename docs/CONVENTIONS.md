@@ -201,8 +201,10 @@ allowed-tools:          # FACULTATIF — moindre privilège, voir §2.2
 
 Quand le champ est renseigné, y lister le **minimum** nécessaire et
 **restreindre les commandes `Bash`** à un préfixe : `Bash(git status:*)`,
-`Bash(python:*)`. Ne jamais accorder un `Bash` nu, qui revient à ouvrir un
-interpréteur complet. N'ajouter `Write` que si la skill écrit réellement des
+`Bash(adb:*)`. Ne jamais accorder un `Bash` nu, qui revient à ouvrir un
+interpréteur complet, ni un interpréteur par son seul nom : `Bash(python:*)`
+autorise `python -c` et donc l'exécution de tout code. Un script embarqué
+s'autorise par son chemin complet ([§2.4](#24-fichiers-embarqués)). N'ajouter `Write` que si la skill écrit réellement des
 fichiers.
 
 ### 2.3 Structure du corps
@@ -248,12 +250,16 @@ bibliothèque standard : Python est déjà requis par l'installation
 ([PREREQUIS.md](PREREQUIS.md)). Il suit les règles du
 [§7](#7-scripts-doutillage-du-dépôt-scripts) sur les identifiants, les messages
 sans accents, la sortie compacte et les codes de sortie `0` / `1` / `2`. La
-skill l'appelle par le chemin absolu de son dossier installé,
-`{AGENT_DIR}/skills/<nom>/`, `~` développé — entre guillemets, un `~` n'est
-pas développé —, et ajoute `Bash(python:*)` à
-`allowed-tools`. Il est testé par `scripts/test_<script>.py` sans le matériel
-ni le service qu'il pilote : un faux exécutable y rejoue des sorties
-enregistrées. `scripts/validate.py` en contrôle la syntaxe. Dans ce script, une
+skill l'autorise dans `allowed-tools` par son chemin complet, seuls ses
+arguments variant : `Bash(python {AGENT_DIR}/skills/<nom>/<script>.py *)`,
+auquel s'ajoute `Bash(python --version)` pour la vérification du prérequis.
+Claude Code compare le texte littéral de la commande à cette règle, sans
+développer de chemin : la skill prescrit donc d'écrire l'appel exactement sous
+la forme `python {AGENT_DIR}/skills/<nom>/<script>.py …`, sans guillemets, le
+shell développant lui-même un `~` placé hors guillemets. Un `*` placé avant le
+chemin complet laisserait passer tout code, comme `Bash(python:*)`. Il est
+testé par `scripts/test_<script>.py` sans le matériel ni le service qu'il
+pilote : un faux exécutable y rejoue des sorties enregistrées. `scripts/validate.py` en contrôle la syntaxe. Dans ce script, une
 majuscule entre accolades serait prise pour un placeholder
 ([§1.2](#12-aucun-chemin-local-en-dur)), y compris dans une f-string : l'éviter.
 

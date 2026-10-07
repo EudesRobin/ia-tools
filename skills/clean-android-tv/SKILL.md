@@ -5,7 +5,8 @@ allowed-tools:
   - Bash(adb:*)
   - Bash(arp:*)
   - Bash(where.exe:*)
-  - Bash(python:*)
+  - Bash(python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py *)
+  - Bash(python --version)
   - Read
   - Write
   - Edit
@@ -99,16 +100,18 @@ lire. Il exécute lui-même les commandes adb, n'affiche qu'une synthèse et ne
 modifie jamais l'appareil.
 
 ```text
-python "<dossier-skill>/adb_tv.py" probe <IP_TV>
-python "<dossier-skill>/adb_tv.py" snapshot <IP_TV> --dir <dossier>
-python "<dossier-skill>/adb_tv.py" residents <IP_TV> <paquet> [<paquet> …]
-python "<dossier-skill>/adb_tv.py" check-plan <journal> [--ip <IP_TV>]
-python "<dossier-skill>/adb_tv.py" compare <journal> [--ip <IP_TV>]
+python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py probe <IP_TV>
+python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py snapshot <IP_TV> --dir <dossier>
+python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py residents <IP_TV> <paquet> [<paquet> …]
+python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py check-plan <journal> [--ip <IP_TV>]
+python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py compare <journal> [--ip <IP_TV>]
 ```
 
-`<dossier-skill>` est le chemin absolu du dossier de cette skill,
-`{AGENT_DIR}/skills/clean-android-tv`, `~` développé : entre guillemets, un `~`
-n'est développé ni par le shell ni par Python.
+Écrire la commande exactement telle qu'elle figure ci-dessus, sans guillemets
+et sans développer le chemin : Claude Code compare le texte de la commande à
+la règle d'`allowed-tools`, et toute autre écriture passe par une demande de
+confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
+Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé.
 
 Codes de sortie : `0` au vert ; `1` écart constaté, détaillé dans la sortie ;
 `2` anomalie d'environnement — adb absent, appareil non connecté ou non

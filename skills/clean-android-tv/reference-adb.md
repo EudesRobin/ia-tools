@@ -64,7 +64,7 @@ réseau. Une sonde TCP des ports 5555, 6466 et 6467 tranche ; `adb_tv.py`
 la mène et rapporte, pour chaque port, `ouvert`, `refus` ou `expiration` :
 
 ```bash
-python "<dossier-skill>/adb_tv.py" probe <IP_TV>
+python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py probe <IP_TV>
 ```
 
 - **Refus explicite sur 5555** — l'hôte répond, mais le démon n'écoute pas en

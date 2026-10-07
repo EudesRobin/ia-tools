@@ -75,10 +75,15 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🔒 Sécurité
 
-- `pull-request` : `allowed-tools` restreint aux commandes employées ;
+- `pull-request` : `allowed-tools` restreint aux commandes employées, le script
+  embarqué n'étant autorisé que par son chemin complet ;
   `git push`, `git pull`, `git rebase`, `gh pr create` et `gh pr edit` restent
   soumis à une demande de confirmation dans Claude Code. L'URL du dépôt distant n'est plus affichée, et les
   fichiers sensibles sont exclus du diff lu par l'agent.
+- `clean-android-tv` : `Bash(python:*)`, qui permettait d'exécuter tout code
+  par `python -c`, est remplacé par l'autorisation du seul script `adb_tv.py`,
+  désigné par son chemin complet. L'appel s'écrit sans guillemets et sans
+  développer le chemin.
 
 ### 📝 Documentation
 
