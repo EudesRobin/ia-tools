@@ -61,6 +61,8 @@ CASES = [
     ("tools d'agent absent", replace_once("agents/audit-docs.md", "tools: Read, Grep, Glob, TodoWrite\n", ""), "champ 'tools'"),
     ("outil hors inventaire", append_to("skills/neuve/SKILL.md", "---\nname: neuve\ndescription: Test.\n---\n"), "absent de l'inventaire"),
     ("syntaxe Python", append_to("scripts/install.py", "\ndef (:\n"), "erreur de syntaxe"),
+    ("syntaxe Python d'une skill", append_to("skills/clean-android-tv/adb_tv.py", "\ndef (:\n"),
+     "skills/clean-android-tv/adb_tv.py:"),
     ("JSON d'enregistrement", replace_once(".claude/settings.json", "{", "{ ,"), "JSON invalide"),
     ("script de hook introuvable", replace_once(".github/hooks/validate-tool.json", "validate-tool.ps1", "absent.ps1"), "script de hook introuvable"),
     ("status line hors inventaire", append_to("statuslines/claude/neuve/STATUSLINE.md", "# Status line\n"), "statuslines/claude/neuve : absent de l'inventaire"),

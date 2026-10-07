@@ -399,11 +399,12 @@ def check_placeholders(errors: list[str]) -> None:
 
 def check_scripts_and_config(errors: list[str]) -> None:
     """Syntaxe des scripts, JSON des enregistrements, scripts references."""
-    for path in sorted((ROOT / "scripts").glob("*.py")):
+    for path in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "skills").rglob("*.py")]):
         try:
             compile(path.read_text(encoding="utf-8"), str(path), "exec")
         except SyntaxError as exc:
-            errors.append(f"scripts/{path.name}:{exc.lineno} : erreur de syntaxe ({exc.msg})")
+            rel = path.relative_to(ROOT).as_posix()
+            errors.append(f"{rel}:{exc.lineno} : erreur de syntaxe ({exc.msg})")
     regs: list[Path] = []
     for rel in HOOK_REGISTRATIONS:
         p = ROOT / rel
