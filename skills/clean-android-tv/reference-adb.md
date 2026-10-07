@@ -361,7 +361,29 @@ des paquets critiques, ou sur des applications que l'utilisateur emploie et qui
 ne peuvent donc pas être désactivées.
 
 **Couper l'activité en background d'une application conservée.** L'état `svc`
-dans `dumpsys activity oom` signale un service permanent. Le réglage
+dans `dumpsys activity oom` signale un service permanent. Contrôler d'abord que
+l'application ne figure pas sur la liste blanche d'économie d'énergie :
+
+```bash
+adb shell "cmd deviceidle whitelist | grep <PAQUET>"
+adb shell "am get-standby-bucket <PAQUET>"   # Android 9 ou ultérieur ; 5 : EXEMPTED
+adb shell "grep -rl <PAQUET> /system/etc/sysconfig /vendor/etc/sysconfig /product/etc/sysconfig"
+```
+
+Une application inscrite sur cette liste échappe à `RUN_IN_BACKGROUND`, à
+`RUN_ANY_IN_BACKGROUND` et aux buckets de mise en veille : ces réglages
+s'appliquent sans erreur et restent sans effet. Une entrée posée par un fichier
+`sysconfig` — balise `<allow-in-power-save>` — ne se retire pas durablement :
+`cmd deviceidle whitelist -<PAQUET>` ne la retire que jusqu'au redémarrage
+suivant, et pas du tout sous Android 8 lorsqu'elle est marquée `system` ; les
+partitions qui portent ces fichiers ne se modifient pas sans root. C'est le cas
+de Netflix sur le NVIDIA Shield et sur un téléviseur TCL (exemples de
+[paquets.md, § 2](paquets.md#2-couche-constructeur)). Pour une application ainsi
+inscrite, ne pas proposer ces réglages : annoncer la limite à l'utilisateur et
+lui présenter les leviers restants, décrits plus bas — l'état « arrêté », s'il
+tient au redémarrage, et la désactivation du paquet.
+
+Pour une application absente de la liste blanche, le réglage
 `RUN_IN_BACKGROUND` ne prend effet sur le processus en cours qu'après un arrêt
 forcé :
 
@@ -393,8 +415,28 @@ adb shell "dumpsys procstats --hours 24 | grep -A4 '<PAQUET> '"
 
 Un `ServiceRecord` créé au démarrage, ou une ligne `Service` qui occupe la
 majeure partie des 24 heures, signale un réglage sans effet. Le consigner comme
-tel, sans annoncer de gain. Aucun autre levier ne s'offre alors à l'UID
-`shell` que la désactivation du paquet entier.
+tel, sans annoncer de gain. Il ne reste alors à l'UID `shell` que l'état
+« arrêté » et la désactivation du paquet entier.
+
+**L'état « arrêté » survit en général au redémarrage, jamais à l'ouverture de
+l'application.** `am force-stop` place le paquet dans l'état `stopped=true`,
+conservé au redémarrage : l'application ne reçoit plus `BOOT_COMPLETED`, et ses
+tâches planifiées et ses alarmes sont annulées, y compris pour une application
+de la liste blanche. L'état est levé dès la prochaine ouverture de
+l'application. Il ne vaut donc que si l'utilisateur force l'arrêt après chaque
+usage, depuis Paramètres → Applications → l'application → Forcer l'arrêt :
+présenter cet arrêt après chaque usage comme une habitude à prendre, non comme
+un réglage acquis, et ne pas le consigner comme tel.
+
+```bash
+adb shell "dumpsys package <PAQUET> | grep -m1 -o 'stopped=[a-z]*'"
+```
+
+Cet état peut être levé au démarrage : sur un téléviseur TCL à puce MediaTek,
+Netflix est relancé malgré `stopped=true`, très probablement par un service du
+constructeur.
+Avant de présenter ce levier, vérifier par un redémarrage que l'état est
+toujours `stopped=true` et qu'aucun processus de l'application ne tourne.
 
 **Désactiver un composant plutôt qu'un paquet : généralement refusé.**
 
