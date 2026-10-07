@@ -29,6 +29,10 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   résident ou en cache d'un paquet, contrôle du lot de désactivations au regard
   les paquets critiques, comparaison de l'appareil au journal. Il exige
   Python 3.10 ou une version ultérieure.
+- `pull-request` : script embarqué `etat_depot.py`, en lecture seule — état
+  du dépôt et de la PR, fichiers de conventions, hook git `commit-msg` et templates
+  de PR repérés, fichiers sensibles modifiés signalés par leur nom. Il exige
+  Python 3.10 ou une version ultérieure.
 
 ### 🔄 Modifications
 
@@ -37,6 +41,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
   imposé, avec une échelle de gravité définie ; dérive évaluée seulement sur un
   rapport d'audit antérieur fourni par l'appelant.
+- `pull-request` : gh n'est plus requis pour un commit seul, et un dépôt sans
+  dépôt distant est pris en charge. Le versionnement du template indicatif est
+  proposé avant la publication. Une correction de la PR rétablissant le contenu
+  validé ne demande pas de nouvel accord. Les instructions globales qui se
+  déclarent prioritaires l'emportent sur les règles du projet.
 
 ### 🐛 Corrections
 
@@ -59,6 +68,17 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   ramène à la phase 5, et un stockage saturé est suivi d'une conduite à tenir.
   Le journal suit un template impératif, et le lot soumis à l'utilisateur un
   template indicatif. « en background » remplace « en fond ».
+- `pull-request` : le message de commit et le titre de la PR sont lus dans un
+  fichier, et non plus passés entre guillemets doubles, où le shell altérait
+  une apostrophe inversée ou un `$`. En cas de conflit, le rebase est
+  annulé et les fichiers en conflit sont présentés à l'utilisateur.
+
+### 🔒 Sécurité
+
+- `pull-request` : `allowed-tools` restreint aux commandes employées ;
+  `git push`, `git pull`, `git rebase`, `gh pr create` et `gh pr edit` restent
+  soumis à une demande de confirmation dans Claude Code. L'URL du dépôt distant n'est plus affichée, et les
+  fichiers sensibles sont exclus du diff lu par l'agent.
 
 ### 📝 Documentation
 

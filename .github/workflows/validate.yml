@@ -51,6 +51,8 @@ jobs:
         run: python scripts/test_statusline.py
       - if: ${{ !cancelled() }}
         run: python scripts/test_adb_tv.py
+      - if: ${{ !cancelled() }}
+        run: python scripts/test_etat_depot.py
 
   workflows:
     name: zizmor

@@ -6,8 +6,14 @@ allowed-tools:
   - Grep
   - Glob
   - Write
-  - Bash(git:*)
-  - Bash(gh:*)
+  - Bash(python:*)
+  - Bash(git status:*)
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git add:*)
+  - Bash(git switch:*)
+  - Bash(git commit:*)
+  - Bash(gh pr view:*)
 ---
 
 # Committer et ouvrir une pull request
@@ -22,18 +28,19 @@ périmètre de la skill.
 
 Cas d'usage et suivi :
 
-- **Commit seul** — « committe », « fais un commit » : [étapes 1](#1-établir-létat)
-  à [4](#4-committer), sans liste de tâches.
+- **Commit seul** — « committe », « fais un commit » :
+  [phases 1](#1-établir-létat) à [4](#4-committer), sans liste de tâches.
 - **Livraison complète** — branche, commits, push et PR, ou mise à jour d'une PR
   existante : tâche en sept phases ; la règle de suivi des tâches s'applique.
 
 Pour la livraison complète, créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat)**, et la ré-afficher en entier à chaque changement
 d'état, avec les marqueurs `[ ]` non commencée, `[~]` en cours, `[x]` terminée,
-`[-]` abandonnée. Plusieurs `[~]` simultanées seulement si les étapes sont
-réellement menées en parallèle. Quand la session expose son propre outil de
-liste de tâches, c'est cet outil qui est employé et qui fait l'affichage ; sinon
-le bloc est écrit dans la réponse. Aucun des deux suivis n'est un repli.
+`[-]` abandonnée, cette dernière avec une raison courte sur la même ligne.
+Plusieurs `[~]` simultanées seulement si les étapes sont réellement menées en
+parallèle. Quand la session expose son propre outil de liste de tâches, c'est
+cet outil qui est employé et qui fait l'affichage ; sinon le bloc est écrit dans
+la réponse. Aucun des deux suivis n'est un repli.
 
 **Tâches**
 - [ ] Phase 1 : établir l'état du dépôt et de la PR
@@ -42,59 +49,86 @@ le bloc est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 4 : committer les modifications
 - [ ] Phase 5 : rédiger le titre et la description de la PR
 - [ ] Phase 6 : obtenir l'accord de l'utilisateur, puis pousser la branche et publier la PR
-- [ ] Phase 7 : contrôler la PR publiée
+- [ ] Phase 7 : vérifier la PR publiée
 
-La [phase 7](#7-contrôler-la-pr-publiée) est une vérification : elle ne passe à `[x]`
-qu'après relecture de la PR par `gh pr view`, le résultat étant alors nommé
-(`[x] Phase 7 : contrôler la PR publiée — conforme, <URL>`).
+La [phase 7](#7-vérifier-la-pr-publiée) est une vérification : elle ne passe à
+`[x]` qu'après relecture de la PR par `gh pr view`, le résultat étant alors
+nommé (`[x] Phase 7 : vérifier la PR publiée — conforme, <URL>`).
 
 ## Prérequis (à vérifier, ne rien installer sans accord)
 
+- **Python 3.10 ou une version ultérieure**, pour
+  [etat_depot.py](etat_depot.py) : `python --version`.
 - **git** : `git --version`. Absent sous Windows → `winget install Git.Git`.
-- **GitHub CLI** : `gh --version`. Absent sous Windows →
-  `winget install GitHub.cli`, puis rouvrir le terminal.
-- **Authentification** : `gh auth status`. Non authentifié → l'utilisateur lance
-  lui-même `gh auth login`, commande interactive que l'agent ne peut pas mener à terme.
+- **GitHub CLI**, pour la livraison complète seulement : `gh --version`. Absent
+  sous Windows → `winget install GitHub.cli`, puis rouvrir le terminal.
+- **Authentification** : vérifiée par `etat_depot.py --github`. Non
+  authentifié → l'utilisateur lance lui-même `gh auth login`, commande
+  interactive que l'agent ne peut pas mener à terme.
 
-Le commit seul n'exige que git.
+## Utilisation
+
+L'état du dépôt s'établit par [etat_depot.py](etat_depot.py), script à
+**lancer**, jamais à lire. Il exécute lui-même les commandes git et gh, en
+lecture seule, et n'affiche qu'une ligne `clé : valeur` par information.
+
+```text
+python "<dossier-skill>/etat_depot.py"            # commit seul : git uniquement
+python "<dossier-skill>/etat_depot.py" --github   # livraison complète : git et gh
+```
+
+`<dossier-skill>` est le chemin absolu du dossier de cette skill,
+`{AGENT_DIR}/skills/pull-request`, une fois le `~` développé : entre
+guillemets, un `~` n'est développé ni par le shell ni par Python.
+
+Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
+d'environnement — git ou gh absent, gh non authentifié, dossier hors d'un dépôt
+git —, à corriger avant de relancer le script.
 
 ## Instructions
 
 ### 1. Établir l'état
 
-```text
-git status
-git branch --show-current
-git remote -v
-gh repo view --json nameWithOwner,defaultBranchRef
-gh pr view --json number,url,state,baseRefName
-```
+Lancer `etat_depot.py`, avec `--github` pour la livraison complète seulement.
+Relever dans sa sortie :
 
-Relever la branche courante, la branche par défaut du dépôt distant et les
-fichiers modifiés. Une PR ouverte existe déjà pour la branche courante → la
-livraison est une **mise à jour** : ne pas créer de seconde PR, et employer
-`gh pr edit` à la [phase 6](#6-obtenir-laccord-puis-publier). Aucune modification
-à committer et aucun commit en avance sur la branche distante → le signaler et
-s'arrêter.
+- `branche`, `base` et `distants` ;
+- `git_dir`, chemin absolu du dossier git, où sont écrits les fichiers de
+  travail des phases 4 et 5 ;
+- `modifications`, `a_pousser` et `avance_sur_base` ;
+- `sensibles` et `exclusions_diff`, employés à la [phase 4](#4-committer) ;
+- `pr`, en livraison complète.
+
+`pr` désigne une PR `OPEN` → la livraison est une **mise à jour** : ne pas créer
+de seconde PR, et employer `gh pr edit` à la
+[phase 6](#6-obtenir-laccord-puis-publier). Aucune modification, aucun commit à
+pousser et aucun commit en avance sur la base, sans description de PR à
+reprendre → signaler qu'il n'y a rien à livrer et s'arrêter.
+`distants : aucun` → seul le commit est possible, car la livraison complète
+exige un dépôt distant.
 
 ### 2. Déterminer les conventions
 
-Lire, à la racine du dépôt, les fichiers suivants quand ils existent, et y
-relever les règles de message de commit, de nommage de branche et de PR :
+Lire les fichiers que `etat_depot.py` a trouvés, sauf ceux déjà chargés dans la
+session, et y relever les règles de message de commit, de nommage de branche et
+de PR :
 
-1. `AGENTS.md`, puis le fichier d'instructions de l'agent hôte (`CLAUDE.md`,
-   `.github/copilot-instructions.md`) et les fichiers vers lesquels ils
-   renvoient ;
-2. `CONTRIBUTING.md`, `.github/CONTRIBUTING.md`, `docs/CONTRIBUTING.md` ;
-3. les contrôles du projet : le dossier désigné par
-   `git config core.hooksPath` et le hook git `commit-msg` qu'il contient, une
-   configuration commitlint
-   (`commitlint.config.*`, `.commitlintrc*`).
+1. `conventions` : fichier d'instructions de l'agent hôte, `AGENTS.md`, guide
+   de contribution, et les fichiers vers lesquels ils renvoient ;
+2. `hook_commit_msg : present` : le hook git `commit-msg` du dossier
+   `hooks_path` ;
+3. `commitlint` : la configuration commitlint citée.
 
-Une règle du projet l'emporte sur toute autre source. Sans règle de projet sur
-un point, appliquer les instructions globales déjà chargées dans la session,
-puis, à défaut, [conventions-defaut.md](conventions-defaut.md). Annoncer en une
-ligne la source retenue pour chaque point (commit, branche, PR).
+Une règle du projet l'emporte sur toute autre source, sauf sur un point où les
+instructions globales chargées dans la session se déclarent prioritaires sur
+les règles de projet. Sans règle de projet sur un point, appliquer les
+instructions globales, puis, à défaut,
+[conventions-defaut.md](conventions-defaut.md). Annoncer en une ligne la source
+retenue pour chaque point (commit, branche, PR).
+
+`base` porte la mention « à confirmer par les règles du projet » → la branche
+par défaut est celle que désignent ces règles, à défaut celle que donne le
+script.
 
 ### 3. Créer la branche
 
@@ -110,23 +144,33 @@ Sur une branche de travail existante, poursuivre sur celle-ci.
 
 ### 4. Committer
 
-1. Lire le diff complet (`git diff`, `git diff --staged`) avant de rédiger quoi
-   que ce soit.
-2. Indexer les fichiers **nommément** : `git add <fichier>…`. Ne pas employer
-   `git add -A` ni `git add .` sans avoir passé en revue chaque fichier. Ne
-   jamais indexer un secret — `.env`, clé privée, jeton, fichier d'identifiants
-   — ni un fichier sans rapport avec la demande.
-3. Un commit par changement cohérent. Plusieurs changements indépendants dans
-   l'arbre de travail → proposer à l'utilisateur leur répartition en commits.
-4. Rédiger le message selon la convention déterminée. Passer le sujet et le corps
-   par deux options `-m`, ce qui évite tout problème d'échappement entre shells :
+1. Lire le diff complet avant de rédiger quoi que ce soit. `sensibles` cite un
+   ou plusieurs fichiers → ajouter `-- . <exclusions_diff>` à chaque commande
+   de diff, ne jamais ouvrir ces fichiers, et les signaler par leur nom à
+   l'utilisateur.
 
    ```text
-   git commit -m "<sujet>" -m "<corps>"
+   git diff [-- . <exclusions_diff>]
+   git diff --staged [-- . <exclusions_diff>]
    ```
 
-5. Un hook git `pre-commit` ou `commit-msg` en échec → lire sa sortie, corriger la
-   cause, relancer le commit. Le commit refusé n'existe pas : ne pas employer
+2. Indexer les fichiers **nommément** : `git add <fichier>…`. Ne pas employer
+   `git add -A` ni `git add .` sans avoir passé en revue chaque fichier. Ne
+   jamais indexer un fichier cité par `sensibles` ni un fichier sans rapport
+   avec la demande.
+3. Un commit par changement cohérent. Plusieurs changements indépendants dans
+   l'arbre de travail → proposer à l'utilisateur leur répartition en commits.
+4. Rédiger le message selon la convention déterminée, l'écrire dans
+   `<git_dir>/COMMIT_MSG.txt`, puis committer depuis ce fichier. Un message
+   passé en argument entre guillemets doubles serait altéré par le shell : une
+   apostrophe inversée ou un `$` y sont interprétés.
+
+   ```text
+   git commit -F "<git_dir>/COMMIT_MSG.txt"
+   ```
+
+5. Un hook git `pre-commit` ou `commit-msg` en échec → lire sa sortie, corriger
+   la cause, relancer le commit. Le commit refusé n'existe pas : ne pas employer
    `--amend` pour le reprendre.
 
 Pour le commit seul, la skill s'arrête ici : indiquer à l'utilisateur le hash
@@ -134,73 +178,76 @@ et le sujet du commit.
 
 ### 5. Rédiger titre et description
 
-Chercher le template de PR du projet, dans cet ordre :
-`.github/pull_request_template.md`, `.github/PULL_REQUEST_TEMPLATE.md`,
-`PULL_REQUEST_TEMPLATE.md`, `docs/pull_request_template.md`, puis le dossier
-`.github/PULL_REQUEST_TEMPLATE/`. Plusieurs templates dans ce dossier → demander
-à l'utilisateur lequel employer.
+Le template de PR du projet est donné par `templates_pr`. Plusieurs templates
+dans `.github/PULL_REQUEST_TEMPLATE/` → demander à l'utilisateur lequel
+employer.
 
 - **Template trouvé** — impératif : en conserver toutes les sections et leur
-  ordre, les remplir à partir des commits de la branche
-  (`git log <base>..HEAD`) et du diff (`git diff <base>...HEAD`). Une section
+  ordre, les remplir à partir des commits et du diff de la branche. Une section
   sans objet porte « Sans objet » ; elle n'est pas supprimée. Une case à cocher
   n'est cochée que si le point a été effectivement vérifié.
 - **Aucun template** — employer [template-pr.md](template-pr.md), template
-  indicatif à adapter.
+  indicatif à adapter. Proposer à l'utilisateur de le versionner dans le
+  projet sous `.github/pull_request_template.md` ; après accord, l'écrire et le
+  committer à part, avant la publication.
+
+Commits et diff se lisent par rapport à la référence `<base>` citée par
+`avance_sur_base`. Quand les commits ont été rédigés dans la session, le diff
+est déjà connu : s'appuyer sur `git log <base>..HEAD` et
+`git diff --stat <base>...HEAD`. Sinon, lire `git diff <base>...HEAD`, avec les
+exclusions de la [phase 4](#4-committer).
 
 Le titre suit la convention du sujet de commit ; pour une branche d'un seul
-commit, il reprend le sujet de ce commit. La description est rédigée dans la langue fixée par le
-projet, à défaut dans celle des commits.
+commit, il reprend le sujet de ce commit. La description est rédigée dans la
+langue fixée par le projet, à défaut dans celle des commits.
 
-Écrire la description dans le dossier git, hors de l'arbre de travail, pour
-qu'elle ne soit jamais committée :
-
-```text
-git rev-parse --git-dir      # dossier où écrire PR_BODY.md
-```
+Écrire le titre dans `<git_dir>/PR_TITLE.txt` et la description dans
+`<git_dir>/PR_BODY.md` : placés hors de l'arbre de travail, ces fichiers ne
+sont jamais committés.
 
 ### 6. Obtenir l'accord, puis publier
 
 Présenter à l'utilisateur, avant toute commande qui écrit sur le dépôt distant :
 la branche de base, la branche de travail, le titre, la description complète, et
 l'état prévu — PR prête par défaut, brouillon sur demande. **Ne rien pousser ni
-publier sans son accord explicite** : un push et une PR sont visibles de tous les lecteurs du
-dépôt.
+publier sans son accord explicite** : un push et une PR sont visibles de tous
+les lecteurs du dépôt.
 
-Après accord :
+Après accord, pousser la branche, puis créer la PR. Le titre est lu dans son
+fichier par une substitution, dont le résultat n'est pas réinterprété par le
+shell :
 
 ```text
 git push -u origin <branche>
-gh pr create --base <base> --head <branche> --title "<titre>" --body-file <git-dir>/PR_BODY.md
+
+# bash
+gh pr create --base <base> --head <branche> --title "$(cat '<git_dir>/PR_TITLE.txt')" --body-file '<git_dir>/PR_BODY.md'
+# PowerShell
+gh pr create --base <base> --head <branche> --title (Get-Content -Raw '<git_dir>/PR_TITLE.txt').Trim() --body-file '<git_dir>/PR_BODY.md'
 ```
 
-Ajouter `--draft` pour un brouillon. Pour une PR existante :
-
-```text
-git push
-gh pr edit <numéro> --title "<titre>" --body-file <git-dir>/PR_BODY.md
-```
+Ajouter `--draft` pour un brouillon. Pour une PR existante : `git push`, puis
+`gh pr edit <numéro>` avec les mêmes options `--title` et `--body-file`.
 
 Un push refusé parce que la branche distante a avancé → `git pull --rebase`,
-puis présenter le résultat à l'utilisateur avant de pousser à nouveau. Ne jamais forcer
-le push.
+puis présenter le résultat à l'utilisateur avant de pousser à nouveau. Un
+conflit pendant le rebase → relever les fichiers en conflit
+(`git diff --name-only --diff-filter=U`), lancer `git rebase --abort`, puis
+les présenter à l'utilisateur. Ne jamais forcer le push.
 
-### 7. Contrôler la PR publiée
+### 7. Vérifier la PR publiée
 
 ```text
 gh pr view --json url,title,body,baseRefName,headRefName,isDraft
 ```
 
 Comparer le résultat à ce que l'utilisateur a validé : titre, description,
-base, état. Vérifier qu'aucune attribution d'outil d'IA n'y figure. Un écart →
-le corriger par `gh pr edit`, puis reprendre à la
-[phase 7](#7-contrôler-la-pr-publiée). Indiquer à l'utilisateur l'URL de la
-PR. `PR_BODY.md` reste dans le dossier git, non versionné, et sera réécrit à
-la livraison suivante.
-
-Si [template-pr.md](template-pr.md) a été employé, proposer de le versionner
-dans le projet sous `.github/pull_request_template.md` ; ne l'écrire qu'après
-accord, dans un commit distinct.
+base, état. Vérifier qu'aucune attribution d'outil d'IA n'y figure. Un écart
+dont la correction se borne à rétablir le contenu validé → le corriger par
+`gh pr edit`, sans nouvel accord, puis reprendre à la [phase 7](#7-vérifier-la-pr-publiée). Tout autre
+changement → reprendre à la [phase 6](#6-obtenir-laccord-puis-publier).
+Indiquer à l'utilisateur l'URL de la PR. Les fichiers de travail restent dans
+le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 
 ## Règles
 
@@ -213,11 +260,16 @@ accord, dans un commit distinct.
 - Ne jamais committer ni pousser directement sur la branche par défaut ou sur
   une branche protégée.
 - Obtenir l'accord explicite de l'utilisateur avant tout `git push`, toute
-  création et toute modification de PR.
+  création et toute modification de PR, hors la correction prévue à la
+  [phase 7](#7-vérifier-la-pr-publiée).
+- Ne jamais lancer `gh auth token`, `gh auth status --show-token`,
+  `git remote -v`, ni aucune commande qui affiche un jeton d'accès ou l'URL
+  complète d'un dépôt distant. Ne jamais ouvrir un fichier cité par `sensibles`.
 - Ne jamais recopier un secret dans un message de commit ni dans une
   description de PR.
-- Les conventions du projet l'emportent sur les instructions globales, qui
-  l'emportent sur [conventions-defaut.md](conventions-defaut.md).
+- Les conventions du projet l'emportent sur les instructions globales, sauf sur
+  un point où celles-ci se déclarent prioritaires ; les deux l'emportent sur
+  [conventions-defaut.md](conventions-defaut.md).
 
 ## Limites
 
@@ -226,5 +278,9 @@ accord, dans un commit distinct.
   pas traitées.
 - Le merge de la PR, la revue et le suivi de l'intégration continue sont hors du
   périmètre de la skill.
-- `allowed-tools` n'est appliqué que par Claude Code : sous Copilot CLI, seules
-  les [règles](#règles) ci-dessus encadrent les commandes git.
+- `sensibles` repère un fichier à son nom seulement : un secret écrit dans un
+  fichier au nom ordinaire n'est pas signalé.
+- `allowed-tools` n'est appliqué que par Claude Code, où `git push`,
+  `git pull`, `git rebase`, `gh pr create` et `gh pr edit` restent soumis à
+  une demande de confirmation : sous Copilot CLI, seules les
+  [règles](#règles) ci-dessus encadrent les commandes git et gh.

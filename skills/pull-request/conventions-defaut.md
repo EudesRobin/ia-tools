@@ -44,6 +44,6 @@ docs: « template » remplace « gabarit »
 ## Pull request
 
 - Le titre suit les règles du sujet de commit.
-- La description suit le template du projet, à défaut
-  [template-pr.md](template-pr.md).
+- La description suit le template du projet, à défaut le template indicatif
+  de la skill.
 - Aucune attribution d'outil d'IA dans la description.
