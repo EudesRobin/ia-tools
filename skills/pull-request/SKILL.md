@@ -82,7 +82,9 @@ python {AGENT_DIR}/skills/pull-request/etat_depot.py --github   # livraison comp
 et sans développer le chemin : Claude Code compare le texte de la commande à
 la règle d'`allowed-tools`, et toute autre forme d'appel déclenche une demande
 de confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
-Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé.
+Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé. Un
+chemin qui contient une espace s'écrit entre guillemets ; l'appel passe alors
+par une demande de confirmation.
 
 Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
 d'environnement — git ou gh absent, gh non authentifié, dossier hors d'un dépôt
@@ -282,10 +284,6 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
   pas traitées.
 - Le merge de la PR, la revue et le suivi de l'intégration continue sont hors du
   périmètre de la skill.
-- **Dossier d'installation dont le chemin contient une espace**, que permet
-  de choisir `install.py --target` : l'appel d'`etat_depot.py` s'écrit alors entre
-  guillemets et passe par une demande de confirmation, la règle
-  d'`allowed-tools` ne lui correspondant plus.
 - `sensibles` repère un fichier à son nom seulement : un secret écrit dans un
   fichier au nom ordinaire n'est pas signalé.
 - `allowed-tools` n'est appliqué que par Claude Code, où `git push`,

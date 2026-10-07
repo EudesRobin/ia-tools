@@ -261,9 +261,9 @@ chemin : la skill prescrit donc d'écrire l'appel exactement sous la forme
 développant lui-même un `~` placé hors guillemets ; seul Windows
 PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé. Un `*` placé
 avant le chemin complet laisserait passer tout code, comme `Bash(python:*)`.
-Un dossier d'installation dont le chemin contient une espace, que permet de
-choisir `install.py --target`, impose des guillemets : l'appel passe alors par une
-demande de confirmation, ce que la section « Limites » de la skill signale.
+Un chemin qui contient une espace impose des guillemets : l'appel passe alors
+par une demande de confirmation, ce que la section « Utilisation » de la skill
+signale, sans renvoyer à la procédure d'installation.
 
 Le script est testé par `scripts/test_<script>.py` sans le matériel ni le
 service qu'il pilote : un faux exécutable y rejoue des sorties enregistrées.
