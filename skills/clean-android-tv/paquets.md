@@ -90,6 +90,18 @@ diffèrent.
 | `com.tcl.smartalexa` | Assistant vocal Alexa |
 | `com.tcl.versionUpdateApp` | Arbitrage — voir [le vérificateur de mises à jour du constructeur](#vérificateur-de-mises-à-jour-du-constructeur) |
 | `com.tcl.tvweishi`, `com.tcl.m`, `com.tcl.xian.StartandroidService`, `com.tcl.eletronicpolicy`, `com.tcl.factory.view`, `com.tcl.virtualkey` | Rôle non établi — laissé activé |
+| `com.mediatek.partner.netflix` | Service persistant d'intégration de Netflix ; rôle dans la lecture non établi — laissé activé |
+
+**Netflix échappe aux réglages d'activité en background.** Application système,
+Netflix est inscrit sur la liste blanche d'économie d'énergie, comme entrée
+système, par le fichier `/system/etc/sysconfig/netflix.xml`. Sous Android 8, une
+entrée système ne se retire pas par adb : `cmd deviceidle whitelist -<PAQUET>`
+s'exécute sans message et la laisse en place. L'état « arrêté » ne tient pas non
+plus : au démarrage, Netflix est relancé malgré cet état, très probablement par
+`com.mediatek.partner.netflix`, qui reçoit `BOOT_COMPLETED` juste avant. Hormis
+la désactivation, aucun levier sans root ne s'offre : ne proposer pour Netflix
+ni `RUN_IN_BACKGROUND` ni l'arrêt forcé après usage
+([reference-adb.md, § 11](reference-adb.md#11-leviers-au-delà-de-la-désactivation)).
 
 ### Vérificateur de mises à jour du constructeur
 
@@ -135,7 +147,7 @@ ensemble d'applications d'accompagnement.
 | `com.nvidia.benchmarkblocker` | Désactivé d'origine |
 | `com.nvidia.packagemanagerservice`, `com.nvidia.KeyComboOta`, `com.nvidia.NvCPLUpdater`, `com.nvidia.app.messaging`, `com.nvidia.avsync`, `com.nvidia.inputviewer`, `com.nvidia.osc`, `com.nvidia.overscancomp`, `com.nvidia.remotelocator`, `com.nvidia.shield.appselector`, `com.nvidia.shield.nvcustomize`, `com.nvidia.shield.remote.server`, `com.nvidia.shieldservice`, `com.nvidia.wifi.countrycode` | Rôle non établi ou lié au matériel — laissé activé |
 
-Deux particularités du Shield modifient le déroulé :
+Trois particularités du Shield modifient le déroulé :
 
 - **L'accueil déclaré est ignoré tant que le lanceur d'origine est actif.** Le
   contrôle par la touche HOME ne peut donc pas précéder la désactivation du
@@ -143,6 +155,16 @@ Deux particularités du Shield modifient le déroulé :
   [reference-adb.md, § 8](reference-adb.md#8-remplacer-le-lanceur).
 - **Le débogage réseau survit au redémarrage.** C'est une option de menu
   persistante : l'accès adb n'est pas perdu à la phase 7.
+- **Netflix échappe aux réglages d'activité en background.** NVIDIA l'inscrit
+  sur la liste blanche d'économie d'énergie par le fichier
+  `/system/etc/sysconfig/com.nvidia.doze.xml`, qui rétablit l'inscription à
+  chaque démarrage : `RUN_IN_BACKGROUND` reste sans effet, et le service de
+  Netflix est relancé au démarrage, puis par ses tâches planifiées. Ne pas
+  proposer ce réglage pour Netflix sur ce boîtier ; seuls restent l'arrêt forcé
+  après chaque usage et la désactivation
+  ([reference-adb.md, § 11](reference-adb.md#11-leviers-au-delà-de-la-désactivation)).
+  Le même fichier inscrit aussi sur cette liste `com.plexapp.mediaserver.smb`
+  et `com.nvidia.shield.alexaexternal`, lorsqu'ils sont installés.
 
 ## 3. Candidats courants — effet à annoncer
 

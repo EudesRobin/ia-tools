@@ -205,12 +205,14 @@ autorisé, fichier illisible —, à corriger avant de relancer.
    conservées, démarrage automatique du lanceur tiers, mise à jour
    automatique du magasin, services de localisation
    ([reference-adb.md, § 10](reference-adb.md#10-caches-et-réglages-de-fluidité) et [§ 11](reference-adb.md#11-leviers-au-delà-de-la-désactivation)).
-   Un réglage d'activité en background n'est acquis qu'une fois son effet
-   mesuré après redémarrage : à défaut, le consigner comme non vérifié. Écrire dans le journal la marche à suivre pour
-   tout réactiver, y compris depuis les menus du téléviseur seul. Conseiller
-   une réservation DHCP de l'adresse du téléviseur sur la box, pour que les
-   commandes du journal restent valables. Refermer l'accès adb et rappeler de
-   couper le débogage.
+   Un réglage d'activité en background est sans effet sur une application de
+   la liste blanche d'économie d'énergie : contrôler l'inscription sur cette
+   liste avant de proposer le réglage ; celui-ci n'est acquis qu'une fois son
+   effet mesuré après redémarrage : à défaut, le consigner comme non vérifié.
+   Écrire dans le journal la marche à suivre pour tout réactiver, y compris
+   depuis les menus du téléviseur seul. Conseiller une réservation DHCP de
+   l'adresse du téléviseur sur la box, pour que les commandes du journal
+   restent valables. Refermer l'accès adb et rappeler de couper le débogage.
 
 ## Templates
 

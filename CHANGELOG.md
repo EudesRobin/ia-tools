@@ -40,6 +40,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🐛 Corrections
 
+- `clean-android-tv` : la liste blanche d'économie d'énergie est contrôlée avant
+  tout réglage d'activité en background, qu'elle rend inopérant. Netflix y est
+  inscrit par le système sur le NVIDIA Shield et sur un téléviseur TCL : le
+  réglage n'est plus proposé, et l'arrêt forcé n'est présenté qu'après
+  vérification de sa tenue au redémarrage.
 - `clean-android-tv` : la désactivation d'un composant isolé est refusée à
   l'UID `shell` sous Android 8, même sur une application système ; l'effet de
   `RUN_IN_BACKGROUND` se vérifie après redémarrage et sur 24 heures ; le statut
