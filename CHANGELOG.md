@@ -24,6 +24,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   écrit. Une écriture impossible est signalée au lieu d'interrompre le script.
   La sortie `--json` comporte désormais les clés `validation`, `outils` et
   `echecs`.
+- `clean-android-tv` : script embarqué `adb_tv.py`, en lecture seule sur
+  l'appareil — sonde des ports, relevé initial qui écrit le journal, état
+  résident ou en cache d'un paquet, contrôle du lot de désactivations au regard
+  les paquets critiques, comparaison de l'appareil au journal. Il exige
+  Python 3.10 ou une version ultérieure.
 
 ### 🔄 Modifications
 
@@ -43,6 +48,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   après sept jours à partir d'Android 11, du changement d'adresse du
   téléviseur, du démarrage automatique du lanceur tiers et du lanceur d'origine
   redéclaré par le constructeur.
+- `clean-android-tv` : les fichiers de référence sont lus à la phase qui les
+  cite, et non plus d'emblée. Le remplacement du lanceur d'origine devient une
+  étape du déroulé. Un contrôle en échec après un groupe de désactivations
+  ramène à la phase 5, et un stockage saturé est suivi d'une conduite à tenir.
+  Le journal suit un template impératif, et le lot soumis à l'utilisateur un
+  template indicatif. « en background » remplace « en fond ».
 
 ### 📝 Documentation
 

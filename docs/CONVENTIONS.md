@@ -243,6 +243,20 @@ logique dans ses instructions. L'installation copie le dossier entier, fichier
 par fichier ([SETUP.md](SETUP.md) §3) : aucune déclaration n'est nécessaire pour
 qu'un fichier embarqué soit installé.
 
+**Script embarqué.** Un script de skill s'écrit en Python, avec la seule
+bibliothèque standard : Python est déjà requis par l'installation
+([PREREQUIS.md](PREREQUIS.md)). Il suit les règles du
+[§7](#7-scripts-doutillage-du-dépôt-scripts) sur les identifiants, les messages
+sans accents, la sortie compacte et les codes de sortie `0` / `1` / `2`. La
+skill l'appelle par le chemin absolu de son dossier installé,
+`{AGENT_DIR}/skills/<nom>/`, `~` développé — entre guillemets, un `~` n'est
+pas développé —, et ajoute `Bash(python:*)` à
+`allowed-tools`. Il est testé par `scripts/test_<script>.py` sans le matériel
+ni le service qu'il pilote : un faux exécutable y rejoue des sorties
+enregistrées. `scripts/validate.py` en contrôle la syntaxe. Dans ce script, une
+majuscule entre accolades serait prise pour un placeholder
+([§1.2](#12-aucun-chemin-local-en-dur)), y compris dans une f-string : l'éviter.
+
 ---
 
 ## 3. Hooks (`hooks/<nom>/HOOK.md` + script) et status lines
@@ -461,8 +475,8 @@ la description d'une *pull request* pour cette dernière
 des modifications et en extrait la section d'une version
 ([CONTRIBUTING.md](CONTRIBUTING.md) §4.2).
 Les fichiers `test_*.py`, écrits avec la seule bibliothèque standard, testent
-ces contrôles, le merge intelligent d'`install.py` et l'affichage des status
-lines ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y
+ces contrôles, le merge intelligent d'`install.py`, l'affichage des status
+lines et les scripts embarqués des skills ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y
 reçoit son cas volontairement cassé.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux

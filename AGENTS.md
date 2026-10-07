@@ -43,8 +43,8 @@ cause.
 - **Skill, agent, hook, status line** — `python scripts/validate.py` au vert et
   checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §5 complète ; pour une
   status line, `python scripts/test_statusline.py` au vert.
-- **Script** (`scripts/*.py`, `hooks/**/*.ps1`, `statuslines/**/*.ps1`) — lancé
-  sur une invocation réelle, sortie effective lue ; toute vérification ajoutée
+- **Script** (`scripts/*.py`, `skills/**/*.py`, `hooks/**/*.ps1`,
+  `statuslines/**/*.ps1`) — lancé sur une invocation réelle, sortie effective lue ; toute vérification ajoutée
   ou modifiée vue en rouge sur un cas volontairement cassé. Le test
   `scripts/test_<script>.py`, quand il existe, est au vert ; pour
   `validate.py` et `check_commit_msg.py`, le cas cassé y est inscrit.
