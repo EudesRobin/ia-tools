@@ -21,7 +21,7 @@ gestionnaire de paquets sur un autre système.
 
 | Outil              | Requis par                                  | Vérifier                         | Installer (Windows)                          |
 |--------------------|---------------------------------------------|----------------------------------|----------------------------------------------|
-| Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
+| Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution), `clean-android-tv` (`adb_tv.py`) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
 | Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions), `pull-request` | `git --version` | `winget install Git.Git` |
 | GitHub CLI (`gh`)  | `pull-request` (push et création de PR)     | `gh --version`, `gh auth status` | `winget install GitHub.cli`                  |
 | Bibliothèques Python | `scripts/validate.py`, `zizmor` (modification d'un workflow, intégration continue) | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |

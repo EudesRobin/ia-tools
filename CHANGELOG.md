@@ -24,6 +24,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   écrit. Une écriture impossible est signalée au lieu d'interrompre le script.
   La sortie `--json` comporte désormais les clés `validation`, `outils` et
   `echecs`.
+- `clean-android-tv` : script embarqué `adb_tv.py`, en lecture seule sur
+  l'appareil — sonde des ports, relevé initial qui écrit le journal, état
+  résident ou en cache d'un paquet, contrôle du lot de désactivations au regard
+  les paquets critiques, comparaison de l'appareil au journal. Il exige
+  Python 3.10 ou une version ultérieure.
 
 ### 🔄 Modifications
 

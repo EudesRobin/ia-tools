@@ -60,19 +60,11 @@ mais l'autorisation du poste expire au bout de sept jours sans connexion
 ## 2. Diagnostiquer un échec de connexion
 
 Le message d'`adb connect` ne distingue pas un démon inactif d'un problème de
-réseau. Une sonde TCP tranche :
+réseau. Une sonde TCP des ports 5555, 6466 et 6467 tranche ; `adb_tv.py`
+la mène et rapporte, pour chaque port, `ouvert`, `refus` ou `expiration` :
 
-```powershell
-$ports = 5555,6466,6467
-foreach ($p in $ports) {
-  $c = New-Object Net.Sockets.TcpClient
-  $r = $c.BeginConnect('<IP_TV>',$p,$null,$null)
-  # 1,2 s : largement au-dela d'un aller-retour en reseau local ;
-  # la sonde des trois ports reste sous 4 s
-  $ok = $r.AsyncWaitHandle.WaitOne(1200)
-  if ($ok -and $c.Connected) { "$p ouvert" } else { "$p ferme" }
-  $c.Close()
-}
+```bash
+python "<dossier-skill>/adb_tv.py" probe <IP_TV>
 ```
 
 - **Refus explicite sur 5555** — l'hôte répond, mais le démon n'écoute pas en
@@ -123,7 +115,8 @@ Si `stop adbd` est refusé, désactiver puis réactiver le débogage ADB dans le
 options pour les développeurs : le basculement relance le démon, qui relit la
 propriété au démarrage. La session de l'application se coupe à cet instant.
 
-Sonder le port depuis le poste, puis lancer `adb connect`. Le téléviseur affiche
+Sonder le port depuis le poste par `adb_tv.py probe`, puis lancer
+`adb connect`. Le téléviseur affiche
 la demande d'autorisation de clé RSA : la faire accepter en cochant « Toujours
 autoriser depuis cet ordinateur ».
 
@@ -158,6 +151,10 @@ poste. Un appareil `offline` se rétablit rarement par une simple
 reconnexion : arrêter puis relancer le serveur local.
 
 ## 5. Relevé de l'état initial
+
+`adb_tv.py snapshot` lance les commandes ci-dessous, range leurs sorties à côté du journal
+et n'en affiche qu'une synthèse. Elles restent la référence quand le script ne
+peut pas être employé.
 
 ```bash
 adb shell getprop ro.product.model
@@ -204,7 +201,8 @@ Repères de lecture :
 `dumpsys meminfo` classe les processus par mémoire occupée, non par coût réel.
 Un processus volumineux peut n'être qu'un reliquat en cache, que le système
 libère à la première demande. Le confondre avec un processus résident conduit à
-désactiver une application sans aucun gain.
+désactiver une application sans aucun gain. `adb_tv.py residents` lance les
+commandes ci-dessous et affiche une ligne par paquet.
 
 ```bash
 adb shell "dumpsys activity oom | grep -B1 -A1 <PAQUET>"
@@ -480,7 +478,9 @@ plusieurs jours de fonctionnement, la mesure qui fait foi est
 ## 13. Vérification d'une intervention antérieure
 
 La vérification est une lecture : elle ne modifie rien sur l'appareil. Chaque
-relevé se confronte au journal de l'intervention.
+relevé se confronte au journal de l'intervention. `adb_tv.py compare` mène
+cette confrontation, à l'exception de `logcat` et de `procstats`, à lire
+directement.
 
 ```bash
 adb shell uptime                                    # duree depuis le dernier demarrage
