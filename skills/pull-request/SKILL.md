@@ -282,6 +282,10 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
   pas traitées.
 - Le merge de la PR, la revue et le suivi de l'intégration continue sont hors du
   périmètre de la skill.
+- **Dossier d'installation dont le chemin contient une espace**, que permet
+  de choisir `install.py --target` : l'appel d'`etat_depot.py` s'écrit alors entre
+  guillemets et passe par une demande de confirmation, la règle
+  d'`allowed-tools` ne lui correspondant plus.
 - `sensibles` repère un fichier à son nom seulement : un secret écrit dans un
   fichier au nom ordinaire n'est pas signalé.
 - `allowed-tools` n'est appliqué que par Claude Code, où `git push`,

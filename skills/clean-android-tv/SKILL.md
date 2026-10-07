@@ -355,5 +355,9 @@ et de sa commande inverse.
   ([§ 3](reference-adb.md#3-mettre-adbd-en-écoute-réseau-depuis-un-shell-local))
   échoue si ce shell ne tourne pas en UID 2000 ; il reste alors les menus
   du téléviseur.
+- **Dossier d'installation dont le chemin contient une espace**, que permet
+  de choisir `install.py --target` : l'appel d'`adb_tv.py` s'écrit alors entre
+  guillemets et passe par une demande de confirmation, la règle
+  d'`allowed-tools` ne lui correspondant plus.
 - **Hors périmètre** : le root, l'installation d'applications tierces, et toute
   modification de la partition système.
