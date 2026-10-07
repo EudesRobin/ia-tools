@@ -52,11 +52,12 @@ d'origine, celui-ci reste indispensable. Une fois le nouvel écran d'accueil
 défini par `cmd package set-home-activity` et contrôlé par un appui réel sur la
 touche HOME, le lanceur d'origine et son service de recommandations deviennent
 désactivables. Désactiver le lanceur d'origine libère une part notable de la
-mémoire sur un appareil à mémoire limitée. Procédure dans
-[reference-adb.md](reference-adb.md), qui traite aussi l'exception du NVIDIA
+mémoire sur un appareil à mémoire limitée. Procédure à la phase 6 de la skill
+et dans [reference-adb.md, § 8](reference-adb.md#8-remplacer-le-lanceur).
+La même section de reference-adb.md traite aussi l'exception du NVIDIA
 Shield, où la désactivation du lanceur d'origine précède le contrôle par la
-touche HOME, et le cas des constructeurs qui, comme TCL, redéclarent le
-lanceur d'origine à chaque démarrage : il reste alors désactivé, et sa
+touche HOME, ainsi que le cas des constructeurs qui, comme TCL, redéclarent le
+lanceur d'origine à chaque démarrage : il doit alors rester désactivé, et sa
 réactivation impose de relancer `set-home-activity`.
 
 ## 2. Couche constructeur
@@ -126,7 +127,7 @@ ensemble d'applications d'accompagnement.
 | `com.nvidia.factory`, `com.nvidia.factorybundling`, `com.nvidia.shield.welcome`, `com.nvidia.shield.registration` | Désactivable — outils d'usine et configuration initiale |
 | `com.nvidia.shieldbeta`, `com.nvidia.shield.beta` | Désactivable hors inscription au programme bêta |
 | `com.nvidia.developerwidget`, `com.nvidia.tegraprofiler.security` | Désactivable — outils de développement |
-| `com.nvidia.nvgamecast`, `com.nvidia.tegrazone3`, `com.nvidia.ControllerMapper`, `com.nvidia.bluetooth.ps3usbpairer` | Désactivable quand le boîtier ne sert pas au jeu — NVIDIA a arrêté GameStream en 2023 |
+| `com.nvidia.nvgamecast`, `com.nvidia.tegrazone3`, `com.nvidia.ControllerMapper`, `com.nvidia.bluetooth.ps3usbpairer` | Désactivable quand le boîtier ne sert pas au jeu — NVIDIA a cessé d'assurer le service GameStream |
 | `com.nvidia.shield.ask`, `com.nvidia.hotwordsetup` | Assistant vocal NVIDIA — désactivable dans le même groupe que `com.google.android.katniss` ([§ 3](#3-candidats-courants--effet-à-annoncer)) |
 | `com.nvidia.shield.smbserver` | Serveur SMB qui partage le stockage du boîtier sur le réseau — désactivable s'il n'est pas utilisé |
 | `com.nvidia.irtuner` | Récepteur infrarouge — désactivable quand seule la télécommande Bluetooth est employée ; HDMI-CEC n'en dépend pas |
@@ -138,12 +139,10 @@ Deux particularités du Shield modifient le déroulé :
 
 - **L'accueil déclaré est ignoré tant que le lanceur d'origine est actif.** Le
   contrôle par la touche HOME ne peut donc pas précéder la désactivation du
-  lanceur d'origine : procédure dans [reference-adb.md](reference-adb.md).
+  lanceur d'origine : procédure à la phase 6 de la skill et dans
+  [reference-adb.md, § 8](reference-adb.md#8-remplacer-le-lanceur).
 - **Le débogage réseau survit au redémarrage.** C'est une option de menu
-  persistante : l'accès adb n'est pas perdu à la phase 7. L'autorisation du
-  poste expire en revanche après sept jours sans connexion, comme sur tout
-  appareil sous Android 11 ou une version ultérieure : lors d'une vérification
-  ultérieure, passé ce délai, la clé RSA est à réaccepter.
+  persistante : l'accès adb n'est pas perdu à la phase 7.
 
 ## 3. Candidats courants — effet à annoncer
 
@@ -184,7 +183,8 @@ Dans l'ordre, en s'arrêtant à la première réponse qui tranche :
    par défaut.
 3. **`dumpsys package <PAQUET>` l'identifie-t-il comme paquet système ?** Un
    paquet système sans fonction identifiée reste activé.
-4. **Consomme-t-il des ressources en fond ?** `dumpsys procstats --hours 24`.
+4. **Consomme-t-il des ressources en background ?**
+   `dumpsys procstats --hours 24`.
    Désactiver un paquet qui ne consomme rien n'apporte aucun gain et ajoute du
    risque.
 
@@ -198,6 +198,6 @@ pas su identifier.
   système. Seul l'espace occupé par le cache et les données de l'application se
   récupère, par `pm trim-caches` ou `pm clear`.
 - Elle ne réduit la mémoire occupée que pour les paquets qui s'exécutaient
-  réellement en fond, ce que seule la mesure établit.
+  réellement en background, ce que seule la mesure établit.
 - Elle ne survit pas nécessairement à une mise à jour majeure du système :
   conserver le journal permet de réappliquer le lot.

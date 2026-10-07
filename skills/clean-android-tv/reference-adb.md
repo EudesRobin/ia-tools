@@ -67,6 +67,8 @@ $ports = 5555,6466,6467
 foreach ($p in $ports) {
   $c = New-Object Net.Sockets.TcpClient
   $r = $c.BeginConnect('<IP_TV>',$p,$null,$null)
+  # 1,2 s : largement au-dela d'un aller-retour en reseau local ;
+  # la sonde des trois ports reste sous 4 s
   $ok = $r.AsyncWaitHandle.WaitOne(1200)
   if ($ok -and $c.Connected) { "$p ouvert" } else { "$p ferme" }
   $c.Close()
@@ -171,7 +173,7 @@ adb shell pm list packages -3          # paquets installes par l'utilisateur
 adb shell pm list packages -e          # paquets actives — inventaire a conserver
 adb shell pm list packages -d          # paquets deja desactives
 
-adb shell dumpsys procstats --hours 24 # ce qui tourne reellement en fond
+adb shell dumpsys procstats --hours 24 # ce qui tourne reellement en background
 ```
 
 Préférer `dumpsys meminfo` à `/proc/meminfo` : les noyaux anciens n'exposent pas
@@ -360,8 +362,8 @@ se fait par `settings delete global <CLE>`.
 des paquets critiques, ou sur des applications que l'utilisateur emploie et qui
 ne peuvent donc pas être désactivées.
 
-**Couper le travail de fond d'une application conservée.** L'état `svc` dans
-`dumpsys activity oom` signale un service permanent. Le réglage
+**Couper l'activité en background d'une application conservée.** L'état `svc`
+dans `dumpsys activity oom` signale un service permanent. Le réglage
 `RUN_IN_BACKGROUND` ne prend effet sur le processus en cours qu'après un arrêt
 forcé :
 
@@ -381,8 +383,8 @@ persiste, mais il n'arrête pas tout :
 
 - un récepteur `BOOT_COMPLETED` de l'application relance son service à chaque
   démarrage ;
-- un service que l'application lie elle-même échappe à l'arrêt des services de
-  fond.
+- un service que l'application lie elle-même échappe à l'arrêt des services en
+  background.
 
 Contrôler l'effet après un redémarrage, puis après une journée d'usage :
 
@@ -434,13 +436,13 @@ Les préfixes `-` et `+` retirent et ajoutent un fournisseur sans réécrire la
 liste entière. Restauration par `+gps` et `+network`.
 
 **Mise à jour automatique du magasin d'applications.** Le magasin est un paquet
-critique, mais son activité de fond pèse souvent lourd. Le réglage de mise à
-jour automatique est propre au magasin et **n'est pas accessible par adb** : il
+critique, mais son activité en background pèse souvent lourd. Le réglage de
+mise à jour automatique est propre au magasin et **n'est pas accessible par adb** : il
 se modifie dans son interface, rubrique des préférences réseau. L'indiquer à
 l'utilisateur plutôt que de chercher une commande.
 
-**VPN installé sur le téléviseur.** Tout le trafic traverse le tunnel et doit
-être chiffré. Sur un processeur d'entrée de gamme, c'est une charge permanente.
+**VPN installé sur le téléviseur.** Sur un processeur d'entrée de gamme, le
+chiffrement du tunnel est une charge permanente.
 Ne pas désinstaller le VPN d'autorité : mesurer la charge du VPN, énoncer le
 chiffre, laisser l'utilisateur arbitrer.
 
@@ -504,7 +506,7 @@ Repères de lecture :
 - **Réglage `settings` ou `appops` revenu à sa valeur initiale** — réglage
   annulé, par une mise à jour du système ou depuis les menus.
 - **Résident retiré qui réapparaît dans `procstats`** — paquet réactivé, ou
-  réglage de travail de fond sans effet ([§11](#11-leviers-au-delà-de-la-désactivation)).
+  réglage d'activité en background sans effet ([§11](#11-leviers-au-delà-de-la-désactivation)).
 
 L'historique de `logcat` ne remonte qu'au dernier démarrage, souvent moins : un
 événement antérieur, comme une demande de confirmation d'accueil, ne s'y lit

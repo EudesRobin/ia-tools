@@ -43,6 +43,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   après sept jours à partir d'Android 11, du changement d'adresse du
   téléviseur, du démarrage automatique du lanceur tiers et du lanceur d'origine
   redéclaré par le constructeur.
+- `clean-android-tv` : les fichiers de référence sont lus à la phase qui les
+  cite, et non plus d'emblée. Le remplacement du lanceur d'origine devient une
+  étape du déroulé. Un contrôle en échec après un groupe de désactivations
+  ramène à la phase 5, et un stockage saturé est suivi d'une conduite à tenir.
+  Le journal suit un template impératif, et le lot soumis à l'utilisateur un
+  template indicatif. « en background » remplace « en fond ».
 
 ### 📝 Documentation
 
