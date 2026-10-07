@@ -80,8 +80,8 @@ python {AGENT_DIR}/skills/pull-request/etat_depot.py --github   # livraison comp
 
 Écrire la commande exactement telle qu'elle figure ci-dessus, sans guillemets
 et sans développer le chemin : Claude Code compare le texte de la commande à
-la règle d'`allowed-tools`, et toute autre écriture passe par une demande de
-confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
+la règle d'`allowed-tools`, et toute autre forme d'appel déclenche une demande
+de confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
 Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé.
 
 Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
@@ -247,8 +247,9 @@ gh pr view --json url,title,body,baseRefName,headRefName,isDraft
 Comparer le résultat à ce que l'utilisateur a validé : titre, description,
 base, état. Vérifier qu'aucune attribution d'outil d'IA n'y figure. Un écart
 dont la correction se borne à rétablir le contenu validé → le corriger par
-`gh pr edit`, sans nouvel accord, puis reprendre à la [phase 7](#7-vérifier-la-pr-publiée). Tout autre
-changement → reprendre à la [phase 6](#6-obtenir-laccord-puis-publier).
+`gh pr edit`, sans nouvel accord, puis reprendre à la
+[phase 7](#7-vérifier-la-pr-publiée). Tout autre changement → reprendre à la
+[phase 6](#6-obtenir-laccord-puis-publier).
 Indiquer à l'utilisateur l'URL de la PR. Les fichiers de travail restent dans
 le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 

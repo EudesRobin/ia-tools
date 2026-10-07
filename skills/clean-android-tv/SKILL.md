@@ -109,13 +109,13 @@ python {AGENT_DIR}/skills/clean-android-tv/adb_tv.py compare <journal> [--ip <IP
 
 Écrire la commande exactement telle qu'elle figure ci-dessus, sans guillemets
 et sans développer le chemin : Claude Code compare le texte de la commande à
-la règle d'`allowed-tools`, et toute autre écriture passe par une demande de
-confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
+la règle d'`allowed-tools`, et toute autre forme d'appel déclenche une demande
+de confirmation. Le shell développe lui-même un `~` placé hors guillemets ; seul
 Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé.
 
 Codes de sortie : `0` au vert ; `1` écart constaté, détaillé dans la sortie ;
 `2` anomalie d'environnement — adb absent, appareil non connecté ou non
-autorisé, fichier illisible —, à corriger avant de relancer.
+autorisé, fichier illisible —, à corriger avant de relancer le script.
 
 ## Instructions
 
