@@ -248,7 +248,7 @@ qu'un fichier embarqué soit installé.
 **Script embarqué.** Un script de skill s'écrit en Python, avec la seule
 bibliothèque standard : Python est déjà requis par l'installation
 ([PREREQUIS.md](PREREQUIS.md)). Il suit les règles du
-[§7](#7-scripts-doutillage-du-dépôt-scripts) sur les identifiants, les messages
+[§7](#7-scripts-doutillage-du-dépôt-scripts-et-tests-tests) sur les identifiants, les messages
 sans accents, la sortie compacte et les codes de sortie `0` / `1` / `2`.
 
 La skill l'autorise dans `allowed-tools` par une règle portant son chemin
@@ -265,7 +265,7 @@ Un chemin qui contient une espace impose des guillemets : l'appel passe alors
 par une demande de confirmation, ce que la section « Utilisation » de la skill
 signale, sans renvoyer à la procédure d'installation.
 
-Le script est testé par `scripts/test_<script>.py` sans le matériel ni le
+Le script est testé par `tests/test_<script>.py` sans le matériel ni le
 service qu'il pilote : un faux exécutable y rejoue des sorties enregistrées.
 `scripts/validate.py` contrôle la syntaxe du script. Dans un script embarqué,
 une majuscule entre accolades serait prise pour un placeholder
@@ -345,7 +345,7 @@ est `~/.claude/statuslines/<nom>/`.
   (`[char]0x2502`).
 - **Paramètres en tête de script** ; la variable d'environnement `NO_COLOR`
   désactive les couleurs.
-- **Tests.** Chaque affichage est vérifié par `scripts/test_statusline.py`, sur
+- **Tests.** Chaque affichage est vérifié par `tests/test_statusline.py`, sur
   des payloads couvrant les champs absents ou nuls.
 
 ---
@@ -431,7 +431,7 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
 - [ ] **[README.md](../README.md)** — l'outil figure dans l'inventaire et dans
       l'arborescence, avec ses fichiers embarqués.
 - [ ] **Status line** — `STATUSLINE.md` et `statusline.ps1` présents, cas
-      d'affichage ajoutés à `scripts/test_statusline.py`.
+      d'affichage ajoutés à `tests/test_statusline.py`.
 - [ ] **[AGENTS.md](../AGENTS.md)** — une règle d'usage est ajoutée **uniquement**
       si l'outil doit être déclenché dans des situations précises.
 - [ ] **Front-matter conforme** au [§2](#2-skills-skillsnomskillmd) ou au
@@ -476,7 +476,7 @@ sont des règles en prose, à appliquer délibérément.
 
 ---
 
-## 7. Scripts d'outillage du dépôt (`scripts/`)
+## 7. Scripts d'outillage du dépôt (`scripts/`) et tests (`tests/`)
 
 Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 `{AGENT_DIR}` et rien des §§1.1 à 4 ne s'y applique, hormis les règles d'or 1.2,
@@ -488,10 +488,16 @@ la description d'une *pull request* pour cette dernière
 ([CONTRIBUTING.md](CONTRIBUTING.md) §3), et `changelog.py` contrôle le journal
 des modifications et en extrait la section d'une version
 ([CONTRIBUTING.md](CONTRIBUTING.md) §4.2).
-Les fichiers `test_*.py`, écrits avec la seule bibliothèque standard, testent
-ces contrôles, le merge intelligent d'`install.py`, l'affichage des status
-lines et les scripts embarqués des skills ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py` y
-reçoit son cas volontairement cassé.
+
+Les tests `test_*.py` se trouvent sous `tests/`, jamais sous `scripts/`, qui ne
+contient que les scripts d'outillage décrits ci-dessus ; `scripts/validate.py`
+signale un test placé sous `scripts/`. Écrits avec la seule bibliothèque
+standard, les tests couvrent les contrôles de `validate.py`, de
+`check_commit_msg.py` et de `changelog.py`, le merge intelligent
+d'`install.py`, l'affichage des status lines et les scripts embarqués des
+skills ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py`
+y reçoit son cas volontairement cassé. Les règles
+ci-dessous s'appliquent aux tests comme aux scripts.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
   scripts de hook, où le contrat d'appel l'impose, et aux scripts de status

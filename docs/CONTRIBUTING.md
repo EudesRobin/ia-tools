@@ -59,7 +59,7 @@ request*.
 
 L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 
-- les tests `scripts/test_*.py` des scripts et des status lines ;
+- les tests `tests/test_*.py` des scripts et des status lines ;
 - l'analyse de sécurité des workflows par `zizmor` ;
 - sur une *pull request*, le contrôle du message de chaque commit, de
   l'absence d'attribution d'IA dans le titre et la description, et de la

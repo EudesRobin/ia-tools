@@ -5,7 +5,7 @@ sur edition locale sans ecriture de l'outil concerne, echec d'ecriture signale,
 validation prealable bloquant --apply, settings.json jamais ecrit (AGENTS.md,
 DoD des scripts ; docs/SETUP.md).
 
-Usage : python scripts/test_install.py
+Usage : python tests/test_install.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 

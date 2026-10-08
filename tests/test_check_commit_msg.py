@@ -3,7 +3,7 @@
 ecart vu en rouge, y compris par les modes --range (depot git temporaire) et
 --pr (variables d'environnement).
 
-Usage : python scripts/test_check_commit_msg.py
+Usage : python tests/test_check_commit_msg.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
@@ -14,7 +14,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent / "check_commit_msg.py"
+ROOT = Path(__file__).resolve().parent.parent
+SCRIPT = ROOT / "scripts" / "check_commit_msg.py"
 sys.path.insert(0, str(SCRIPT.parent))
 from check_commit_msg import issues  # noqa: E402
 

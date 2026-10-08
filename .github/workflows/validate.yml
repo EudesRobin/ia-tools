@@ -40,19 +40,19 @@ jobs:
       # donne le diagnostic complet.
       - run: python scripts/validate.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_validate.py
+        run: python tests/test_validate.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_check_commit_msg.py
+        run: python tests/test_check_commit_msg.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_changelog.py
+        run: python tests/test_changelog.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_install.py
+        run: python tests/test_install.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_statusline.py
+        run: python tests/test_statusline.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_adb_tv.py
+        run: python tests/test_adb_tv.py
       - if: ${{ !cancelled() }}
-        run: python scripts/test_etat_depot.py
+        run: python tests/test_etat_depot.py
 
   workflows:
     name: zizmor

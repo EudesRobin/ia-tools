@@ -4,7 +4,7 @@ payload JSON sur son entree standard, sous chaque PowerShell present (pwsh,
 powershell), et sa sortie est comparee a l'affichage attendu (AGENTS.md, DoD
 des scripts).
 
-Usage : python scripts/test_statusline.py
+Usage : python tests/test_statusline.py
 Code de sortie : 0 si tout passe, 1 sinon, 2 si aucun PowerShell n'est present.
 """
 

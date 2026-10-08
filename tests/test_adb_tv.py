@@ -3,7 +3,7 @@
 renvoie des sorties enregistrees. Chaque controle de check-plan et de compare
 est vu en rouge sur un cas volontairement casse (AGENTS.md, DoD des scripts).
 
-Usage : python scripts/test_adb_tv.py
+Usage : python tests/test_adb_tv.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
