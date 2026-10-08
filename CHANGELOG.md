@@ -8,6 +8,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+## [1.4.0] - 2026-10-09
+
 ### 🚀 Nouveautés
 
 - `audit-outil` : nouvel agent qui audite une skill, un agent ou un hook — qualité
@@ -179,7 +181,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `scripts/validate.py`, ses tests, l'intégration continue et les hooks git
   `pre-commit` et `commit-msg`, pour contribuer au dépôt.
 
-[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.3.0...HEAD
+[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.4.0...HEAD
+[1.4.0]: https://github.com/EudesRobin/ia-tools/compare/1.3.0...1.4.0
 [1.3.0]: https://github.com/EudesRobin/ia-tools/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/EudesRobin/ia-tools/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/EudesRobin/ia-tools/compare/1.0.0...1.1.0
