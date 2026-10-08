@@ -41,6 +41,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
   imposé, avec une échelle de gravité définie ; dérive évaluée seulement sur un
   rapport d'audit antérieur fourni par l'appelant.
+- `audit-outil` : l'absence de scénarios d'évaluation n'est plus relevée comme
+  un constat. Ces scénarios deviennent facultatifs et sont seulement suggérés ;
+  l'emploi de l'outil installé, sur du travail réel, fait foi.
 - `pull-request` : gh n'est plus requis pour un commit seul, et un dépôt sans
   dépôt distant est pris en charge. Le versionnement du template indicatif est
   proposé avant la publication. Une correction de la PR rétablissant le contenu

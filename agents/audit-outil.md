@@ -190,11 +190,12 @@ Un outil MCP est nommé sous la forme qualifiée `Serveur:nom_outil`.
 
 ## 9. Évaluation
 
-Relever l'absence de scénarios d'évaluation — au moins trois, chacun donnant
-les outils chargés, la demande, les fichiers d'entrée et le comportement
-attendu en énoncés observables. Ne pas exiger ces scénarios d'un outil dont
-le dépôt n'organise aucune évaluation : signaler alors leur absence comme un
-constat mineur.
+La mise à l'épreuve de référence est l'emploi de l'outil installé, sur du
+travail réel. Les scénarios d'évaluation sont facultatifs : **ne jamais
+relever leur absence comme un constat**. Quand l'outil s'y prête, les suggérer
+dans le verdict du rapport, comme une piste facultative — au moins trois,
+chacun donnant les outils chargés, la demande, les fichiers d'entrée et le
+comportement attendu en énoncés observables.
 
 # Délégation à un script
 

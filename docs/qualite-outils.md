@@ -259,8 +259,15 @@ particulier quand plusieurs serveurs MCP sont connectés.
 
 ## 9. Évaluation et itération
 
-**Construire les scénarios avant la documentation**, pour que l'outil réponde à
-des défaillances observées et non supposées :
+**L'emploi réel prime.** La mise à l'épreuve de référence est l'emploi de
+l'outil installé, sur du travail réel : dans ce dépôt, un outil modifié est
+installé puis validé par l'utilisateur avant tout commit et tout push
+([CONTRIBUTING.md](CONTRIBUTING.md) §2).
+
+**Les scénarios d'évaluation sont facultatifs** : les suggérer à l'utilisateur
+quand l'outil s'y prête, sans les exiger. Quand ils sont retenus, les
+construire avant la documentation, pour que l'outil réponde à des défaillances
+observées et non supposées :
 
 1. Faire traiter des tâches représentatives **sans** l'outil, et relever les
    défaillances précises et le contexte manquant.
@@ -296,6 +303,7 @@ autorité.
 | Liste de déclencheurs incluant la forme `/nom` | `CONVENTIONS.md` §2.1 exige « À utiliser quand… », formulé avec les mots de l'utilisateur ; la forme `/nom` n'est pas requise |
 | Placeholder d'un dossier d'agent, pour un outil installable sous plusieurs environnements | **Reprise.** Les outils sont installés pour Claude Code et Copilot CLI : la racine de l'agent hôte s'écrit `{AGENT_DIR}` (`CONVENTIONS.md` §1.2) |
 | Prose neutre entre outils (« l'agent », jamais « Claude ») | **Reprise**, avec une réserve : `CONVENTIONS.md` §1.9 admet de nommer Claude ou Copilot pour un comportement propre à l'un d'eux |
+| Au moins trois scénarios d'évaluation pour chaque outil | **Non repris.** Les scénarios sont facultatifs, suggérés à l'utilisateur et jamais exigés ; l'emploi de l'outil installé, validé par l'utilisateur avant tout commit et tout push ([CONTRIBUTING.md](CONTRIBUTING.md) §2), fait foi (§9) |
 | Séparateurs de chemin en `/` sans exception | **Non repris.** Ce dépôt ne fixe aucune convention de séparateur et n'a aucun script embarqué qui construise un chemin absolu ; la règle serait sans objet |
 
 ## 11. Checklist
@@ -341,6 +349,7 @@ de la seule prose de ce document.
 
 **Mise à l'épreuve**
 
-- [ ] Au moins trois scénarios d'évaluation existent.
 - [ ] L'outil a été employé sur du travail réel, dans une session neuve, pas
       seulement sur des cas construits.
+- [ ] Si l'outil s'y prête, des scénarios d'évaluation, dont la rédaction
+      reste facultative, ont été suggérés à l'utilisateur.
