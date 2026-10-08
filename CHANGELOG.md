@@ -41,6 +41,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   le rapport ; ajout d'une étape d'élimination des faux positifs ; rapport au format
   imposé, avec une échelle de gravité définie ; dérive évaluée seulement sur un
   rapport d'audit antérieur fourni par l'appelant.
+- `audit-outil` : l'absence de scénarios d'évaluation n'est plus relevée comme
+  un constat. Ces scénarios deviennent facultatifs et sont seulement suggérés ;
+  l'emploi de l'outil installé, sur du travail réel, fait foi.
 - `pull-request` : gh n'est plus requis pour un commit seul, et un dépôt sans
   dépôt distant est pris en charge. Le versionnement du template indicatif est
   proposé avant la publication. Une correction de la PR rétablissant le contenu
@@ -77,6 +80,14 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   est déterminé et lu avant la proposition, ce qui évite une section en double.
   Les commandes que le projet déclare lui-même sont retenues en priorité, et
   `allowed-tools` est renseigné.
+- `audit-docs` : le rapport nomme le mécanisme réel de l'audit documentaire et
+  signale que le verdict du validateur du projet reste à observer par
+  l'appelant. L'évaluation de la dérive compare les constats à ceux du rapport
+  antérieur. Les manques ne sont dits massifs qu'en l'absence conjointe de la
+  table de routage, des conventions d'écriture et du DoD ; un élément isolé
+  absent peut être créé.
+  L'inventaire couvre les fichiers d'instructions hors de la racine, et les
+  liens sont relevés en une seule recherche.
 
 ### 🔒 Sécurité
 
