@@ -77,6 +77,14 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   est déterminé et lu avant la proposition, ce qui évite une section en double.
   Les commandes que le projet déclare lui-même sont retenues en priorité, et
   `allowed-tools` est renseigné.
+- `audit-docs` : le rapport nomme le mécanisme réel de l'audit documentaire et
+  signale que le verdict du validateur du projet reste à observer par
+  l'appelant. L'évaluation de la dérive compare les constats à ceux du rapport
+  antérieur. Les manques ne sont dits massifs qu'en l'absence conjointe de la
+  table de routage, des conventions d'écriture et du DoD ; un élément isolé
+  absent peut être créé.
+  L'inventaire couvre les fichiers d'instructions hors de la racine, et les
+  liens sont relevés en une seule recherche.
 
 ### 🔒 Sécurité
 

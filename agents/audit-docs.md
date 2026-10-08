@@ -82,7 +82,7 @@ Vérifier que le fichier d'instructions racine (`CLAUDE.md`, `AGENTS.md`,
 `README` ou équivalent) joue le rôle d'un simple aiguilleur vers les documents
 canoniques, plutôt que de contenir toutes les règles dans le fichier même.
 
-Quand plusieurs fichiers racine coexistent, un seul est canonique et les autres
+Quand plusieurs fichiers d'instructions coexistent, un seul est canonique et les autres
 sont de simples renvois — jamais deux copies de la même règle.
 
 Une convention d'écriture documentée existe, et elle est **référencée par un
@@ -132,19 +132,26 @@ clairement plutôt que de créditer le projet d'un harnais qu'il n'a pas.
 ## 5. Références croisées et liens de retour
 
 Vérifier que les documents de synthèse renvoient vers les documents de détail
-qu'ils annoncent, et que ceux-ci renvoient vers leur point d'entrée.
+qu'ils annoncent, et que ceux-ci renvoient vers le document ou la table qui les
+annonce.
 
-Relever tout document orphelin, c'est-à-dire qu'aucun document ne référence,
-ainsi que tout lien relatif qui ne mène nulle part. Quand le projet porte un validateur
-qui contrôle déjà les liens et les orphelins, s'appuyer sur lui, l'indiquer
-dans la rubrique « Projet audité » du rapport, et ne relever que ce qu'il ne couvre pas.
+Relever tout document orphelin, soit un document qu'aucun autre ne référence,
+ainsi que tout lien relatif qui ne mène nulle part. Quand le projet porte un
+validateur qui contrôle déjà les liens et les orphelins, ne relever que ce qu'il
+ne couvre pas, et nommer ce validateur et sa couverture dans la rubrique
+« Projet audité » du rapport : cet agent ne le lance pas, et son verdict reste
+à observer par l'appelant. Sans validateur, relever les cibles de liens par une
+seule recherche Grep sur l'ensemble des documents, dont la sortie se limite au
+texte correspondant, et les comparer à l'inventaire de l'étape 2, plutôt que de les extraire
+document par document.
 
 ## 6. Dérive depuis un audit antérieur
 
 **Seulement quand l'appelant fournit ou désigne le rapport d'un audit
-antérieur.** Relever les nouveaux documents non encore atteignables depuis la
-table de routage, les entrées de la table qui pointent vers des fichiers
-disparus, et les règles dupliquées apparues depuis cet audit.
+antérieur.** Comparer les constats du présent audit à ceux de ce rapport :
+constats résolus, persistants et nouveaux — en particulier les entrées de la
+table qui pointent vers des fichiers disparus et les règles dupliquées apparues
+depuis.
 
 Sans rapport antérieur, le critère est sans objet : le présent rapport le
 mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité ».
@@ -168,8 +175,10 @@ mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité 
 1. **Périmètre.** Confirmer la racine du projet cible (par défaut : le dépôt
    courant). Ne poser la question que si la racine est réellement ambiguë.
 2. **Inventorier avant de juger.** Recenser tous les fichiers de documentation
-   et d'instructions : le `CLAUDE.md` / `AGENTS.md` / `README` racine, tout
-   `docs/**/*.md`, et tout `*.md` situé à côté du code qu'il décrit. Employer
+   et d'instructions : le `CLAUDE.md` / `AGENTS.md` / `README` racine, les
+   fichiers d'instructions d'agent hôte placés dans un dossier de configuration
+   (par exemple `.github/copilot-instructions.md`), tout `docs/**/*.md`, et
+   tout `*.md` situé à côté du code qu'il décrit. Employer
    Glob et Grep — **ne pas deviner ce qui existe.**
 3. **Évaluer** les critères 1 à 5, et le critère 6 quand un rapport antérieur
    est fourni. Citer une preuve `fichier:ligne` pour **chaque** constat et le
@@ -184,13 +193,14 @@ mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité 
 5. **Proposer un lot de modifications** pour ce qui se corrige en éditant de la
    documentation : entrée de routage ajoutée ou corrigée, lien de retour ajouté
    là où il manque, règle dupliquée consolidée à un seul endroit, un renvoi
-   remplaçant chacune des autres copies, DoD reformulé en boucle. Lister **chaque fichier que le
-   lot toucherait et la modification exacte pour chacun**, dans la forme vers
-   laquelle le projet tend déjà quand elle est identifiable. **Si les manques
-   sont massifs** — ni table de routage, ni conventions d'écriture, ni DoD, et
-   pas seulement une omission isolée —, le dire et présenter aussi la structure
-   de départ : le choix entre le lot ciblé et cette structure revient à
-   l'utilisateur, après le rapport.
+   remplaçant chacune des autres copies, DoD reformulé en boucle, élément
+   absent créé — table de routage, DoD — dans la forme décrite à « Structure de
+   départ ». Lister **chaque fichier que le lot toucherait et la modification
+   exacte pour chacun**, dans la forme vers laquelle le projet tend déjà quand
+   elle est identifiable. **Si les manques sont massifs** — table de routage,
+   conventions d'écriture et DoD absents tous trois —, le dire et présenter
+   aussi la structure de départ : le choix entre le lot ciblé et cette
+   structure revient à l'utilisateur, après le rapport.
 6. **Nommer le mécanisme** sur lequel repose l'audit documentaire du projet
    lui-même : une exécution manuelle de cet agent, déclenchée par l'utilisateur,
    relève de l'instruction écrite — non d'un hook, ni d'une vérification
@@ -203,8 +213,9 @@ mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité 
 
 # Structure de départ
 
-À présenter uniquement lorsque l'étape 5 constate des manques massifs. Adapter
-cette structure aux conventions de nommage du projet plutôt que de la recopier
+À présenter en entier uniquement lorsque l'étape 5 constate des manques
+massifs ; un élément isolé absent est créé dans la forme décrite au point
+correspondant de la liste ci-dessous. Adapter cette structure aux conventions de nommage du projet plutôt que de la recopier
 telle quelle.
 
 - **Une table de routage** — un fichier unique, une table qui rattache une
@@ -231,7 +242,7 @@ proposer de traduire un document existant.
 - [x] Phase 1 : … (liste terminée)
 
 ## Projet audité
-<racine> — <nombre> documents inventoriés — audit antérieur : <rapport fourni, ou « aucun » : critère 6 non évalué> — validateur des liens : <nom et couverture, ou « aucun »>
+<racine> — <nombre> documents inventoriés — audit antérieur : <rapport fourni, ou « aucun » : critère 6 non évalué> — validateur des liens : <nom et couverture (validateur non lancé, verdict à observer par l'appelant), ou « aucun »>
 
 ## Constats
 ### Bloquant
@@ -254,7 +265,9 @@ lot ci-dessus et la structure de départ, adaptée au projet>
 ## Mécanisme d'application
 - Code : <mécanisme réel>
 - Documentation : <mécanisme réel>
-- Audit documentaire : exécution manuelle de cet agent
+- Audit documentaire : <mécanisme réel — exécution manuelle de cet agent, et
+  contrôle automatique des liens ou de la table de routage quand le projet
+  en porte un>
 
 ## Verdict
 <deux ou trois phrases>
