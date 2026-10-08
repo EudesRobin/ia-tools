@@ -3,7 +3,7 @@
 volontairement casse, et le depot reel reste au vert (AGENTS.md, DoD des
 scripts). Chaque cas opere sur une copie du depot dans un dossier temporaire.
 
-Usage : python scripts/test_validate.py
+Usage : python tests/test_validate.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
@@ -63,6 +63,8 @@ CASES = [
     ("syntaxe Python", append_to("scripts/install.py", "\ndef (:\n"), "erreur de syntaxe"),
     ("syntaxe Python d'une skill", append_to("skills/clean-android-tv/adb_tv.py", "\ndef (:\n"),
      "skills/clean-android-tv/adb_tv.py:"),
+    ("syntaxe Python d'un test", append_to("tests/test_install.py", "\ndef (:\n"), "tests/test_install.py:"),
+    ("test hors de tests/", append_to("scripts/test_neuf.py", "import unittest\n"), "scripts/test_neuf.py : test hors de tests/"),
     ("JSON d'enregistrement", replace_once(".claude/settings.json", "{", "{ ,"), "JSON invalide"),
     ("script de hook introuvable", replace_once(".github/hooks/validate-tool.json", "validate-tool.ps1", "absent.ps1"), "script de hook introuvable"),
     ("status line hors inventaire", append_to("statuslines/claude/neuve/STATUSLINE.md", "# Status line\n"), "statuslines/claude/neuve : absent de l'inventaire"),

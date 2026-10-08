@@ -22,7 +22,7 @@ skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas 
 | Rédiger ou reprendre un document, et hésiter sur un terme                         | [VOCABULARY.md](VOCABULARY.md) — **à suivre obligatoirement** |
 | Rédiger un document, quel qu'il soit — niveau de langue, forme des énoncés        | [CONVENTIONS.md](CONVENTIONS.md) §1.9 — **à suivre obligatoirement** |
 | Ajouter ou reprendre un document de fond sous `docs/`                             | [CONVENTIONS.md](CONVENTIONS.md) §6 — **checklist à dérouler** |
-| Ajouter ou modifier un script d'outillage du dépôt sous `scripts/`                | [CONVENTIONS.md](CONVENTIONS.md) §7 — **à suivre obligatoirement** |
+| Ajouter ou modifier un script d'outillage sous `scripts/` ou un test sous `tests/` | [CONVENTIONS.md](CONVENTIONS.md) §7 — **à suivre obligatoirement** |
 | Comprendre le hook du dépôt, son enregistrement pour chaque agent hôte et pourquoi il n'est pas distribué | [hooks/README.md](../hooks/README.md) |
 | Installer ou mettre à jour les outils vers `{AGENT_DIR}` (Claude Code, Copilot CLI) | [SETUP.md](SETUP.md) — **procédure à suivre** |
 | Committer, ouvrir ou mettre à jour une *pull request*, activer les hooks git      | [CONTRIBUTING.md](CONTRIBUTING.md) — **à suivre obligatoirement** |

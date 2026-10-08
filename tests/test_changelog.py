@@ -3,7 +3,7 @@
 structure vu en rouge, extraction d'une section, et refus d'une plage qui
 modifie un outil sans entree du journal (depot git temporaire).
 
-Usage : python scripts/test_changelog.py
+Usage : python tests/test_changelog.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
@@ -14,7 +14,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent / "changelog.py"
+ROOT = Path(__file__).resolve().parent.parent
+SCRIPT = ROOT / "scripts" / "changelog.py"
 sys.path.insert(0, str(SCRIPT.parent))
 from changelog import structure_issues, version_notes  # noqa: E402
 

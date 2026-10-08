@@ -38,6 +38,7 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     contient STATUSLINE.md et statusline.ps1 ;
   - tout placeholder {NOM} d'un outil distribue est declare dans
     scripts/install.py, faute de quoi il serait installe tel quel ;
+  - les tests test_*.py vivent sous tests/, jamais sous scripts/ ;
   - les scripts Python compilent, les enregistrements du hook sont du JSON
     valide et designent un script existant, les scripts PowerShell de hooks/
     et de statuslines/ sont syntaxiquement corrects (controle saute si pwsh
@@ -131,7 +132,7 @@ UTF8_REQUIRED = {".md", ".py", ".ps1", ".json"}
 
 # Fichiers exemptes du controle "chemin en dur" (ils documentent le motif lui-meme).
 # Chemins relatifs a la racine, pas des noms de base.
-PATH_SCAN_EXCLUDE = {"scripts/validate.py", "scripts/test_validate.py"}
+PATH_SCAN_EXCLUDE = {"scripts/validate.py", "tests/test_validate.py"}
 
 # Titre Markdown : "#{1,6} texte".
 HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$", re.MULTILINE)
@@ -399,7 +400,10 @@ def check_placeholders(errors: list[str]) -> None:
 
 def check_scripts_and_config(errors: list[str]) -> None:
     """Syntaxe des scripts, JSON des enregistrements, scripts references."""
-    for path in sorted([*(ROOT / "scripts").glob("*.py"), *(ROOT / "skills").rglob("*.py")]):
+    for path in sorted((ROOT / "scripts").glob("test_*.py")):
+        errors.append(f"scripts/{path.name} : test hors de tests/ (CONVENTIONS.md section 7)")
+    scripts = [*(ROOT / "scripts").glob("*.py"), *(ROOT / "tests").glob("*.py"), *(ROOT / "skills").rglob("*.py")]
+    for path in sorted(scripts):
         try:
             compile(path.read_text(encoding="utf-8"), str(path), "exec")
         except SyntaxError as exc:

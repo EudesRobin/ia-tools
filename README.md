@@ -61,8 +61,8 @@ ia-tools/
 │   ├── validate.py      validateur des sources
 │   ├── install.py       merge intelligent vers chaque agent hôte
 │   ├── check_commit_msg.py  contrôle des messages de commit
-│   ├── changelog.py     contrôle du journal des modifications, notes d'une version
-│   └── test_*.py        tests des scripts et des status lines
+│   └── changelog.py     contrôle du journal des modifications, notes d'une version
+├── tests/               tests des scripts, des scripts embarqués et des status lines
 ├── .githooks/           hooks git pre-commit et commit-msg (à activer dans chaque clone)
 ├── .claude/             config Claude Code du dépôt (enregistrement du hook local)
 └── .github/             renvoi pour Copilot (copilot-instructions.md),
@@ -181,11 +181,13 @@ ouverte dans le dépôt. Lancement manuel :
 
 ```powershell
 python scripts/validate.py
-python scripts/test_validate.py
-python scripts/test_check_commit_msg.py
-python scripts/test_changelog.py
-python scripts/test_install.py
-python scripts/test_statusline.py
+python tests/test_validate.py
+python tests/test_check_commit_msg.py
+python tests/test_changelog.py
+python tests/test_install.py
+python tests/test_statusline.py
+python tests/test_adb_tv.py
+python tests/test_etat_depot.py
 ```
 
 ## Licence

@@ -4,7 +4,7 @@ et un faux gh renvoient des sorties enregistrees et journalisent leurs appels.
 Chaque garde-fou sur les donnees sensibles est vu en rouge sur un cas
 volontairement casse (AGENTS.md, DoD des scripts).
 
-Usage : python scripts/test_etat_depot.py
+Usage : python tests/test_etat_depot.py
 Code de sortie : 0 si tout passe, 1 sinon.
 """
 
