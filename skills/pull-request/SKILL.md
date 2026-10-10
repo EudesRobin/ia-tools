@@ -1,6 +1,14 @@
 ---
 name: pull-request
-description: Committer des modifications, créer la branche de travail, la pousser et ouvrir ou mettre à jour la pull request GitHub par gh, en appliquant les conventions de commit et le template de PR du projet. À utiliser quand l'utilisateur demande de committer, de faire un commit, de créer une branche pour ses modifications, de pousser et d'ouvrir une pull request (PR), ou de reprendre la description d'une PR.
+description: >-
+  Committer des modifications, créer la branche de travail, la pousser et
+  ouvrir ou mettre à jour la pull request GitHub par gh, en appliquant les
+  conventions de commit et le template de PR du projet. À utiliser quand
+  l'utilisateur demande de committer, de faire un commit, de créer une branche
+  pour ses modifications, de pousser sa branche et d'ouvrir une pull request
+  (PR), de
+  pousser de nouveaux commits sur une PR existante, de mettre à jour une PR ou
+  d'en reprendre la description.
 allowed-tools:
   - Read
   - Grep

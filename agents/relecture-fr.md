@@ -5,8 +5,8 @@ description: >-
   anglicismes, les calques de l'anglais, les pronoms sans antécédent et les
   fautes d'accord. Rendre un constat sourcé `fichier:ligne` avec, pour chaque
   écart, le remplacement proposé, sans modifier aucun fichier. À utiliser
-  quand l'utilisateur demande de relire un texte, de vérifier la langue ou la
-  rédaction, signale des « formulations bizarres » ou des « tournures
+  quand l'utilisateur demande de relire un texte pour en vérifier la langue ou
+  la rédaction, signale des « formulations bizarres » ou des « tournures
   maladroites », ou délègue directement à l'agent relecture-fr.
 tools: Read, Grep, Glob, TodoWrite
 ---

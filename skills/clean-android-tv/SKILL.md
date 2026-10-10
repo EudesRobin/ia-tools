@@ -1,6 +1,15 @@
 ---
 name: clean-android-tv
-description: Réduire la consommation mémoire d'un téléviseur Android TV ou Google TV par adb, et le rendre plus réactif — relevé du stockage, de la mémoire et des paquets, désactivation réversible des applications préinstallées inutilisées, réglages de fluidité. À utiliser quand l'utilisateur demande d'optimiser, d'accélérer ou de nettoyer sa TV Android, se plaint qu'elle rame ou qu'elle est devenue lente, veut désactiver des applications préinstallées, veut connecter sa TV en adb, ou demande de vérifier qu'un nettoyage précédent est toujours en place.
+description: >-
+  Réduire la consommation mémoire d'un téléviseur ou d'un boîtier Android TV ou
+  Google TV par adb, et le rendre plus réactif — relevé du stockage, de la
+  mémoire et des paquets, désactivation réversible des applications
+  préinstallées inutilisées, réglages de fluidité. À utiliser quand
+  l'utilisateur demande d'optimiser, d'accélérer ou de nettoyer sa TV Android
+  ou son boîtier Android TV, NVIDIA Shield compris, se plaint que l'appareil
+  rame ou soit devenu lent, veut désactiver des applications préinstallées,
+  veut connecter l'appareil en adb, ou demande de vérifier qu'un nettoyage
+  précédent est toujours en place.
 allowed-tools:
   - Bash(adb:*)
   - Bash(arp:*)

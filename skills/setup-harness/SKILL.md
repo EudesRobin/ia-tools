@@ -1,6 +1,13 @@
 ---
 name: setup-harness
-description: Configurer le harnais (boucle de vérification lancer/tester/vérifier) d'un projet dans son fichier d'instructions — AGENTS.md, CLAUDE.md ou copilot-instructions.md. À utiliser quand l'utilisateur demande de mettre en place / configurer la boucle de feedback, le harnais ou le DoD (Definition of Done) du projet, d'indiquer dans AGENTS.md ou CLAUDE.md comment lancer et tester le projet, ou « comment vérifier que ça marche » pour un projet.
+description: >-
+  Configurer le harnais d'un projet (boucle de vérification : lancer, tester,
+  vérifier) dans son fichier d'instructions — AGENTS.md, CLAUDE.md ou
+  copilot-instructions.md. À utiliser quand l'utilisateur demande de mettre en
+  place ou de configurer la boucle de feedback, le harnais ou le DoD
+  (Definition of Done) du projet, d'indiquer dans AGENTS.md ou CLAUDE.md
+  comment lancer et tester le projet, ou demande « comment vérifier que ça
+  marche » pour un projet.
 allowed-tools:
   - Read
   - Grep
