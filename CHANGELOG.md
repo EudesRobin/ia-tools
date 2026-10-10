@@ -8,6 +8,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+## [1.4.1] - 2026-10-10
+
 ### 🐛 Corrections
 
 - `audit-outil`, `relecture-fr` : leurs descriptions distinguent deux
@@ -196,7 +198,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `scripts/validate.py`, ses tests, l'intégration continue et les hooks git
   `pre-commit` et `commit-msg`, pour contribuer au dépôt.
 
-[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.4.0...HEAD
+[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.4.1...HEAD
+[1.4.1]: https://github.com/EudesRobin/ia-tools/compare/1.4.0...1.4.1
 [1.4.0]: https://github.com/EudesRobin/ia-tools/compare/1.3.0...1.4.0
 [1.3.0]: https://github.com/EudesRobin/ia-tools/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/EudesRobin/ia-tools/compare/1.1.0...1.2.0
