@@ -1,6 +1,13 @@
 ---
 name: pull-request
-description: Committer des modifications, créer la branche de travail, la pousser et ouvrir ou mettre à jour la pull request GitHub par gh, en appliquant les conventions de commit et le template de PR du projet. À utiliser quand l'utilisateur demande de committer, de faire un commit, de créer une branche pour ses modifications, de pousser et d'ouvrir une pull request (PR), ou de reprendre la description d'une PR.
+description: >-
+  Créer la branche de travail, y committer les modifications, la pousser et
+  ouvrir ou mettre à jour la pull request GitHub par gh, en appliquant les
+  conventions de commit et le template de PR du projet. À utiliser quand
+  l'utilisateur demande de committer, de faire un commit, de créer une branche
+  pour ses modifications, de pousser sa branche et d'ouvrir une pull request
+  (PR), de pousser de nouveaux commits sur une PR existante, de mettre à jour
+  une PR ou d'en reprendre la description.
 allowed-tools:
   - Read
   - Grep
@@ -19,8 +26,8 @@ allowed-tools:
 
 # Committer et ouvrir une pull request
 
-Mener des modifications locales jusqu'à une *pull request* GitHub : commit,
-branche de travail, push, puis création ou mise à jour de la PR par `gh`. Les
+Mener des modifications locales jusqu'à une *pull request* GitHub : branche
+de travail, commit, push, puis création ou mise à jour de la PR par `gh`. Les
 conventions appliquées sont celles du projet ; à défaut, celles de
 [conventions-defaut.md](conventions-defaut.md). Le merge de la PR est hors du
 périmètre de la skill.

@@ -7,7 +7,8 @@ description: >-
   constat étayé puis proposer un lot de modifications que l'appelant applique.
   À utiliser quand l'utilisateur demande d'auditer la documentation, de
   vérifier la structure ou l'organisation des docs, de contrôler la dérive
-  documentaire, de mettre en place une table de routage de la documentation, ou
+  documentaire, de vérifier que le DoD ou le harnais d'un projet est explicite
+  et appliqué, de mettre en place une table de routage de la documentation, ou
   délègue directement à l'agent audit-docs.
 tools: Read, Grep, Glob, TodoWrite
 ---
