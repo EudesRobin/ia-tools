@@ -8,6 +8,21 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🐛 Corrections
+
+- `audit-outil`, `relecture-fr` : leurs descriptions distinguent deux
+  relectures, celle de la conception d'un outil (`audit-outil`) et celle de la
+  langue d'un texte (`relecture-fr`), afin qu'une demande de relecture soit
+  confiée au bon agent.
+- `clean-android-tv` : la description couvre les boîtiers Android TV, NVIDIA
+  Shield compris, et non plus les seuls téléviseurs.
+- `pull-request` : la description couvre la mise à jour d'une *pull request*
+  existante et place la création de la branche de travail avant le commit.
+- `audit-docs` : la description couvre la vérification du DoD (*Definition of
+  Done*) ou du harnais d'un projet.
+- `setup-harness` : description corrigée — registre et construction de la
+  phrase —, sans changement de déclenchement.
+
 ## [1.4.0] - 2026-10-09
 
 ### 🚀 Nouveautés
