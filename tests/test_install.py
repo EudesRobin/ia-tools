@@ -158,5 +158,55 @@ class TestInstall(unittest.TestCase):
                 self.assertIn("validation", out.getvalue())
 
 
+    def test_tool_adds_declared_dependencies(self):
+        """--tool installe aussi les dependances declarees, et les signale."""
+        spec = importlib.util.spec_from_file_location("install", ROOT / "scripts" / "install.py")
+        install = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(install)
+        validator = self.tmp / "validator_ok.py"
+        validator.write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+        readme = self.tmp / "README.md"
+        readme.write_text(DEPS_README.format(tool="clean-android-tv", dep="setup-harness"), encoding="utf-8")
+        install.VALIDATOR = validator
+        install.DEPENDENCIES_FILE = readme
+        target = self.tmp / "cible"
+        argv = ["install.py", "--agent", "claude", "--target", str(target),
+                "--tool", "clean-android-tv", "--apply", "--json"]
+        out = io.StringIO()
+        with unittest.mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out):
+            code = install.main()
+        self.assertEqual(code, 0, out.getvalue())
+        report = json.loads(out.getvalue())
+        self.assertEqual(report["dependances_ajoutees"], ["setup-harness"])
+        written = report["agents"]["claude"]["ecrits"]
+        self.assertTrue(any(s.startswith("skills/setup-harness/") for s in written), written)
+        self.assertTrue(any(s.startswith(TOOL + "/") for s in written), written)
+
+
+class TestDependencies(unittest.TestCase):
+    def setUp(self):
+        spec = importlib.util.spec_from_file_location("install", ROOT / "scripts" / "install.py")
+        self.install = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.install)
+
+    def test_declared_dependencies(self):
+        text = DEPS_README.format(tool="a", dep="b") + "| [`a`](x) | `c`, `b` | y |\n\n## Suite\n| [`z`](x) | `w` | hors section |\n"
+        self.assertEqual(self.install.declared_dependencies(text), {"a": ["b", "c"]})
+        self.assertEqual(self.install.declared_dependencies("# Sans carte\n"), {})
+        empty = "## Dépendances entre outils\n\n| Outil | Dépend de | Pour |\n|---|---|---|\n"
+        self.assertEqual(self.install.declared_dependencies(empty), {})
+
+    def test_with_dependencies_transitive_and_cycle(self):
+        deps = {"a": ["b"], "b": ["c", "a"], "c": []}
+        self.assertEqual(self.install.with_dependencies({"a"}, deps), {"a", "b", "c"})
+        self.assertEqual(self.install.with_dependencies({"c"}, deps), {"c"})
+
+
+DEPS_README = (
+    "# Depot\n\n## Dépendances entre outils\n\n| Outil | Dépend de | Pour |\n|---|---|---|\n"
+    "| [`{tool}`](x) | `{dep}` | essai |\n"
+)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -181,8 +181,8 @@ session conditionne l'accès à sa liste de tâches au champ `tools` d'un agent,
 accorder l'outil de liste de tâches dans ce champ
 ([CONVENTIONS.md](CONVENTIONS.md) §4.1).
 
-**Auto-suffisance.** Une skill ou un agent s'installe isolément et ne peut pas
-renvoyer vers ce document ([CONVENTIONS.md](CONVENTIONS.md) §1.7). Le protocole
+**Auto-suffisance.** Une skill ou un agent est distribué sans `docs/` et ne
+peut pas renvoyer vers ce document ([CONVENTIONS.md](CONVENTIONS.md) §1.7). Le protocole
 se **recopie** dans l'outil, adapté à son déroulé ; il ne s'y lie pas.
 
 **Boucles de vérification.** La boucle est *lancer → observer → corriger →

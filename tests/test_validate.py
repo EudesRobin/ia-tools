@@ -45,6 +45,9 @@ def replace_once(rel: str, before: str, after: str):
 
 
 # (nom, alteration, fragment attendu dans la sortie)
+# En-tete du tableau de la carte des dependances dans README.md.
+DEPS_HEADER = "| Outil | Dépend de | Pour |\n|---|---|---|\n"
+
 CASES = [
     ("ancre interne morte", append_to("docs/SETUP.md", "\n[x](#nulle-part)\n"), "ancre interne introuvable"),
     ("ancre externe morte", append_to("README.md", "\n[x](docs/SETUP.md#nulle-part)\n"), "ancre introuvable"),
@@ -74,6 +77,12 @@ CASES = [
     ("journal mal forme", replace_once("CHANGELOG.md", "### 🚀 Nouveautés", "### Divers"), "rubrique non prevue 'Divers'"),
     ("journal manquant", lambda d: (d / "CHANGELOG.md").unlink(), "CHANGELOG.md manquant"),
     ("fichier non UTF-8", lambda d: (d / "README.md").write_text("# Titre\n", encoding="utf-16"), "illisible en UTF-8"),
+    ("dependance non declaree", append_to("skills/setup-harness/SKILL.md", "\nVoir la skill `pull-request`.\n"),
+     "'setup-harness' s'appuie sur 'pull-request' sans le declarer"),
+    ("dependance perimee", replace_once("README.md", DEPS_HEADER, DEPS_HEADER + "| [`setup-harness`](./skills/setup-harness/SKILL.md) | `pull-request` | x |\n"),
+     "'setup-harness' -> 'pull-request' declare mais aucune reference"),
+    ("dependance vers un outil inconnu", replace_once("README.md", DEPS_HEADER, DEPS_HEADER + "| [`setup-harness`](./skills/setup-harness/SKILL.md) | `inexistant` | x |\n"),
+     "outil inconnu 'inexistant'"),
 ]
 
 # Controle saute par validate.py quand pwsh est absent : teste seulement s'il est present.
@@ -116,6 +125,15 @@ class TestValidate(unittest.TestCase):
                 r = self.run_validate(alteration)
                 self.assertEqual(r.returncode, 1, f"{name} : reste vert")
                 self.assertIn(expected, r.stdout, f"{name} : message attendu absent")
+
+    def test_declared_dependency_passes(self):
+        """Une reference a un autre outil, declaree dans la carte, est admise."""
+        def declared(d: Path) -> None:
+            append_to("skills/setup-harness/SKILL.md", "\nVoir la skill `pull-request`.\n")(d)
+            replace_once("README.md", DEPS_HEADER,
+                         DEPS_HEADER + "| [`setup-harness`](./skills/setup-harness/SKILL.md) | `pull-request` | x |\n")(d)
+        r = self.run_validate(declared)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_annotations(self):
         """En CI, chaque ecart est emis en annotation rattachee a son fichier et a sa ligne."""

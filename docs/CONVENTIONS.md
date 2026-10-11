@@ -92,8 +92,10 @@ la checklist du [§5](#5-checklist--ajouter-un-outil).
 
 ### 1.7 Auto-suffisance des outils
 
-Un outil s'installe **isolément** : l'utilisateur peut copier
-`skills/clean-android-tv/` sans le reste du dépôt. Il en découle deux règles.
+Un outil s'installe sans le reste du dépôt : `docs/`, `README.md` et
+`scripts/` ne sont jamais distribués. Un outil sans dépendance déclarée
+s'installe **isolément** : l'utilisateur peut copier
+`skills/clean-android-tv/` seul. Il en découle trois règles.
 
 - **Ne jamais référencer un chemin relatif au dépôt.** Une fois installée dans
   `{AGENT_DIR}/skills/<nom>/`, une skill n'a plus ni `docs/`, ni `README.md` à
@@ -103,10 +105,23 @@ Un outil s'installe **isolément** : l'utilisateur peut copier
   installé. `scripts/validate.py` refuse, dans une skill, un agent ou une
   status line, tout lien relatif qui sort du dossier de l'outil ; pour un
   agent, le périmètre admis est son fichier et `agents/docs/<nom>/`.
-- **Répéter plutôt que renvoyer.** Si un outil a besoin d'une règle ou d'un
-  template qui figure ailleurs dans le dépôt, le recopier dans l'outil. Cette
-  duplication est délibérée : elle garantit que l'outil fonctionne seul. Elle
-  doit alors être déclarée au [§1.8](#18-règles-dupliquées-à-tenir-synchrones).
+- **Répéter plutôt que renvoyer vers ce qui n'est pas distribué.** Si un outil
+  a besoin d'une règle ou d'un template qui figure dans `docs/` ou ailleurs
+  hors des outils, le recopier dans l'outil. Cette duplication est délibérée :
+  elle garantit que l'outil fonctionne sans `docs/`. Elle doit alors être
+  déclarée au [§1.8](#18-règles-dupliquées-à-tenir-synchrones).
+- **S'appuyer sur un autre outil du dépôt plutôt que d'en recopier la
+  logique.** Un outil peut employer un autre outil du dépôt — skill, agent ou
+  script embarqué — au lieu d'en reproduire le déroulé. Il le désigne par son
+  chemin installé (`{AGENT_DIR}/skills/<autre>/…`, `{AGENT_DIR}/agents/<autre>.md`)
+  ou par son nom (« la skill `<autre>` », « l'agent `<autre>` »). Ses prérequis
+  vérifient la présence de cet outil sous `{AGENT_DIR}` ; absent, l'outil
+  s'arrête et indique la commande qui l'installe :
+  `python scripts/install.py --tool <autre> --apply`. Toute dépendance est
+  déclarée dans la carte de [README.md](../README.md#dépendances-entre-outils) :
+  `scripts/validate.py` la compare aux références réelles entre outils, dans
+  les deux sens, et `scripts/install.py --tool` installe aussi les dépendances
+  de l'outil demandé.
 
 ### 1.8 Règles dupliquées à tenir synchrones
 
@@ -132,8 +147,9 @@ depuis chacun d'eux. Les lignes du suivi des tâches, des conventions de commit,
 du registre, de la commande d'enregistrement, de la grille de qualité et de la
 donnée sensible relèvent du
 [§1.7](#17-auto-suffisance-des-outils) :
-`skills/`, `agents/` et `statuslines/` sont distribués séparément et `docs/` ne
-l'est pas du tout — aucun de ces ensembles ne peut renvoyer vers un autre.
+`docs/` n'est pas distribué, et aucun outil ne peut y renvoyer. Un outil ne
+s'appuie sur un autre outil que par une dépendance déclarée, jamais par un lien
+relatif.
 
 ### 1.9 Registre de rédaction
 
@@ -419,8 +435,8 @@ s'applique d'après les outils accordés, et **répéter la liste terminée en t
 du rapport rendu** — l'appelant lit ce rapport, pas le déroulement du travail.
 Le protocole complet est décrit dans [qualite-outils.md](qualite-outils.md) §5.
 
-Un agent est un outil installable isolément : le
-[§1.7](#17-auto-suffisance-des-outils) s'applique.
+Un agent est un outil distribué sans `docs/` : le
+[§1.7](#17-auto-suffisance-des-outils) s'applique, dépendances comprises.
 
 ---
 
@@ -437,6 +453,10 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
 - [ ] **Front-matter conforme** au [§2](#2-skills-skillsnomskillmd) ou au
       [§4](#4-agents-agentsnommd) — sans objet pour un hook ou une status
       line —, aucun chemin local en dur, moindre privilège respecté.
+- [ ] **Dépendances** — tout autre outil du dépôt employé figure dans la carte
+      de [README.md](../README.md#dépendances-entre-outils), et sa présence est
+      vérifiée dans les prérequis de l'outil
+      ([§1.7](#17-auto-suffisance-des-outils)).
 - [ ] **Aucun secret ni fichier produit à l'exécution** n'est versionné.
 - [ ] **Aucune donnée sensible ne transite par le contexte de l'agent** : un
       script la lit et l'emploie ([§1.3](#13-aucun-secret-dans-le-dépôt)).

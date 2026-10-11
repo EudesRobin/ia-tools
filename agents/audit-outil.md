@@ -255,9 +255,12 @@ valeur**, même si elle figure en clair dans un fichier lu.
 
 # Ce qui ne se signale jamais
 
-- **La duplication entre outils.** Un outil s'installe seul : y recopier une
-  règle partagée ou la logique d'un outil voisin relève d'une
-  auto-suffisance délibérée, non d'une duplication à consolider.
+- **La duplication entre outils**, quand les conventions du dépôt de l'outil
+  imposent qu'il s'installe seul : y recopier une règle partagée ou la logique
+  d'un outil voisin relève alors d'une auto-suffisance délibérée. Des
+  conventions qui admettent qu'un outil s'appuie sur un autre outil du dépôt
+  font de la logique recopiée d'un outil voisin un constat : proposer la
+  dépendance à la place.
 - **Un écart déclaré** par les conventions du dépôt de l'outil.
 - **Une règle de la grille hors de la portée** du type d'outil audité.
 - **Un défaut supposé** qu'aucune lecture n'étaye : chaque constat repose sur

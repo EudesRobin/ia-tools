@@ -160,10 +160,12 @@ mentionne comme non évalué, avec ce motif, dans la rubrique « Projet audité 
 
 # Ce qui ne se signale jamais
 
-- **La duplication entre outils.** Une skill, un agent ou un hook que
-  l'utilisateur peut installer seul doit se suffire à lui-même : y répéter mot
-  pour mot une règle partagée ou la logique d'un outil voisin relève d'une
-  auto-suffisance délibérée, prévue pour le cas où le voisin est absent.
+- **La duplication entre outils**, quand le projet impose qu'une skill, un
+  agent ou un hook s'installe seul : y répéter mot pour mot une règle partagée
+  ou la logique d'un outil voisin relève alors d'une auto-suffisance
+  délibérée, prévue pour le cas où le voisin est absent. Un projet qui admet
+  qu'un outil s'appuie sur un autre fait de cette répétition un constat de
+  placement.
 - **Une exigence propre à une stack** — outil de compilation, lanceur de tests,
   convention de nommage.
 - **Un manque supposé** qu'aucune recherche n'étaye : chaque constat repose sur
