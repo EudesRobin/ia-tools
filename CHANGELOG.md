@@ -8,6 +8,16 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🚀 Nouveautés
+
+- `pull-request` : post-merge, nettoyage du dépôt local après le merge d'une
+  *pull request* (PR) — retour sur la branche par défaut mise à jour, retrait
+  des worktrees et suppression des branches locales mergées, selon un plan
+  accepté par l'utilisateur. Une branche n'est supprimée d'office que si son
+  head est identique à celui de la PR mergée, ce qui couvre aussi les merges par squash
+  ou par rebase ; un worktree qui contient des fichiers ignorés est signalé
+  avant son retrait. `etat_depot.py` acquiert l'option `--post-merge`.
+
 ## [1.4.1] - 2026-10-10
 
 ### 🐛 Corrections
