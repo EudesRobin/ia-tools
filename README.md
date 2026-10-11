@@ -50,10 +50,11 @@ logique : l'outil dépendant vérifie la présence de l'outil employé et s'arr�
 si celui-ci est absent. Ce tableau est la
 carte de ces dépendances : `scripts/validate.py` la compare aux références
 réelles entre outils, et `scripts/install.py --tool` installe aussi les
-dépendances de l'outil demandé. Aucune dépendance n'est déclarée à ce jour.
+dépendances de l'outil demandé.
 
 | Outil | Dépend de | Pour |
 |---|---|---|
+| [`release`](./skills/release/SKILL.md) | `pull-request` | livrer la clôture de la version par une *pull request* |
 
 ## Arborescence
 
@@ -202,6 +203,7 @@ python tests/test_install.py
 python tests/test_statusline.py
 python tests/test_adb_tv.py
 python tests/test_etat_depot.py
+python tests/test_journal_version.py
 ```
 
 ## Licence

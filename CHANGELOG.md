@@ -19,9 +19,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   avant son retrait. `etat_depot.py` acquiert l'option `--post-merge`.
 - `release` : nouvelle skill qui publie une version d'un projet GitHub —
   numéro proposé selon le versionnage sémantique d'après le journal des
-  modifications, clôture de la version par une *pull request* (PR),
-  tag annoté posé après le merge et Release vérifiée. Son script
-  `journal_version.py` exige Python 3.10 ou une version ultérieure.
+  modifications, clôture de la version par une *pull request* (PR) menée par
+  la skill `pull-request`, dont elle dépend, tag annoté posé après le merge sur
+  le commit vérifié, Release vérifiée. La publication reprend à la bonne étape
+  d'après la branche par défaut distante, les tags distants et la Release. Son
+  script `journal_version.py` exige Python 3.10 ou une version ultérieure.
 
 ### 🔄 Modifications
 
