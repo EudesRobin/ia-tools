@@ -24,6 +24,10 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   le commit vérifié, Release vérifiée. La publication reprend à la bonne étape
   d'après la branche par défaut distante, les tags distants et la Release. Son
   script `journal_version.py` exige Python 3.10 ou une version ultérieure.
+- `pull-request` : livraison locale, pour un dépôt sans dépôt distant — après
+  le commit, merge de la branche de travail sur la branche par défaut par un
+  commit de merge (`--no-ff`), selon la règle du projet, puis suppression de
+  la branche.
 
 ### 🔄 Modifications
 

@@ -41,6 +41,17 @@ docs: « template » remplace « gabarit »
 `<préfixe>/<sujet-en-kebab-case>`, le préfixe étant celui du commit principal :
 `feat/skill-pull-request`, `docs/regle-settings-json`.
 
+## Merge local
+
+Dans un dépôt sans dépôt distant, la branche de travail se merge sur la branche
+par défaut par un commit de merge, même quand le fast-forward est possible
+(`git merge --no-ff`), puis est supprimée. Le message du commit de merge suit les
+règles du message de commit et résume la branche :
+
+```text
+feat: livraison locale dans pull-request
+```
+
 ## Pull request
 
 - Le titre suit les règles du sujet de commit.
