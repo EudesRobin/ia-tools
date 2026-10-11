@@ -141,7 +141,7 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 | Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
 | Commande d'enregistrement d'une status line — interpréteur, `-ExecutionPolicy Bypass`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 | Grille de qualité d'un outil — règles de [qualite-outils.md](qualite-outils.md) §§1 à 9, dont la délégation à un script, et checklist du §11 | [docs/qualite-outils.md](qualite-outils.md) et [agents/audit-outil.md](../agents/audit-outil.md) |
-| Donnée sensible tenue hors du contexte de l'agent | ce document [§1.3](#13-aucun-secret-dans-le-dépôt) et [agents/audit-outil.md](../agents/audit-outil.md) |
+| Donnée sensible tenue hors du contexte de l'agent | ce document [§1.3](#13-aucun-secret-dans-le-dépôt), [agents/audit-outil.md](../agents/audit-outil.md) et [agents/audit-github.md](../agents/audit-github.md) |
 | Duplication entre outils exclue des constats, sauf dans un dépôt qui admet la dépendance entre outils | [agents/audit-outil.md](../agents/audit-outil.md) et [agents/audit-docs.md](../agents/audit-docs.md) |
 
 La ligne relative à la lecture d'`AGENTS.md` tient au chargement : chaque

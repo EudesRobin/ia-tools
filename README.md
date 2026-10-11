@@ -25,6 +25,7 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 | Agent | Ce qu'il fait |
 |---|---|
 | [`audit-docs`](./agents/audit-docs.md) | Audite la structure documentaire d'un projet : accessibilité des règles, duplication, solidité du harnais. Produit un constat étayé et un lot de modifications à appliquer ; n'écrit rien lui-même. |
+| [`audit-github`](./agents/audit-github.md) | Audite l'hygiène GitHub d'un dépôt : épinglage des actions, permissions, injections et fuites possibles dans les workflows, Dependabot, checks requis, badges, version de PowerShell déclarée — la compatibilité PowerShell n'y donne lieu qu'à des avertissements. Les réglages en ligne (protection de branche, rulesets) se lisent dans la sortie de `gh api` que l'appelant fournit. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
 | [`audit-outil`](./agents/audit-outil.md) | Audite une skill, un agent ou un hook : qualité d'écriture, étapes à confier à un script pour réduire le coût en tokens, données sensibles exposées au contexte de l'agent. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
 | [`relecture-fr`](./agents/relecture-fr.md) | Relit un document français en contexte neuf : calques de l'anglais, pronoms sans antécédent, accords, registre. Rend un constat sourcé `fichier:ligne` ; n'écrit rien lui-même. |
 

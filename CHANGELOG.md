@@ -34,6 +34,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   portant les notes de la version, vérifié par `--release`.
   `journal_version.py` affiche la clé `distant`, refuse des dépôts distants
   sans `origin`, et `--check` bloque sur une modification non committée.
+- `audit-github` : nouvel agent qui audite l'hygiène GitHub d'un dépôt —
+  actions épinglées par SHA, permissions minimales, injections, secrets et
+  fuites possibles dans les workflows, Dependabot, checks requis, badges. La
+  version de PowerShell n'y produit que des avertissements mineurs. Sans
+  `Bash`, l'agent lit les réglages en ligne dans la sortie de `gh api` que
+  l'appelant lui fournit et, à défaut, les marque « non vérifié ».
 
 ### 🔄 Modifications
 
