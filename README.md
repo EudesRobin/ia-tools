@@ -45,7 +45,8 @@ Chaque status line est propre à un agent hôte, nommé dans son chemin :
 ## Dépendances entre outils
 
 Un outil peut s'appuyer sur un autre outil du dépôt plutôt que d'en recopier la
-logique ; il vérifie sa présence et s'arrête s'il est absent. Ce tableau est la
+logique : l'outil dépendant vérifie la présence de l'outil employé et s'arrête
+si celui-ci est absent. Ce tableau est la
 carte de ces dépendances : `scripts/validate.py` la compare aux références
 réelles entre outils, et `scripts/install.py --tool` installe aussi les
 dépendances de l'outil demandé. Aucune dépendance n'est déclarée à ce jour.
@@ -118,7 +119,8 @@ agent hôte. Une status line est donc copiée mais reste inactive tant que sa cl
 n'est pas enregistrée ([ci-dessous](#activer-une-status-line)). Procédure
 détaillée : [SETUP.md](./docs/SETUP.md).
 
-Sans le script, un outil s'installe par simple copie : le dossier
+Sans le script, un outil s'installe par simple copie, avec les outils dont il
+dépend ([carte](#dépendances-entre-outils)) : le dossier
 `skills/<nom>/` sous `{AGENT_DIR}/skills/`, le fichier `agents/<nom>.md` sous
 `{AGENT_DIR}/agents/` — renommé `<nom>.agent.md` pour Copilot CLI —, le dossier
 `statuslines/claude/<nom>/` sous `~/.claude/statuslines/`. `{AGENT_DIR}` vaut

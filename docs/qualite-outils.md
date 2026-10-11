@@ -183,7 +183,8 @@ accorder l'outil de liste de tâches dans ce champ
 
 **Auto-suffisance.** Une skill ou un agent est distribué sans `docs/` et ne
 peut pas renvoyer vers ce document ([CONVENTIONS.md](CONVENTIONS.md) §1.7). Le protocole
-se **recopie** dans l'outil, adapté à son déroulé ; il ne s'y lie pas.
+se **recopie** dans l'outil, adapté à son déroulé ; l'outil ne renvoie pas vers
+lui par un lien.
 
 **Boucles de vérification.** La boucle est *lancer → observer → corriger →
 relancer*, et c'est le levier de qualité le plus fort. Le contrôle n'a pas à

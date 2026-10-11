@@ -104,7 +104,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 
 Une skill introduit le vocabulaire de son domaine. Les termes qui y ont fait
 l'objet d'une correction rejoignent ce document, au même titre que les autres :
-`docs/` n'étant pas distribué, l'outil ne peut pas renvoyer ici
+`docs/` n'étant pas distribué, la skill ne peut pas renvoyer ici
 ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)), mais
 c'est la relecture du dépôt qui doit empêcher la formulation écartée de
 revenir.
