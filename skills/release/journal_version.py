@@ -21,6 +21,7 @@ Usage :
                               | --notes X.Y.Z [--output <fichier>]
                               | --check X.Y.Z | --release TAG]
                               [--file <journal>] [--base <branche>]
+                              [--tag-prefix v|none]
 
 Codes de sortie : 0 etat releve ou operation faite ; 1 erreur d'usage,
 operation refusee ou verification en echec ; 2 anomalie d'environnement (git
@@ -230,8 +231,10 @@ class Journal:
 class Repo:
     """Depot git courant : racine, journal, tags et branche par defaut."""
 
-    def __init__(self, git: Runner, gh: Runner, explicit_file: str | None, base: str | None):
+    def __init__(self, git: Runner, gh: Runner, explicit_file: str | None, base: str | None,
+                 tag_prefix: str | None = None):
         self.git, self.gh = git, gh
+        self.tag_prefix = tag_prefix
         root = git.value("rev-parse", "--show-toplevel")
         if not root:
             raise EnvError("le dossier courant n'est pas dans un depot git")
@@ -297,7 +300,9 @@ class Repo:
 
     def prefix(self) -> str | None:
         """Prefixe des tags : celui des tags existants, a defaut celui des liens
-        de comparaison ; None s'il reste indetermine."""
+        de comparaison ; None s'il reste indetermine. --tag-prefix l'emporte."""
+        if self.tag_prefix is not None:
+            return self.tag_prefix
         tags = self.all_tags()
         if tags:
             return TAG_RE.match(tags[0])["prefix"]
@@ -613,6 +618,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--output", help="avec --notes : fichier ecrit en UTF-8")
     p.add_argument("--file", help="journal, relatif a la racine du depot (defaut : recherche)")
     p.add_argument("--base", help="branche par defaut (defaut : origin/HEAD)")
+    p.add_argument("--tag-prefix", choices=("v", "none"),
+                   help="prefixe des tags quand il est indetermine (v ou none)")
     args = p.parse_args(argv)
     if args.output and not args.notes:
         p.error("--output ne s'emploie qu'avec --notes")
@@ -621,7 +628,8 @@ def main(argv: list[str] | None = None) -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     code = EXIT_OK
     try:
-        repo = Repo(Runner("git"), Runner("gh", required=False), args.file, args.base)
+        prefix = {"v": "v", "none": ""}.get(args.tag_prefix)
+        repo = Repo(Runner("git"), Runner("gh", required=False), args.file, args.base, prefix)
         if args.notes:
             body = repo.journal.notes(args.notes)
             if not args.output:

@@ -195,6 +195,14 @@ class JournalVersionTest(unittest.TestCase):
         self.set_repo(EN.split("[unreleased]")[0], tags=[])
         self.assertTrue(self.field(self.run_script()[1], "prefixe_tag").startswith("indetermine"))
 
+    def test_tag_prefix_option(self):
+        # Cas casse : prefixe indetermine, choisi par l'utilisateur.
+        self.set_repo(EN.split("[unreleased]")[0], tags=[])
+        code, out = self.run_script("--tag-prefix", "v")
+        self.assertEqual(self.field(out, "prefixe_tag"), "v")
+        self.assertEqual(self.field(self.run_script("--tag-prefix", "none")[1], "prefixe_tag"), "aucun")
+        self.assertEqual(self.run_script("--tag-prefix", "x")[0], 1)
+
     def test_state_tolerant_headings(self):
         text = ("# C\n\n## [Unreleased]\n\n### Fixed\n\n- x.\n\n## [1.2.0] — 2024-01-01\n\n### Added\n\n- a.\n\n"
                 "## v1.1.0 (2023-01-01)\n\n### Added\n\n- b.\n\n## [0.0.5] - 2014-12-13 [YANKED]\n\n### Added\n\n- c.\n")

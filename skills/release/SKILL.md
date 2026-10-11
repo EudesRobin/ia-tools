@@ -25,7 +25,7 @@ allowed-tools:
 # Publier une version
 
 Conduire la publication d'une version d'un projet GitHub, du journal des
-modifications jusqu'à la Release : numéro, clôture du journal, *pull request*,
+modifications jusqu'à la Release : numéro, clôture du journal, *pull request* (PR),
 tag annoté après le merge, vérification. Le journal suit le format
 [Keep a Changelog](https://keepachangelog.com/) et le numéro le versionnage
 sémantique ; les règles de version du projet l'emportent sur la table de la
@@ -34,8 +34,8 @@ sémantique ; les règles de version du projet l'emportent sur la table de la
 
 ## Suivi de progression — impératif
 
-La publication est une tâche en six phases, interrompue par le merge de la PR,
-fait par l'utilisateur. Créer la liste ci-dessous **avant la
+La publication est une tâche en six phases, interrompue le temps que
+l'utilisateur merge la PR. Créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat-et-létape)**, et la ré-afficher en entier à chaque
 changement d'état, avec les marqueurs `[ ]` non commencée, `[~]` en cours,
 `[x]` terminée, `[-]` abandonnée, cette dernière avec une raison courte sur la
@@ -53,12 +53,13 @@ est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 6 : vérifier la Release
 
 Les phases 4 et 6 sont des vérifications : chacune ne passe à `[x]` qu'avec sa
-preuve nommée — `[x] Phase 4 : … — CI au vert, <sha>` d'après `--check`,
+preuve nommée — `[x] Phase 4 : … — intégration continue au vert, <sha>`
+d'après `--check`,
 `[x] Phase 6 : vérifier la Release — publiée, <URL>` d'après `--release`.
 
 Pendant la [phase 3](#3-clore-la-version-et-la-livrer), la liste de la skill
-`pull-request` s'affiche sous la ligne de la phase 3, restée `[~]` ; la liste
-ci-dessus reprend à la fin de la livraison.
+`pull-request` s'affiche sous la ligne de la phase 3, restée `[~]` ; le suivi
+de la liste ci-dessus reprend à la fin de la livraison.
 
 ## Prérequis (à vérifier, ne rien installer sans accord)
 
@@ -68,14 +69,15 @@ ci-dessus reprend à la fin de la livraison.
   Non authentifié → l'utilisateur lance lui-même `gh auth login`.
 - **Skill `pull-request`**, employée à la phase 3 :
   `{AGENT_DIR}/skills/pull-request/SKILL.md` doit exister. Absente →
-  s'arrêter et indiquer de l'installer : `python scripts/install.py --tool
+  s'arrêter et indiquer comment l'installer : `python scripts/install.py --tool
   pull-request --apply` depuis un clone d'ia-tools, à défaut une copie de son
   dossier sous `{AGENT_DIR}/skills/`.
 
 ## Utilisation
 
 [journal_version.py](journal_version.py) est un script à **lancer**, jamais à
-lire. Il n'affiche qu'une ligne `clé : valeur` par information.
+lire. Il n'affiche qu'une ligne `clé : valeur` par information ; seul
+`--notes` sans `--output` affiche le corps de la section.
 
 ```text
 python {AGENT_DIR}/skills/release/journal_version.py                       # état et étape
@@ -92,11 +94,14 @@ seul Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé.
 Un chemin qui contient une espace s'écrit entre guillemets ; l'appel passe
 alors par une demande de confirmation. `--file <journal>` désigne le journal
 quand le script ne le trouve pas de lui-même ; `--base <branche>` fixe la
-branche par défaut quand `origin/HEAD` ne la donne pas ; `--date AAAA-MM-JJ`
-fixe la date de clôture, aujourd'hui par défaut.
+branche par défaut quand `origin/HEAD` ne la donne pas ; `--tag-prefix v`
+ou `--tag-prefix none` fixe le préfixe des tags quand `prefixe_tag` est
+indéterminé ; `--date AAAA-MM-JJ` fixe la date de clôture, aujourd'hui par
+défaut.
 
 Codes de sortie : `0` état relevé ou opération faite ; `1` erreur d'usage,
-opération refusée ou vérification en échec, motif sur la sortie ; `2`
+opération refusée ou vérification en échec, motif sur la sortie d'erreur ou,
+pour `--check`, dans la ligne `verdict` ; `2`
 anomalie d'environnement — git absent, dossier hors d'un dépôt git, journal
 introuvable ou illisible, écriture impossible.
 
@@ -116,7 +121,7 @@ le présenter à l'utilisateur avant d'agir :
 | `etape` | Suite |
 |---|---|
 | `nouvelle` | [phase 2](#2-proposer-le-numéro) |
-| `attente_merge (X.Y.Z, …)` | la clôture n'est pas sur la branche par défaut : signaler que la PR de clôture attend son merge, et s'arrêter |
+| `attente_merge (X.Y.Z, …)` | la clôture est faite localement mais absente de la branche par défaut distante : vérifier que sa PR est ouverte — à défaut, la livrer à la [phase 3](#3-clore-la-version-et-la-livrer) — puis s'arrêter jusqu'au merge |
 | `tag (X.Y.Z, …)` | phases 1 à 3 à `[x]`, reprendre à la [phase 4](#4-vérifier-la-branche-par-défaut-après-le-merge) |
 | `release (<tag>, …)` | phases 1 à 5 à `[x]`, reprendre à la [phase 6](#6-vérifier-la-release) |
 | `rien` | signaler qu'il n'y a rien à publier, et s'arrêter |
@@ -131,14 +136,14 @@ forte :
 
 | Rubriques | Incrément |
 |---|---|
-| Removed, Breaking, suppressions, action requise | `MAJEUR` |
-| Added, Changed, Deprecated, nouveautés, modifications, obsolescences | `MINEUR` |
-| Fixed, Security, Documentation, Maintenance et équivalents | `CORRECTIF` |
+| Removed, Breaking, suppressions, action requise et équivalents | `majeur` |
+| Added, Changed, Deprecated, nouveautés, modifications, obsolescences et équivalents | `mineur` |
+| Fixed, Security, Documentation, Maintenance et équivalents | `correctif` |
 
-Une règle du projet prévaut sur cette table. `rubriques_inconnues` → classer ces
-entrées, écartées du calcul, d'après leur contenu. `prefixe_tag : indetermine`
-→ faire choisir à l'utilisateur la forme du tag, `X.Y.Z` ou `vX.Y.Z`, d'après
-ses habitudes et le filtre de tag de ses workflows. Présenter le numéro, son
+Une règle du projet prévaut sur cette table. `rubriques_inconnues` → classer d'après
+leur contenu les entrées de ces rubriques, écartées du calcul. `prefixe_tag : indetermine`
+→ faire choisir à l'utilisateur la forme du tag, `X.Y.Z` ou `vX.Y.Z`, d'après les usages du projet et le filtre de tag de ses workflows, puis passer
+`--tag-prefix` à chaque appel suivant du script. Présenter le numéro, son
 motif et le tag qui en découlera, et **obtenir l'accord de l'utilisateur**
 avant toute écriture.
 
@@ -151,8 +156,9 @@ avant toute écriture.
    publiée.
 2. `fichiers_version` cite un ou plusieurs fichiers → y porter le numéro
    `X.Y.Z` par `Edit`, dans le même commit que le journal.
-3. Lire `{AGENT_DIR}/skills/pull-request/SKILL.md` et en mener la livraison
-   complète : elle crée la branche de travail avant le commit — la clôture
+3. Lire `{AGENT_DIR}/skills/pull-request/SKILL.md` et mener la livraison
+   complète que cette skill décrit : la skill crée la branche de travail avant
+   le commit — la clôture
    n'est jamais committée sur la branche par défaut —, committe le journal et
    les fichiers de version, puis pousse et ouvre la PR après accord de
    l'utilisateur.
@@ -171,12 +177,16 @@ python {AGENT_DIR}/skills/release/journal_version.py --check X.Y.Z
 `verdict : pret` → [phase 5](#5-poser-le-tag), avec le `sha` relevé.
 `verdict : bloque (…)` :
 
-- `ci : aucune execution` ou exécutions `en cours` → attendre la demande de
-  l'utilisateur pour relancer `--check` ; un projet sans intégration continue
-  sur la branche par défaut ne passe à la phase 5 qu'avec l'accord explicite de
-  l'utilisateur ;
-- exécution en échec, tag existant, entrées ajoutées depuis la clôture, HEAD
-  différent de `origin/<base>` → s'arrêter et présenter le motif.
+- `ci : aucune execution`, ou `ci` avec un nombre non nul d'exécutions
+  `en cours` → attendre la demande de l'utilisateur pour relancer `--check`. Un
+  projet sans intégration continue sur la branche par défaut ne passe à la
+  phase 5 qu'avec l'accord explicite de l'utilisateur, la preuve de la phase 4
+  devenant `— sans intégration continue, accord de l'utilisateur, <sha>` ;
+- branche courante différente de la branche par défaut, ou HEAD différent de
+  `origin/<base>` → reprendre `git switch <base>` et `git pull --ff-only` ;
+- `ci` avec un nombre non nul d'`echec`, `ci : indeterminee (…)`, version
+  absente du journal, tag existant, entrées ajoutées depuis la clôture →
+  s'arrêter et présenter le motif.
 
 ### 5. Poser le tag
 
@@ -195,21 +205,29 @@ git push origin <tag>
 python {AGENT_DIR}/skills/release/journal_version.py --release <tag>
 ```
 
-- `workflow : <fichier> : en cours` → attendre la demande de l'utilisateur pour
-  relancer `--release`.
+- `workflow : <fichier> : en cours` ou `aucune execution` → attendre la
+  demande de l'utilisateur pour relancer `--release`.
 - `workflow : <fichier> : failure` (ou autre échec) → en signaler la cause, ne
   pas toucher au tag.
+- `workflow : … : indetermine` ou `release : indeterminee (gh)` → signaler que
+  GitHub n'a pas répondu, et relancer à la demande de l'utilisateur.
 - `release : <URL>` → la phase passe à `[x]` avec cette URL.
-- `release : absente`, sans workflow qui crée la Release, ou workflow terminé
-  avec succès sans l'avoir créée → écrire les notes, présenter à l'utilisateur
-  le tag, le titre et les notes, puis, après accord :
+- `release : <URL> (brouillon)` → signaler à l'utilisateur que la Release est
+  en brouillon ; la phase reste `[~]` jusqu'à sa publication.
+- `release : absente`, alors qu'aucun workflow ne crée la Release ou que ce
+  workflow s'est terminé avec succès sans la créer → écrire les notes dans un
+  fichier hors du worktree, en UTF-8 :
 
   ```text
   python {AGENT_DIR}/skills/release/journal_version.py --notes X.Y.Z --output <git_dir>/RELEASE_NOTES.md
+  ```
+
+  Présenter à l'utilisateur le tag, le titre et les notes, puis, après accord :
+
+  ```text
   gh release create <tag> --verify-tag --title <tag> --notes-file <git_dir>/RELEASE_NOTES.md
   ```
 
-  Le fichier de notes, écrit en UTF-8 par le script, reste hors du worktree.
   Relancer ensuite `--release <tag>`.
 
 ## Règles
@@ -222,13 +240,13 @@ python {AGENT_DIR}/skills/release/journal_version.py --release <tag>
   avant toute création de Release.
 - Aucune attribution d'outil d'IA dans un commit, une PR, un tag ou une
   Release.
-- Ne jamais employer `--force`, `--no-verify`, ni `git switch
-  --discard-changes` ou `git switch -C`.
+- Ne jamais employer `--force`, `--no-verify`, `git switch --discard-changes`
+  ni `git switch -C`.
 
 ## Limites
 
 - GitHub seul, par `gh` ; journal au format Keep a Changelog seul.
-- Versions `X.Y.Z`, avec ou sans préfixe `v`, sans pré-version (`-rc.1`) ni
+- Versions `X.Y.Z`, avec ou sans préfixe `v`, sans *pre-release* (`-rc.1`) ni
   métadonnée de build ; un tag d'une autre forme (`release-1.2.0`) n'est pas
   reconnu.
 - Un dépôt qui publie plusieurs paquets, chacun avec son journal et ses tags,
@@ -236,4 +254,5 @@ python {AGENT_DIR}/skills/release/journal_version.py --release <tag>
 - Pour une version `0.y.z`, un changement incompatible incrémente `MINEUR`.
 - `allowed-tools` n'est appliqué que par Claude Code, où `git tag`, `git push`
   et `gh release create` restent soumis à une demande de confirmation, comme
-  les commandes de la skill `pull-request` qui ne figurent pas dans ses règles.
+  les commandes de la skill `pull-request` absentes des règles
+  d'`allowed-tools` de la présente skill.
