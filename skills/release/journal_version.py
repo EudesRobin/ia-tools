@@ -16,9 +16,17 @@ locaux et distants, et GitHub par gh, puis, selon le mode :
   --release TAG        releve le workflow de release du commit tague et la
                        Release GitHub.
 
+Sans aucun depot distant, la reference est la branche par defaut locale (main,
+a defaut master) et les tags locaux : --check ne compare pas HEAD a origin et
+ne lit pas l'integration continue, et --release verifie le tag local (annote,
+present sur la branche par defaut, message egal aux notes de la version,
+precedees ou non du tag en titre). Des depots distants sans origin sont
+refuses (code 1). Dans les deux cas, --check bloque sur une modification non
+committee d'un fichier suivi : le journal lu doit etre celui de HEAD.
+
 Usage :
     python journal_version.py [--close X.Y.Z [--date AAAA-MM-JJ]
-                              | --notes X.Y.Z [--output <fichier>]
+                              | --notes X.Y.Z [--title <titre>] [--output <fichier>]
                               | --check X.Y.Z | --release TAG]
                               [--file <journal>] [--base <branche>]
                               [--tag-prefix v|none]
@@ -245,6 +253,10 @@ class Repo:
         except ValueError:
             self.rel = None  # journal hors du depot : aucune lecture sur origin
         self.journal = Journal(self.read(self.path))
+        remotes = (git.value("remote") or "").split()
+        if remotes and "origin" not in remotes:
+            raise Refused(f"depots distants sans origin ({', '.join(remotes)}) : cas non couvert")
+        self.local = not remotes
         self.base = base or self._base()
         self._remote_tags: set[str] | None | bool = False
 
@@ -270,6 +282,11 @@ class Repo:
             raise EnvError(f"{path.as_posix()} : lecture impossible ({exc.strerror})")
 
     def _base(self) -> str | None:
+        if self.local:
+            for name in ("main", "master"):
+                if self.git.value("rev-parse", "--verify", "--quiet", f"refs/heads/{name}"):
+                    return name
+            return None
         ref = self.git.value("symbolic-ref", "--short", "refs/remotes/origin/HEAD")
         if ref and ref.startswith("origin/"):
             return ref[len("origin/"):]
@@ -284,6 +301,8 @@ class Repo:
 
     def remote_tags(self) -> set[str] | None:
         """Tags du depot distant origin, None si illisibles."""
+        if self.local:
+            return None
         if self._remote_tags is False:
             out = self.git.value("ls-remote", "--tags", "origin")
             if out is None:
@@ -312,11 +331,17 @@ class Repo:
                 return m.group(1)
         return None
 
-    def base_journal(self) -> Journal | None:
-        """Journal de origin/<base>, reference partagee apres un git fetch."""
-        if not self.base or not self.rel:
+    def base_ref(self) -> str | None:
+        """Reference partagee : origin/<base>, ou <base> dans un depot local."""
+        if not self.base:
             return None
-        text = self.git.value("show", f"origin/{self.base}:{self.rel}")
+        return self.base if self.local else f"origin/{self.base}"
+
+    def base_journal(self) -> Journal | None:
+        """Journal de la reference partagee (origin/<base> apres un git fetch)."""
+        if not self.base_ref() or not self.rel:
+            return None
+        text = self.git.value("show", f"{self.base_ref()}:{self.rel}")
         return Journal(text) if text is not None else None
 
     def release_url(self, tag: str) -> str | None | bool:
@@ -380,11 +405,11 @@ def version_files(root: Path) -> list[str]:
 
 def step(repo: Repo) -> str:
     """Etape de la publication, d'apres origin/<base>, les tags distants et la
-    Release."""
+    Release ; dans un depot local, d'apres <base> et les tags locaux."""
     journal = repo.journal
     shared = repo.base_journal()
     reference = shared or journal
-    where = f"origin/{repo.base}" if shared else "journal local"
+    where = repo.base_ref() if shared else "journal local"
     remote = repo.remote_tags()
     prefix = repo.prefix() or ""
     # Tags distants : un tag pose localement mais non pousse n'est pas publie.
@@ -396,7 +421,7 @@ def step(repo: Repo) -> str:
         is_newer = newest_tag is None or version_key(last["num"]) > newest_tag
         if tag not in known and is_newer:
             return f"tag ({last['num']}, close sur {where})"
-        if tag in known and repo.gh.cmd is not None:
+        if tag in known and repo.gh.cmd is not None and not repo.local:
             url = repo.release_url(tag)
             if url is None:
                 return f"release ({tag}, tag pose, Release absente)"
@@ -413,6 +438,7 @@ def state(repo: Repo) -> list[tuple[str, str]]:
     lines: list[tuple[str, str]] = [("journal", repo.rel or repo.path.as_posix())]
     git_dir = repo.git.value("rev-parse", "--absolute-git-dir")
     lines.append(("git_dir", Path(git_dir).as_posix() if git_dir else "indetermine"))
+    lines.append(("distant", "aucun (depot local)" if repo.local else "origin"))
     lines.append(("base", repo.base or "indeterminee"))
     pending = journal.unreleased()
     lines.append(("section_non_publiee", pending["name"] if pending else "absente"))
@@ -552,13 +578,22 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
     blockers: list[str] = []
     branch = repo.git.value("branch", "--show-current") or "(HEAD detachee)"
     lines.append(("branche", branch))
-    if branch != repo.base:
+    if repo.base is None:
+        blockers.append("branche par defaut indeterminee (--base)")
+    elif branch != repo.base:
         blockers.append(f"branche courante differente de {repo.base}")
     sha = repo.git.value("rev-parse", "HEAD") or ""
     lines.append(("sha", sha))
-    remote_sha = repo.git.value("rev-parse", f"refs/remotes/origin/{repo.base}") if repo.base else None
-    if sha != remote_sha:
-        blockers.append(f"HEAD differe de origin/{repo.base} (git pull --ff-only)")
+    # Le journal lu est celui de la copie de travail : il doit etre celui de HEAD.
+    code, out, _ = repo.git.run("status", "--porcelain", "--untracked-files=no")
+    pending = [line[3:] for line in (out if code == 0 else "").splitlines() if line.strip()]
+    if pending:
+        shown = ", ".join(pending[:5]) + (f", +{len(pending) - 5}" if len(pending) > 5 else "")
+        blockers.append(f"modifications non committees : {shown}")
+    if not repo.local:
+        remote_sha = repo.git.value("rev-parse", f"refs/remotes/origin/{repo.base}") if repo.base else None
+        if sha != remote_sha:
+            blockers.append(f"HEAD differe de origin/{repo.base} (git pull --ff-only)")
     if repo.journal.find(version) is None:
         blockers.append(f"version {version} absente de {repo.rel}")
     after = Journal.entries(repo.journal.unreleased())
@@ -569,7 +604,7 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
     lines.append(("tag", tag))
     if tag in repo.local_tags() or tag in (repo.remote_tags() or set()):
         blockers.append(f"le tag {tag} existe deja")
-    ci, green = ci_summary(repo.gh, sha)
+    ci, green = ("sans objet (depot local)", True) if repo.local else ci_summary(repo.gh, sha)
     lines.append(("ci", ci))
     if not green:
         blockers.append("integration continue pas au vert")
@@ -577,11 +612,35 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
     return lines, not blockers
 
 
-def release(repo: Repo, tag: str) -> list[tuple[str, str]]:
+def local_tag(repo: Repo, tag: str, sha: str) -> tuple[list[tuple[str, str]], bool]:
+    """Depot sans distant : tag annote, sur la branche par defaut, message egal aux notes."""
+    lines: list[tuple[str, str]] = []
+    annotated = repo.git.value("cat-file", "-t", tag) == "tag"
+    lines.append(("annote", "oui" if annotated else "non (tag leger)"))
+    on_base = bool(repo.base) and repo.git.run("merge-base", "--is-ancestor", sha, repo.base)[0] == 0
+    lines.append(("sur_base", "oui" if on_base else f"non (absent de {repo.base or 'base indeterminee'})"))
+    m = TAG_RE.match(tag)
+    try:
+        notes = repo.journal.notes(m["num"]) if m else ""
+    except Refused:
+        notes = ""
+    message = (repo.git.value("tag", "-l", "--format=%(contents)", tag) or "").strip()
+    conform = bool(notes) and message in (notes, f"{tag}\n\n{notes}")
+    lines.append(("notes", "conformes" if conform else
+                  "differentes du journal" if notes else f"version {tag} absente du journal"))
+    ok = annotated and on_base and conform
+    lines.append(("verdict", "conforme" if ok else "ecart"))
+    return lines, ok
+
+
+def release(repo: Repo, tag: str) -> tuple[list[tuple[str, str]], bool]:
     sha = repo.git.value("rev-list", "-n", "1", tag)
     if not sha:
         raise Refused(f"tag {tag} introuvable localement")
     lines = [("tag", tag), ("sha", sha)]
+    if repo.local:
+        checked, ok = local_tag(repo, tag, sha)
+        return lines + checked, ok
     for name, creates in release_workflows(repo.root):
         code, out, _ = repo.gh.run("run", "list", "--workflow", name, "--commit", sha,
                                    "--json", "status,conclusion")
@@ -596,7 +655,7 @@ def release(repo: Repo, tag: str) -> list[tuple[str, str]]:
         lines.append(("workflow", f"{name} : {status}{'' if creates else ' (sans creation de Release)'}"))
     url = repo.release_url(tag)
     lines.append(("release", "indeterminee (gh)" if url is False else url or "absente"))
-    return lines
+    return lines, True
 
 
 class Parser(argparse.ArgumentParser):
@@ -616,13 +675,14 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--date", default=datetime.date.today().isoformat(),
                    help="date de la version close (defaut : aujourd'hui)")
     p.add_argument("--output", help="avec --notes : fichier ecrit en UTF-8")
+    p.add_argument("--title", help="avec --notes : premiere ligne ecrite avant les notes (sujet d'un tag)")
     p.add_argument("--file", help="journal, relatif a la racine du depot (defaut : recherche)")
-    p.add_argument("--base", help="branche par defaut (defaut : origin/HEAD)")
+    p.add_argument("--base", help="branche par defaut (defaut : origin/HEAD ; depot local : main, a defaut master)")
     p.add_argument("--tag-prefix", choices=("v", "none"),
                    help="prefixe des tags quand il est indetermine (v ou none)")
     args = p.parse_args(argv)
-    if args.output and not args.notes:
-        p.error("--output ne s'emploie qu'avec --notes")
+    if (args.output or args.title) and not args.notes:
+        p.error("--output et --title ne s'emploient qu'avec --notes")
     # Emojis et accents des rubriques : sortie en UTF-8 quelle que soit la console.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -632,6 +692,8 @@ def main(argv: list[str] | None = None) -> int:
         repo = Repo(Runner("git"), Runner("gh", required=False), args.file, args.base, prefix)
         if args.notes:
             body = repo.journal.notes(args.notes)
+            if args.title:
+                body = f"{args.title}\n\n{body}"
             if not args.output:
                 print(body)
                 return EXIT_OK
@@ -647,7 +709,8 @@ def main(argv: list[str] | None = None) -> int:
             lines, ok = check(repo, args.check)
             code = EXIT_OK if ok else EXIT_FAIL
         elif args.release:
-            lines = release(repo, args.release)
+            lines, ok = release(repo, args.release)
+            code = EXIT_OK if ok else EXIT_FAIL
         else:
             lines = state(repo)
     except EnvError as exc:
