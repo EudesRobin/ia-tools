@@ -21,9 +21,9 @@ gestionnaire de paquets sur un autre système.
 
 | Outil              | Requis par                                  | Vérifier                         | Installer (Windows)                          |
 |--------------------|---------------------------------------------|----------------------------------|----------------------------------------------|
-| Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution), `clean-android-tv` (`adb_tv.py`), `pull-request` (`etat_depot.py`) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
-| Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions), `pull-request` | `git --version` | `winget install Git.Git` |
-| GitHub CLI (`gh`)  | `pull-request` (PR, nettoyage post-merge)  | `gh --version`, `gh auth status` | `winget install GitHub.cli`                  |
+| Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution), `clean-android-tv` (`adb_tv.py`), `pull-request` (`etat_depot.py`), `release` (`journal_version.py`) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
+| Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions), `pull-request`, `release` | `git --version` | `winget install Git.Git` |
+| GitHub CLI (`gh`)  | `pull-request` (PR, nettoyage post-merge), `release` (intégration continue, Release) | `gh --version`, `gh auth status` | `winget install GitHub.cli`                  |
 | Bibliothèques Python | `scripts/validate.py`, `zizmor` (modification d'un workflow, intégration continue) | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
 | `adb` (platform-tools) | `clean-android-tv`                      | `adb version`                    | `winget install Google.PlatformTools`        |
 | PowerShell 7 (`pwsh`) | hook `validate-tool` (contribution au dépôt) ; status line `usage-session`, à défaut de PowerShell 5.1 | `pwsh --version`             | `winget install Microsoft.PowerShell`        |

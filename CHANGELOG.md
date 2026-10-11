@@ -17,6 +17,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   head est identique à celui de la PR mergée, ce qui couvre aussi les merges par squash
   ou par rebase ; un worktree qui contient des fichiers ignorés est signalé
   avant son retrait. `etat_depot.py` acquiert l'option `--post-merge`.
+- `release` : nouvelle skill qui publie une version d'un projet GitHub —
+  numéro proposé selon le versionnage sémantique d'après le journal des
+  modifications, clôture de la version par une *pull request* (PR),
+  tag annoté posé après le merge et Release vérifiée. Son script
+  `journal_version.py` exige Python 3.10 ou une version ultérieure.
 
 ### 🔄 Modifications
 

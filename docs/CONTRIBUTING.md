@@ -87,7 +87,8 @@ continue a été observée au vert. Ces règles s'appliquent délibérément.
 Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`, et
 une **Release** GitHub associée à ce tag. Le numéro de version figure dans le
 tag et dans le journal des modifications, [CHANGELOG.md](../CHANGELOG.md), dont
-la section de la version fournit les notes de la Release.
+la section de la version fournit les notes de la Release. La skill `release`,
+si elle est installée, mène la procédure du [§4.3](#43-procédure).
 
 ### 4.1 Numérotation
 
