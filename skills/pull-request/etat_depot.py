@@ -7,13 +7,21 @@ fichiers de conventions et les templates de PR, et n'affiche qu'une ligne
 contenu d'un fichier : un fichier sensible modifie est signale par son nom.
 
 Usage :
-    python etat_depot.py [--github] [--git <executable>] [--gh <executable>]
+    python etat_depot.py [--github | --post-merge] [--git <executable>] [--gh <executable>]
 
 --github ajoute les verifications propres a la livraison complete : gh
 present et authentifie, depot GitHub, branche par defaut, PR de la branche.
 
+--post-merge releve, apres le merge d'une PR, l'etat du worktree principal,
+les branches locales dont une PR est mergee, la concordance de leur head avec
+celui de la PR, et l'etat de leur worktree. Une branche n'est supprimable que
+si son head est identique a celui de la PR mergee : le critere vaut aussi pour
+un merge par squash ou par rebase.
+
 Codes de sortie : 0 etat releve ; 1 erreur d'usage ; 2 anomalie
-d'environnement (git ou gh absent, gh non authentifie, hors d'un depot git).
+d'environnement (git ou gh absent, gh non authentifie, sortie de gh illisible,
+liste des PR inaccessible, branche par defaut indeterminee, hors d'un depot
+git).
 
 Python >= 3.10, bibliotheque standard seule.
 """
@@ -51,6 +59,12 @@ SENSITIVE_GLOBS = (
     "id_ecdsa*", "id_ed25519*", "*credentials*", ".netrc", ".pypirc", ".npmrc",
 )
 EXAMPLE_SUFFIXES = (".example", ".sample", ".dist", ".template")
+
+# PR mergees examinees en post-merge, des plus recentes aux plus anciennes :
+# une seule requete a l'API GitHub couvre l'historique recent, celui des
+# branches locales restees en place. Une branche dont la PR est plus ancienne
+# est classee non mergee.
+MERGED_PR_LIMIT = 100
 
 EXIT_OK, EXIT_USAGE, EXIT_ENV = 0, 1, 2
 
@@ -165,28 +179,174 @@ def count_ahead(git: Runner, ref: str) -> str:
     return value if value is not None else "indetermine"
 
 
-def github_state(gh: Runner) -> tuple[list[tuple[str, str]], str | None]:
-    """Lignes propres a GitHub et branche par defaut declaree par le depot."""
+def load_json(out: str, label: str):
+    """Sortie JSON de gh ; illisible -> anomalie d'environnement."""
+    try:
+        return json.loads(out)
+    except json.JSONDecodeError:
+        raise EnvError(f"{label} : sortie JSON illisible")
+
+
+def github_repo(gh: Runner) -> tuple[str, str | None]:
+    """Authentification verifiee, puis nom du depot et branche par defaut."""
     code, _, _ = gh.run("auth", "status")
     if code != 0:
         # La sortie de gh auth status n'est jamais relayee.
         raise EnvError("gh non authentifie : l'utilisateur lance lui-meme gh auth login")
-    lines: list[tuple[str, str]] = []
     code, out, err = gh.run("repo", "view", "--json", "nameWithOwner,defaultBranchRef")
     if code != 0:
         raise EnvError(f"gh repo view : code {code} ({first_line(err)})")
-    repo = json.loads(out)
+    repo = load_json(out, "gh repo view")
     base = (repo.get("defaultBranchRef") or {}).get("name") or None
-    lines.append(("depot_github", repo.get("nameWithOwner", "?")))
+    return repo.get("nameWithOwner", "?"), base
+
+
+def github_state(gh: Runner) -> tuple[list[tuple[str, str]], str | None]:
+    """Lignes propres a GitHub et branche par defaut declaree par le depot."""
+    name, base = github_repo(gh)
+    lines: list[tuple[str, str]] = [("depot_github", name)]
     code, out, err = gh.run("pr", "view", "--json", "number,url,state,baseRefName")
     if code == 0:
-        pr = json.loads(out)
+        pr = load_json(out, "gh pr view")
         lines.append(("pr", f"#{pr['number']} {pr['state']} base={pr['baseRefName']} {pr['url']}"))
     elif "no pull requests found" in err.lower():
         lines.append(("pr", "aucune"))
     else:
         lines.append(("pr", f"indeterminee ({first_line(err)})"))
     return lines, base
+
+
+def parse_worktrees(text: str) -> list[dict]:
+    """Worktrees de git worktree list --porcelain, le principal en premier :
+    chemin, branche (None si HEAD detachee), verrouille, prunable. Le bloc
+    d'un depot nu, sans arbre de travail, est ignore."""
+    found: list[dict] = []
+    for block in text.strip().split("\n\n"):
+        tree = {"path": None, "branch": None, "locked": False, "prunable": False, "bare": False}
+        for line in block.splitlines():
+            word = line.split(" ", 1)[0]
+            if word == "worktree":
+                tree["path"] = Path(line[len("worktree "):])
+            elif line.startswith("branch refs/heads/"):
+                tree["branch"] = line[len("branch refs/heads/"):]
+            elif word in ("bare", "locked", "prunable"):
+                tree[word] = True
+        if tree["path"] is not None and not tree["bare"]:
+            found.append(tree)
+    return found
+
+
+def merged_prs(gh: Runner) -> dict[str, list[tuple[int, str]]]:
+    """PR mergees par branche de head : [(numero, sha du head)], les plus
+    recentes en premier."""
+    code, out, err = gh.run("pr", "list", "--state", "merged", "--limit", str(MERGED_PR_LIMIT),
+                            "--json", "number,headRefName,headRefOid")
+    if code != 0:
+        raise EnvError(f"gh pr list : code {code} ({first_line(err)})")
+    found: dict[str, list[tuple[int, str]]] = {}
+    for pr in load_json(out, "gh pr list"):
+        found.setdefault(pr["headRefName"], []).append((pr["number"], pr["headRefOid"]))
+    return found
+
+
+def status_counts(git: Runner, path: Path, ignored: bool = False) -> tuple[int, int, int, int]:
+    """Indexes, non indexes, non suivis et ignores d'un arbre de travail."""
+    args = ["-C", path.as_posix(), "status", "--porcelain=v1", "--untracked-files=all"]
+    if ignored:
+        args.append("--ignored")
+    code, out, _ = git.run(*args)
+    if code != 0:
+        raise EnvError(f"git status en echec dans {path.as_posix()}")
+    lines = out.splitlines()
+    ignored_count = sum(1 for line in lines if line.startswith("!!"))
+    kept = "\n".join(line for line in lines if not line.startswith("!!"))
+    staged, unstaged, untracked, _ = parse_porcelain(kept)
+    return staged, unstaged, untracked, ignored_count
+
+
+def worktree_state(git: Runner, tree: dict) -> str:
+    """Etat d'un worktree lie avant son retrait."""
+    if tree["prunable"] or not tree["path"].is_dir():
+        return "absent"
+    if tree["locked"]:
+        return "verrouille"
+    staged, unstaged, untracked, ignored = status_counts(git, tree["path"], ignored=True)
+    parts = []
+    if staged or unstaged or untracked:
+        parts.append(f"modifie:{staged + unstaged + untracked}")
+    if ignored:
+        parts.append(f"ignores:{ignored}")
+    return ",".join(parts) or "propre"
+
+
+def head_comparison(git: Runner, branch: str, sha: str, prs: list[tuple[int, str]]) -> tuple[int, str]:
+    """Numero de PR et classement du head local au regard de la PR mergee."""
+    match = next((num for num, oid in prs if oid == sha), None)
+    if match is not None:
+        # Head identique a celui d'une PR mergee : aucun commit local perdu.
+        return match, "head=identique"
+    number, oid = prs[0]
+    short = oid[:7]
+    if git.value("cat-file", "-e", f"{oid}^{{commit}}") is None:
+        return number, f"head=divergente pr_head={short} commits_locaux=indetermine"
+    if git.run("merge-base", "--is-ancestor", sha, oid)[0] == 0:
+        return number, f"head=en_retard pr_head={short}"
+    ahead = git.value("rev-list", "--count", f"{oid}..refs/heads/{branch}") or "indetermine"
+    return number, f"head=divergente pr_head={short} commits_locaux={ahead}"
+
+
+def post_merge_state(git: Runner, gh: Runner) -> list[tuple[str, str]]:
+    """Etat apres le merge d'une PR : branches locales mergees et worktrees.
+    Les lignes branche, modifications et dernier_commit portent sur le worktree
+    principal, ou s'execute le retour sur la base."""
+    root_raw = git.value("rev-parse", "--show-toplevel")
+    if not root_raw:
+        raise EnvError("le dossier courant n'est pas dans un depot git")
+    root = Path(root_raw)
+    name, base = github_repo(gh)
+    if base is None:
+        raise EnvError("branche par defaut du depot GitHub indeterminee")
+
+    code, out, _ = git.run("worktree", "list", "--porcelain")
+    if code != 0:
+        raise EnvError("git worktree list en echec")
+    worktrees = parse_worktrees(out)
+    main = worktrees[0] if worktrees else {"path": root, "branch": None}
+    linked = {t["branch"]: t for t in worktrees[1:] if t["branch"]}
+
+    lines: list[tuple[str, str]] = [("racine", root.as_posix())]
+    lines.append(("racine_principale", main["path"].as_posix()))
+    lines.append(("worktree_courant", "principal" if root == main["path"] else "lie"))
+    lines.append(("depot_github", name))
+    lines.append(("base", base))
+    lines.append(("branche", main["branch"] or "(HEAD detachee)"))
+    staged, unstaged, untracked, _ = status_counts(git, main["path"])
+    lines.append(("modifications", f"{staged} indexee(s), {unstaged} non indexee(s), {untracked} non suivie(s)"))
+    last = git.value("-C", main["path"].as_posix(), "log", "-1", "--format=%h %s")
+    lines.append(("dernier_commit", last or "aucun"))
+    if base in linked:
+        lines.append(("base_extraite", linked[base]["path"].as_posix()))
+
+    code, out, _ = git.run("for-each-ref", "refs/heads", "--format=%(refname:lstrip=2) %(objectname)")
+    if code != 0:
+        raise EnvError("git for-each-ref en echec")
+    merged = merged_prs(gh)
+    unmerged: list[str] = []
+    for line in out.splitlines():
+        branch, _, sha = line.strip().partition(" ")
+        if not branch or branch == base:
+            continue
+        prs = merged.get(branch)
+        if not prs:
+            unmerged.append(branch)
+            continue
+        number, head = head_comparison(git, branch, sha, prs)
+        tree = linked.get(branch)
+        where = (f"worktree={tree['path'].as_posix()} etat={worktree_state(git, tree)}"
+                 if tree else "worktree=aucun")
+        lines.append(("mergee", f"{branch} #{number} {head} {where}"))
+    lines.append(("non_mergees", ", ".join(unmerged) or "aucune"))
+    return lines
 
 
 def first_line(text: str) -> str:
@@ -268,15 +428,18 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(errors="replace")
     p = Parser(description="Etat du depot git en lecture seule (pull-request)")
-    p.add_argument("--github", action="store_true",
-                   help="ajouter gh : authentification, depot, PR de la branche")
+    mode = p.add_mutually_exclusive_group()
+    mode.add_argument("--github", action="store_true",
+                      help="ajouter gh : authentification, depot, PR de la branche")
+    mode.add_argument("--post-merge", action="store_true",
+                      help="apres le merge : branches locales mergees et worktrees")
     p.add_argument("--git", default="git", help="executable git (defaut : git du PATH)")
     p.add_argument("--gh", default="gh", help="executable gh (defaut : gh du PATH)")
     args = p.parse_args(argv)
     try:
         git = Runner(args.git, "git")
-        gh = Runner(args.gh, "gh") if args.github else None
-        lines = collect(git, gh)
+        gh = Runner(args.gh, "gh") if args.github or args.post_merge else None
+        lines = post_merge_state(git, gh) if args.post_merge else collect(git, gh)
     except EnvError as exc:
         print(f"erreur : {exc}", file=sys.stderr)
         return EXIT_ENV

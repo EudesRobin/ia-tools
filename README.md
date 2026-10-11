@@ -16,7 +16,7 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 | Skill | Ce qu'elle fait |
 |---|---|
 | [`clean-android-tv`](./skills/clean-android-tv/SKILL.md) | Rend un téléviseur ou un boîtier Android TV plus réactif par adb : libère la mémoire vive en désactivant les applications préinstallées inutilisées, de façon réversible, et vérifie qu'une intervention antérieure tient toujours. Embarque `reference-adb.md`, `paquets.md` et `adb_tv.py`, script de relevés en lecture seule. |
-| [`pull-request`](./skills/pull-request/SKILL.md) | Committe des modifications, crée la branche de travail, la pousse et ouvre ou met à jour la *pull request* GitHub par `gh`, selon les conventions et le template de PR du projet. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet n'en déclare aucun, et `etat_depot.py`, script en lecture seule qui relève l'état du dépôt. |
+| [`pull-request`](./skills/pull-request/SKILL.md) | Crée la branche de travail, y committe les modifications, la pousse et ouvre ou met à jour la *pull request* GitHub par `gh`, selon les conventions et le template de PR du projet, puis, après le merge, nettoie le dépôt local : branche par défaut mise à jour, worktrees retirés, branches mergées supprimées. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet n'en déclare aucun ; `post-merge.md`, déroulé du nettoyage post-merge ; `etat_depot.py`, script en lecture seule qui relève l'état du dépôt. |
 | [`setup-harness`](./skills/setup-harness/SKILL.md) | Installe la section « Harnais » — lancer / tester / vérifier — dans le fichier d'instructions d'un projet tiers (`AGENTS.md`, à défaut celui de l'agent hôte). |
 
 ### Agents
@@ -78,7 +78,7 @@ ia-tools/
 | Python ≥ 3.10 | lancer `scripts/install.py`, le script `adb_tv.py` de la skill `clean-android-tv` et le script `etat_depot.py` de la skill `pull-request` |
 | Git, et le dépôt obtenu par `git clone` | reconnaître une installation obsolète : sans l'historique git, elle est signalée comme conflit |
 | `adb` (platform-tools) | la skill `clean-android-tv` |
-| GitHub CLI (`gh`), authentifié | la skill `pull-request`, pour pousser et ouvrir une PR |
+| GitHub CLI (`gh`), authentifié | la skill `pull-request`, pour pousser et ouvrir une PR, puis nettoyer le dépôt local en post-merge |
 | PowerShell 5.1 (intégré à Windows) ou 7 (`pwsh`) | la status line `usage-session` |
 | `pyyaml` et PowerShell 7 (`pwsh`) | contribuer au dépôt : `scripts/validate.py` et hook `validate-tool` |
 

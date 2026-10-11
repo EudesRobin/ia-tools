@@ -7,7 +7,9 @@ description: >-
   l'utilisateur demande de committer, de faire un commit, de créer une branche
   pour ses modifications, de pousser sa branche et d'ouvrir une pull request
   (PR), de pousser de nouveaux commits sur une PR existante, de mettre à jour
-  une PR ou d'en reprendre la description.
+  une PR ou d'en reprendre la description, ou signale qu'une PR est mergée et
+  demande de revenir sur la branche principale, de la mettre à jour, de
+  supprimer la branche locale ou de nettoyer le worktree.
 allowed-tools:
   - Read
   - Grep
@@ -21,6 +23,7 @@ allowed-tools:
   - Bash(git add:*)
   - Bash(git switch:*)
   - Bash(git commit:*)
+  - Bash(git pull --ff-only)
   - Bash(gh pr view:*)
 ---
 
@@ -29,10 +32,11 @@ allowed-tools:
 Mener des modifications locales jusqu'à une *pull request* GitHub : branche
 de travail, commit, push, puis création ou mise à jour de la PR par `gh`. Les
 conventions appliquées sont celles du projet ; à défaut, celles de
-[conventions-defaut.md](conventions-defaut.md). Le merge de la PR est hors du
-périmètre de la skill.
+[conventions-defaut.md](conventions-defaut.md). Le merge de la PR, fait par
+l'utilisateur, est hors du périmètre de la skill ; le nettoyage du dépôt local
+qui le suit en fait partie.
 
-## Suivi de progression — impératif pour la livraison complète
+## Suivi de progression — impératif pour la livraison complète et le post-merge
 
 Cas d'usage et suivi :
 
@@ -40,6 +44,12 @@ Cas d'usage et suivi :
   [phases 1](#1-établir-létat) à [4](#4-committer), sans liste de tâches.
 - **Livraison complète** — branche, commits, push et PR, ou mise à jour d'une PR
   existante : tâche en sept phases ; la règle de suivi des tâches s'applique.
+  La livraison se termine à la [phase 7](#7-vérifier-la-pr-publiée), sans
+  attendre le merge.
+- **Post-merge** — « la PR est mergée », « supprime la branche locale »,
+  « nettoie le worktree » : lire et suivre [post-merge.md](post-merge.md),
+  qui porte ses cinq phases et sa propre liste de tâches. Les phases 1 à 7
+  ci-dessous ne s'appliquent pas.
 
 Pour la livraison complète, créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat)**, et la ré-afficher en entier à chaque changement
@@ -68,11 +78,13 @@ nommé (`[x] Phase 7 : vérifier la PR publiée — conforme, <URL>`).
 - **Python 3.10 ou une version ultérieure**, pour
   [etat_depot.py](etat_depot.py) : `python --version`.
 - **git** : `git --version`. Absent sous Windows → `winget install Git.Git`.
-- **GitHub CLI**, pour la livraison complète seulement : `gh --version`. Absent
-  sous Windows → `winget install GitHub.cli`, puis rouvrir le terminal.
-- **Authentification** : vérifiée par `etat_depot.py --github`. Non
-  authentifié → l'utilisateur lance lui-même `gh auth login`, commande
-  interactive que l'agent ne peut pas mener à terme.
+- **GitHub CLI**, pour la livraison complète et le post-merge :
+  `gh --version`. Absent sous Windows → `winget install GitHub.cli`, puis
+  rouvrir le terminal.
+- **Authentification** : vérifiée par `etat_depot.py --github` ou
+  `--post-merge`. Non authentifié → l'utilisateur lance lui-même
+  `gh auth login`, commande interactive que l'agent ne peut pas mener à
+  terme.
 
 ## Utilisation
 
@@ -83,6 +95,7 @@ lecture seule, et n'affiche qu'une ligne `clé : valeur` par information.
 ```text
 python {AGENT_DIR}/skills/pull-request/etat_depot.py            # commit seul
 python {AGENT_DIR}/skills/pull-request/etat_depot.py --github   # livraison complète
+python {AGENT_DIR}/skills/pull-request/etat_depot.py --post-merge   # post-merge
 ```
 
 Écrire la commande exactement telle qu'elle figure ci-dessus, sans guillemets
@@ -94,8 +107,10 @@ chemin qui contient une espace s'écrit entre guillemets ; l'appel passe alors
 par une demande de confirmation.
 
 Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
-d'environnement — git ou gh absent, gh non authentifié, dossier hors d'un dépôt
-git —, à corriger avant de relancer le script.
+d'environnement — git ou gh absent, gh non authentifié, sortie de gh
+illisible, liste des PR inaccessible, branche par défaut indéterminée, dossier
+hors d'un dépôt git —, à corriger avant de relancer le
+script.
 
 ## Instructions
 
@@ -269,7 +284,10 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
   description de PR ou un commentaire. Cette règle prévaut sur le comportement
   par défaut de l'agent hôte.
 - Ne jamais employer `--no-verify`, `--force`, `--force-with-lease`,
-  `git reset --hard`, ni `--amend` sur un commit déjà poussé.
+  `git reset --hard`, ni `--amend` sur un commit déjà poussé. Seule exception :
+  `git branch -D` en post-merge, réservé à une branche classée
+  `head=identique` et retenue dans le plan accepté par l'utilisateur, ou à une
+  branche dont l'utilisateur demande explicitement la suppression.
 - Ne jamais committer ni pousser directement sur la branche par défaut ou sur
   une branche protégée.
 - Obtenir l'accord explicite de l'utilisateur avant tout `git push`, toute
@@ -290,10 +308,17 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 - Les PR depuis un fork, les PR empilées et la signature des commits ne sont
   pas traitées.
 - Le merge de la PR, la revue et le suivi de l'intégration continue sont hors du
-  périmètre de la skill.
+  périmètre de la skill. En post-merge, les autres branches de travail ne font
+  pas l'objet d'un rebase sur la base mise à jour.
+- Le post-merge n'examine que les 100 PR mergées les plus récentes : une
+  branche dont la PR a été mergée avant ces 100 PR est classée non mergée.
+  Un dépôt nu à worktrees n'a pas de worktree principal : le premier worktree
+  en tient lieu.
 - `sensibles` repère un fichier à son nom seulement : un secret écrit dans un
   fichier au nom ordinaire n'est pas signalé.
 - `allowed-tools` n'est appliqué que par Claude Code, où `git push`,
-  `git pull`, `git rebase`, `gh pr create` et `gh pr edit` restent soumis à
-  une demande de confirmation : sous Copilot CLI, seules les
+  `git pull --rebase`, `git rebase`, `gh pr create`, `gh pr edit`,
+  `git branch -D`, `git worktree remove`, `git worktree prune`, `git fetch`
+  et toute commande `git -C` restent soumis à une
+  demande de confirmation : sous Copilot CLI, seules les
   [règles](#règles) ci-dessus encadrent les commandes git et gh.

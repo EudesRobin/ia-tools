@@ -256,6 +256,182 @@ class EtatDepotTest(unittest.TestCase):
         self.assertEqual(code, 2, out)
         self.assertIn("gh introuvable", out)
 
+    # ---------------------------------------------------------- post-merge
+
+    FOR_EACH_REF = "git for-each-ref refs/heads --format=%(refname:lstrip=2) %(objectname)"
+    PR_LIST = "gh pr list --state merged --limit 100 --json number,headRefName,headRefOid"
+
+    def post_merge_fixtures(self, **over):
+        main = self.repo.as_posix()
+        self.tree = self.dir / "arbre-b"
+        self.tree.mkdir(exist_ok=True)
+        tree = self.tree.as_posix()
+        f = self.base_fixtures(**{
+            "git worktree list --porcelain": ok(
+                f"worktree {main}\nHEAD aaa111\nbranch refs/heads/feat/a\n\n"
+                f"worktree {tree}\nHEAD bbb222\nbranch refs/heads/feat/b\n\n"),
+            f"git -C {main} status --porcelain=v1 --untracked-files=all": ok(""),
+            f"git -C {main} log -1 --format=%h %s": ok("aaa111 feat: sujet\n"),
+            f"git -C {tree} status --porcelain=v1 --untracked-files=all --ignored": ok(""),
+            self.FOR_EACH_REF: ok(
+                "feat/a aaa111\nfeat/b bbb222\nfeat/c ccc333\nfeat/d ddd444\nmain mmm000\n"),
+            self.PR_LIST: ok(json.dumps([
+                {"number": 42, "headRefName": "feat/a", "headRefOid": "aaa111"},
+                {"number": 41, "headRefName": "feat/b", "headRefOid": "bbb222"},
+                {"number": 40, "headRefName": "feat/c", "headRefOid": "cccPR40ffff"},
+            ])),
+            "git cat-file -e cccPR40ffff^{commit}": fail(),
+        })
+        f.update(over)
+        return f
+
+    def fields(self, out, key):
+        return [v for k, _, v in (l.partition(" : ") for l in out.splitlines()) if k.strip() == key]
+
+    def test_post_merge_classifies_branches(self):
+        self.fixtures(self.post_merge_fixtures())
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "base"), "main")
+        self.assertEqual(self.field(out, "worktree_courant"), "principal")
+        self.assertEqual(self.field(out, "branche"), "feat/a")
+        self.assertEqual(self.field(out, "dernier_commit"), "aaa111 feat: sujet")
+        self.assertEqual(self.fields(out, "mergee"), [
+            "feat/a #42 head=identique worktree=aucun",
+            f"feat/b #41 head=identique worktree={self.tree.as_posix()} etat=propre",
+            "feat/c #40 head=divergente pr_head=cccPR40 commits_locaux=indetermine worktree=aucun",
+        ])
+        self.assertEqual(self.field(out, "non_mergees"), "feat/d")
+        self.assertNotIn("base_extraite", out)
+        self.assertLess(len(out.splitlines()), 20, "sortie trop longue")
+
+    def test_post_merge_diverging_head_never_deletable(self):
+        # Cas casse : le head local porte un commit absent de la PR mergee.
+        self.fixtures(self.post_merge_fixtures(**{
+            self.FOR_EACH_REF: ok("feat/a fff999\n"),
+            "git cat-file -e aaa111^{commit}": ok(),
+            "git merge-base --is-ancestor fff999 aaa111": fail(),
+            "git rev-list --count aaa111..refs/heads/feat/a": ok("2\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.fields(out, "mergee"),
+                         ["feat/a #42 head=divergente pr_head=aaa111 commits_locaux=2 worktree=aucun"])
+        self.assertNotIn("identique", out)
+
+    def test_post_merge_head_behind_pr_is_not_identical(self):
+        self.fixtures(self.post_merge_fixtures(**{
+            self.FOR_EACH_REF: ok("feat/a eee888\n"),
+            "git cat-file -e aaa111^{commit}": ok(),
+            "git merge-base --is-ancestor eee888 aaa111": ok(),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.fields(out, "mergee"), ["feat/a #42 head=en_retard pr_head=aaa111 worktree=aucun"])
+
+    def test_post_merge_matches_older_pr_of_same_branch(self):
+        self.fixtures(self.post_merge_fixtures(**{
+            self.PR_LIST: ok(json.dumps([
+                {"number": 50, "headRefName": "feat/a", "headRefOid": "zzz000"},
+                {"number": 42, "headRefName": "feat/a", "headRefOid": "aaa111"},
+            ])),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertIn("feat/a #42 head=identique worktree=aucun", self.fields(out, "mergee"))
+
+    def test_post_merge_worktree_states(self):
+        tree = (self.dir / "arbre-b").as_posix()
+        self.fixtures(self.post_merge_fixtures(**{
+            f"git -C {tree} status --porcelain=v1 --untracked-files=all --ignored":
+                ok(" M a.py\n?? b.txt\n!! .env\n!! build/\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertIn(f"feat/b #41 head=identique worktree={tree} etat=modifie:2,ignores:2",
+                      self.fields(out, "mergee"))
+
+    def test_post_merge_ignored_files_only(self):
+        # Cas casse : seuls des fichiers ignores, que git worktree remove supprime sans avertir.
+        tree = (self.dir / "arbre-b").as_posix()
+        self.fixtures(self.post_merge_fixtures(**{
+            f"git -C {tree} status --porcelain=v1 --untracked-files=all --ignored": ok("!! .env\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertIn(f"worktree={tree} etat=ignores:1", "\n".join(self.fields(out, "mergee")))
+
+    def test_post_merge_locked_and_missing_worktrees(self):
+        main, tree = self.repo.as_posix(), (self.dir / "arbre-b").as_posix()
+        gone = (self.dir / "disparu").as_posix()
+        self.fixtures(self.post_merge_fixtures(**{
+            "git worktree list --porcelain": ok(
+                f"worktree {main}\nHEAD aaa111\nbranch refs/heads/feat/a\n\n"
+                f"worktree {tree}\nHEAD bbb222\nbranch refs/heads/feat/b\nlocked\n\n"
+                f"worktree {gone}\nHEAD ccc333\nbranch refs/heads/feat/c\nprunable gitdir file points to non-existent location\n\n"),
+            "git cat-file -e cccPR40ffff^{commit}": fail(),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        merged = "\n".join(self.fields(out, "mergee"))
+        self.assertIn(f"worktree={tree} etat=verrouille", merged)
+        self.assertIn(f"worktree={gone} etat=absent", merged)
+
+    def test_post_merge_from_linked_worktree(self):
+        tree = self.dir / "arbre-b"
+        self.fixtures(self.post_merge_fixtures(**{
+            "git rev-parse --show-toplevel": ok(f"{tree.as_posix()}\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "worktree_courant"), "lie")
+        self.assertEqual(self.field(out, "racine_principale"), self.repo.as_posix())
+        # Modifications et branche relevees dans le worktree principal.
+        self.assertEqual(self.field(out, "branche"), "feat/a")
+
+    def test_post_merge_detached_head_and_base_checked_out_elsewhere(self):
+        main, tree = self.repo.as_posix(), (self.dir / "arbre-b").as_posix()
+        self.fixtures(self.post_merge_fixtures(**{
+            "git worktree list --porcelain": ok(
+                f"worktree {main}\nHEAD aaa111\ndetached\n\n"
+                f"worktree {tree}\nHEAD mmm000\nbranch refs/heads/main\n\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "branche"), "(HEAD detachee)")
+        self.assertEqual(self.field(out, "base_extraite"), tree)
+
+    def test_post_merge_reports_uncommitted_changes(self):
+        main = self.repo.as_posix()
+        self.fixtures(self.post_merge_fixtures(**{
+            f"git -C {main} status --porcelain=v1 --untracked-files=all": ok(" M src/a.py\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "modifications"),
+                         "0 indexee(s), 1 non indexee(s), 0 non suivie(s)")
+
+    def test_post_merge_requires_gh(self):
+        code, out = self.run_script("--post-merge", gh=self.dir / "absent.py")
+        self.assertEqual(code, 2, out)
+        self.assertIn("gh introuvable", out)
+
+    def test_post_merge_pr_list_failure_is_environment_error(self):
+        self.fixtures(self.post_merge_fixtures(**{self.PR_LIST: fail("HTTP 502\n")}))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 2, out)
+        self.assertNotIn("mergee", out)
+
+    def test_post_merge_unreadable_json_is_environment_error(self):
+        self.fixtures(self.post_merge_fixtures(**{self.PR_LIST: ok("<html>erreur</html>")}))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 2, out)
+        self.assertIn("sortie JSON illisible", out)
+        self.assertNotIn("Traceback", out)
+
+    def test_post_merge_excludes_github(self):
+        code, out = self.run_script("--post-merge", "--github")
+        self.assertEqual(code, 1, out)
+
 
 class UnitTest(unittest.TestCase):
     def setUp(self):
@@ -272,6 +448,14 @@ class UnitTest(unittest.TestCase):
             "MM a.py\nR  b.py -> c.py\n?? d.txt\n D e.py\n")
         self.assertEqual((staged, unstaged, untracked), (2, 2, 1))
         self.assertEqual(paths, ["a.py", "c.py", "d.txt", "e.py"])
+
+    def test_parse_worktrees(self):
+        found = self.mod.parse_worktrees(
+            "worktree /d/nu\nbare\n\n"
+            "worktree /d/main\nHEAD a\nbranch refs/heads/main\n\n"
+            "worktree /d/wt\nHEAD b\ndetached\nlocked raison\n\n")
+        self.assertEqual([(t["path"].as_posix(), t["branch"], t["locked"]) for t in found],
+                         [("/d/main", "main", False), ("/d/wt", None, True)])
 
 
 if __name__ == "__main__":
