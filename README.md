@@ -42,6 +42,18 @@ Chaque status line est propre à un agent hôte, nommé dans son chemin :
 |---|---|
 | [`usage-session`](./statuslines/claude/usage-session/STATUSLINE.md) | Modèle, effort, remplissage du contexte en pourcentage et en tokens, puis quotas 5 h et 7 jours de l'abonnement ou, en facturation API, coût estimé de la session, sur une ligne alignée à droite. Script PowerShell sans appel au modèle : aucun token consommé. |
 
+## Dépendances entre outils
+
+Un outil peut s'appuyer sur un autre outil du dépôt plutôt que d'en recopier la
+logique : l'outil dépendant vérifie la présence de l'outil employé et s'arrête
+si celui-ci est absent. Ce tableau est la
+carte de ces dépendances : `scripts/validate.py` la compare aux références
+réelles entre outils, et `scripts/install.py --tool` installe aussi les
+dépendances de l'outil demandé. Aucune dépendance n'est déclarée à ce jour.
+
+| Outil | Dépend de | Pour |
+|---|---|---|
+
 ## Arborescence
 
 ```
@@ -92,7 +104,7 @@ Commandes de vérification et d'installation : [PREREQUIS.md](./docs/PREREQUIS.m
 python scripts/install.py                  # audit : n'écrit rien
 python scripts/install.py --apply          # installe ou met à jour, pour les deux agents hôtes
 python scripts/install.py --agent copilot --apply            # un seul agent hôte
-python scripts/install.py --tool clean-android-tv --apply    # un seul outil
+python scripts/install.py --tool clean-android-tv --apply    # un seul outil et ses dépendances
 ```
 
 La sortie donne, pour chaque agent hôte, l'état de chaque outil : à jour, à
@@ -107,7 +119,8 @@ agent hôte. Une status line est donc copiée mais reste inactive tant que sa cl
 n'est pas enregistrée ([ci-dessous](#activer-une-status-line)). Procédure
 détaillée : [SETUP.md](./docs/SETUP.md).
 
-Sans le script, un outil s'installe par simple copie : le dossier
+Sans le script, un outil s'installe par simple copie, avec les outils dont il
+dépend ([carte](#dépendances-entre-outils)) : le dossier
 `skills/<nom>/` sous `{AGENT_DIR}/skills/`, le fichier `agents/<nom>.md` sous
 `{AGENT_DIR}/agents/` — renommé `<nom>.agent.md` pour Copilot CLI —, le dossier
 `statuslines/claude/<nom>/` sous `~/.claude/statuslines/`. `{AGENT_DIR}` vaut

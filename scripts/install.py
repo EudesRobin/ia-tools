@@ -42,6 +42,11 @@ affiche, pas applique. Il en va de meme pour la cle statusLine d'une status
 line : l'audit lit settings.json, indique si la cle designe le script installe
 et affiche le fragment a fusionner.
 
+Un outil peut s'appuyer sur un autre outil du depot (CONVENTIONS.md 1.7) :
+la carte des dependances est le tableau de la section « Dependances entre
+outils » de README.md. --tool installe aussi les dependances declarees des
+outils nommes, de proche en proche.
+
 Une status line est propre a un agent hote, que nomme son dossier source :
 statuslines/<agent hote>/<nom>/ s'installe sous {AGENT_DIR}/statuslines/<nom>/.
 Seul Claude Code en a aujourd'hui (SCOPE_AGENTS) : le perimetre statusline
@@ -61,6 +66,7 @@ d'ecriture ne reste chez aucun agent hote, 1 sinon.
 import argparse
 import difflib
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -86,6 +92,12 @@ SCOPES = {
     "statusline": [("statuslines/{agent}", "statuslines")],
 }
 DEFAULT_SCOPES = ["skills", "agents", "hooks", "statusline"]
+
+# Carte des dependances entre outils (CONVENTIONS.md 1.7) : tableau place
+# sous ce titre dans README.md, colonnes Outil | Depend de | Pour.
+DEPENDENCIES_FILE = ROOT / "README.md"
+DEPENDENCIES_HEADING = "## Dépendances entre outils"
+TOOL_NAME_RE = re.compile(r"`([a-z0-9][a-z0-9-]*)`")
 
 # Perimetres reserves a certains agents hotes ; les autres les ignorent.
 # scripts/validate.py n'admet sous statuslines/ que les dossiers declares ici.
@@ -157,6 +169,42 @@ def source_rel(agent: str, src_rel: str, rel: Path) -> Path | None:
             return None
         return rel.with_name(rel.name.removesuffix(suffix) + ".md")
     return rel
+
+
+def declared_dependencies(text: str) -> dict[str, list[str]]:
+    """Carte des dependances lue dans le texte de README.md : outil -> outils
+    dont il depend. Sans section ni ligne de tableau, la carte est vide."""
+    deps: dict[str, list[str]] = {}
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == DEPENDENCIES_HEADING
+            continue
+        if not inside or not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        tools = TOOL_NAME_RE.findall(cells[0])
+        needed = TOOL_NAME_RE.findall(cells[1])
+        # Ligne d'en-tete et separateur : aucun nom entre backticks.
+        if len(tools) == 1 and needed:
+            deps.setdefault(tools[0], [])
+            deps[tools[0]] += [n for n in needed if n not in deps[tools[0]]]
+    return deps
+
+
+def with_dependencies(wanted: set[str], deps: dict[str, list[str]]) -> set[str]:
+    """Outils demandes et leurs dependances, de proche en proche ; un cycle
+    n'entraine pas de boucle."""
+    found = set(wanted)
+    pending = list(wanted)
+    while pending:
+        for needed in deps.get(pending.pop(), []):
+            if needed not in found:
+                found.add(needed)
+                pending.append(needed)
+    return found
 
 
 def tool_of(rel: str) -> str:
@@ -628,6 +676,13 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
+        text = DEPENDENCIES_FILE.read_text(encoding="utf-8") if DEPENDENCIES_FILE.is_file() else ""
+        expanded = with_dependencies(wanted, declared_dependencies(text))
+        added = sorted(expanded - wanted)
+        if added:
+            args = argparse.Namespace(**{**vars(args), "tool": ",".join(sorted(expanded))})
+    else:
+        added = []
 
     if args.diff:
         # Le diff cite le contenu des fichiers, accents et symboles compris :
@@ -675,6 +730,7 @@ def main() -> int:
                 {
                     "validation": validation,
                     "perimetres": scopes,
+                    "dependances_ajoutees": added,
                     "agents": {
                         agent: {k: r[k] for k in keys} for agent, r in reports.items()
                     },
@@ -694,6 +750,8 @@ def main() -> int:
         verdict = "--apply n'a rien ecrit" if refused else "--apply n'ecrira rien"
         print(f"install.py : validation (scripts/validate.py) en echec : {verdict}.\n")
 
+    if added:
+        print(f"install.py : dependances ajoutees : {', '.join(added)}\n")
     for agent, r in reports.items():
         print_report(agent, r, args.apply, validation != "echec")
 

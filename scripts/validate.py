@@ -33,6 +33,11 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
     et tout agent declare 'tools' par des noms simples ;
   - tout outil figure dans l'inventaire de README.md (CONVENTIONS.md
     section 5) ;
+  - toute reference d'un outil a un autre outil du depot ({AGENT_DIR}/skills/
+    <nom>, {AGENT_DIR}/agents/<nom>, skill `<nom>`, agent `<nom>`) est
+    declaree dans la carte des dependances de README.md, et toute ligne de la
+    carte correspond a une reference reelle entre outils existants
+    (CONVENTIONS.md 1.7) ;
   - une status line vit sous statuslines/<agent hote>/<nom>/, pour un agent
     hote dote de status lines dans scripts/install.py (SCOPE_AGENTS), et
     contient STATUSLINE.md et statusline.ps1 ;
@@ -634,6 +639,66 @@ def check_tool_links(errors: list[str]) -> None:
                 )
 
 
+# References d'un outil a un autre outil du depot (CONVENTIONS.md 1.7).
+TOOL_REFERENCE_RES = (
+    re.compile(r"\{AGENT_DIR\}/(?:skills|agents)/([a-z0-9][a-z0-9-]*)"),
+    re.compile(r"\b(?:skill|agent)\s+`([a-z0-9][a-z0-9-]*)`"),
+)
+TOOL_TEXT_SUFFIXES = {".md", ".py", ".ps1"}
+
+
+def check_tool_dependencies(errors: list[str]) -> None:
+    """CONVENTIONS.md 1.7 : un outil qui s'appuie sur un autre outil du depot le
+    declare dans la carte de README.md ; la carte ne declare que des
+    dependances reelles, entre outils existants."""
+    try:
+        install = load_install()
+        sources = []
+        for scope, pairs in install.SCOPES.items():
+            hosts = install.SCOPE_AGENTS.get(scope, install.AGENTS)
+            for src, _ in pairs:
+                sources += sorted({src.format(agent=h) for h in hosts})
+        declared = install.declared_dependencies(read(ROOT / "README.md") or "")
+    except Exception as exc:
+        errors.append(f"scripts/install.py : carte des dependances inutilisable ({exc})")
+        return
+    tools = {p.stem for p in (ROOT / "agents").glob("*.md")}
+    tools |= {p.name for p in (ROOT / "skills").glob("*/") if p.is_dir()}
+    tools |= {p.name for p in (ROOT / "statuslines").glob("*/*/") if p.is_dir()}
+
+    found: dict[tuple[str, str], str] = {}  # (outil, dependance) -> fichier:ligne
+    for path in tracked_files():
+        rel = path.relative_to(ROOT).as_posix()
+        if path.suffix.lower() not in TOOL_TEXT_SUFFIXES or tool_scope(rel, sources) is None:
+            continue
+        owner = install.tool_of(rel)
+        text = read(path)
+        if text is None:
+            continue
+        for n, line in enumerate(text.splitlines(), 1):
+            for regex in TOOL_REFERENCE_RES:
+                for name in regex.findall(line):
+                    if name in tools and name != owner:
+                        found.setdefault((owner, name), f"{rel}:{n}")
+
+    for (owner, name), where in sorted(found.items()):
+        if name not in declared.get(owner, []):
+            errors.append(
+                f"{where} : '{owner}' s'appuie sur '{name}' sans le declarer dans "
+                "README.md, section Dependances entre outils (CONVENTIONS.md 1.7)"
+            )
+    for owner, needed in sorted(declared.items()):
+        for name in [owner, *needed]:
+            if name not in tools:
+                errors.append(f"README.md : carte des dependances, outil inconnu '{name}'")
+        for name in needed:
+            if name in tools and owner in tools and (owner, name) not in found:
+                errors.append(
+                    f"README.md : carte des dependances, '{owner}' -> '{name}' declare "
+                    f"mais aucune reference de '{owner}' a '{name}' (declaration perimee)"
+                )
+
+
 def check_doc_map(errors: list[str]) -> None:
     docs_dir = ROOT / DOCS_DIR
     if not docs_dir.is_dir():
@@ -773,6 +838,7 @@ def main() -> int:
     check_entry_redirects(errors)
     check_no_hardcoded_paths(errors)
     check_inventory(errors)
+    check_tool_dependencies(errors)
     check_statuslines(errors)
     check_changelog(errors)
     check_placeholders(errors)

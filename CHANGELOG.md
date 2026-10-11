@@ -18,6 +18,16 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   ou par rebase ; un worktree qui contient des fichiers ignorés est signalé
   avant son retrait. `etat_depot.py` acquiert l'option `--post-merge`.
 
+### 🔄 Modifications
+
+- `install.py` : `--tool` installe aussi les dépendances déclarées des outils
+  nommés, et le signale. Un outil du dépôt peut désormais s'appuyer sur un
+  autre outil du dépôt plutôt que d'en recopier la logique ; la carte de ces
+  dépendances figure dans `README.md`.
+- `audit-outil`, `audit-docs` : la logique recopiée d'un outil voisin devient
+  un constat quand les conventions du dépôt audité admettent la dépendance
+  entre outils.
+
 ## [1.4.1] - 2026-10-10
 
 ### 🐛 Corrections

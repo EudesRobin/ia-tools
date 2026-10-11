@@ -85,7 +85,10 @@ Le périmètre par défaut est `skills,agents,hooks,statusline`, tous outils
 compris, pour les agents hôtes `claude,copilot`. Le périmètre `statusline` n'est
 examiné que pour Claude Code, seul agent hôte doté de status lines. `--agent` restreint l'installation aux agents
 hôtes nommés. `--tool` restreint l'examen et l'écriture aux outils nommés,
-séparés par des virgules. `--target` permet de viser une autre racine que
+séparés par des virgules, et à leurs dépendances déclarées dans la carte de
+[README.md](../README.md#dépendances-entre-outils) ([CONVENTIONS.md](CONVENTIONS.md) §1.7)
+qui relèvent du périmètre examiné ; le script signale chaque dépendance ainsi
+ajoutée. `--target` permet de viser une autre racine que
 `{AGENT_DIR}` et n'est admis qu'avec un seul agent hôte ; une cible dont le
 chemin contient une espace oblige à appeler les scripts embarqués entre
 guillemets, forme que ne couvre plus la règle `allowed-tools` de leur skill

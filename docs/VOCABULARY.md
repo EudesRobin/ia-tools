@@ -69,7 +69,8 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 
 | Terme retenu | Sens | À ne pas employer |
 |---|---|---|
-| **outil** | Une skill, un agent, un hook ou une status line. S'installe **isolément** : l'utilisateur peut le copier seul, sans le reste du dépôt, d'où l'exigence d'auto-suffisance ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)). Terme générique par défaut ; ne préciser skill, agent, hook ou status line que lorsque la distinction importe. | « unité installable isolément » — exact mais lourd, et jamais employé spontanément |
+| **outil** | Une skill, un agent, un hook ou une status line. S'installe sans le reste du dépôt, et seul quand il n'a pas de **dépendance** déclarée ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)). Terme générique par défaut ; ne préciser skill, agent, hook ou status line que lorsque la distinction importe. | « unité installable isolément » — exact mais lourd, et jamais employé spontanément |
+| **dépendance** (entre outils) | Le fait qu'un outil du dépôt en emploie un autre plutôt que d'en recopier la logique ; l'outil employé doit être installé, faute de quoi l'outil dépendant s'arrête. Déclarée dans la carte de [README.md](../README.md#dépendances-entre-outils) ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)). | « composant », « module » — ne disent pas qu'il s'agit d'un outil du dépôt, déclaré dans la carte |
 | **skill** | Un dossier `skills/<nom>/` avec son `SKILL.md`. Suite d'étapes fixes, sortie unique. | « compétence », « capacité » |
 | **agent** | Un fichier `agents/<nom>.md`. Persona spécialisée dont le raisonnement se réutilise. | « sous-agent » au sens d'agent de ce dépôt (voir ci-dessous) |
 | **sous-agent** | Une instance déléguée dans une session, quel que soit l'agent qu'elle exécute. À distinguer de l'artefact `agents/<nom>.md`. | — |
@@ -103,7 +104,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 
 Une skill introduit le vocabulaire de son domaine. Les termes qui y ont fait
 l'objet d'une correction rejoignent ce document, au même titre que les autres :
-l'outil s'installe isolément et ne peut pas renvoyer ici
+`docs/` n'étant pas distribué, la skill ne peut pas renvoyer ici
 ([CONVENTIONS.md §1.7](CONVENTIONS.md#17-auto-suffisance-des-outils)), mais
 c'est la relecture du dépôt qui doit empêcher la formulation écartée de
 revenir.
