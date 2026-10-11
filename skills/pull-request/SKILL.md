@@ -58,7 +58,7 @@ Cas d'usage et suivi :
   quand l'utilisateur demande de merger la branche de travail ou que les
   instructions du projet font du merge sur la branche par défaut la suite
   normale d'un commit : [phases 1](#1-établir-létat) à [4](#4-committer), puis
-  [phase 8](#8-merger-localement), sans liste de tâches : les phases
+  [phase 8](#8-merger-localement), sans liste de tâches. Les phases
   s'enchaînent sans demande de confirmation, dans une même réponse. Les
   annonces et les points d'arrêt prévus restent, et le résultat final se
   réduit au hash et au sujet du commit de merge. Le cas se confirme en fin de
@@ -179,8 +179,8 @@ script. `base : indeterminee` → celle que désignent ces règles, à défaut l
 demander à l'utilisateur.
 
 Avec `distants : aucun`, une règle du projet qui fait du merge sur la branche
-par défaut la suite normale d'un commit place la demande en livraison locale,
-même formulée comme un commit seul. Sans une telle règle, le cas demandé est
+par défaut la suite normale d'un commit fait traiter la demande comme une
+livraison locale, même formulée comme un commit seul. Sans une telle règle, le cas demandé est
 conservé : le merge n'a lieu que si l'utilisateur l'a demandé.
 
 ### 3. Créer la branche
@@ -226,7 +226,7 @@ Sur une branche de travail existante, poursuivre sur celle-ci.
    la cause, relancer le commit. Le commit refusé n'existe pas : ne pas employer
    `--amend` pour le reprendre.
 
-Pour le commit seul, tel que confirmé en fin de
+Pour le commit seul, cas confirmé en fin de
 [phase 2](#2-déterminer-les-conventions), la skill s'arrête ici : indiquer à
 l'utilisateur le hash et le sujet du commit. La livraison locale se poursuit à
 la [phase 8](#8-merger-localement).
@@ -311,8 +311,8 @@ Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
 
 1. Relancer `python {AGENT_DIR}/skills/pull-request/etat_depot.py` et lire
    `modifications` et `sensibles`. Une modification que la
-   [phase 4](#4-committer) a laissée de côté à dessein — fichier cité par
-   `sensibles` ou sans rapport avec la demande — → la nommer à l'utilisateur
+   [phase 4](#4-committer) a laissée de côté à dessein (fichier cité par
+   `sensibles` ou sans rapport avec la demande) → la nommer à l'utilisateur
    et ne poursuivre qu'avec son accord. Toute autre modification hors des
    commits → la signaler et s'arrêter.
 2. Appliquer la règle de merge déterminée à la
@@ -322,8 +322,8 @@ Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
    Rédiger le message du commit de merge selon la convention de commit, en
    résumant la branche de travail, et l'écrire dans
    `<git_dir>/MERGE_COMMIT_MSG.txt`.
-3. Merger la branche de travail sur la branche par défaut, puis la supprimer,
-   sauf règle contraire du projet :
+3. Merger la branche de travail sur la branche par défaut, puis supprimer la
+   branche de travail, sauf règle contraire du projet :
 
    ```text
    git switch <base>
@@ -341,12 +341,12 @@ Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
      - Conflit → relever d'abord les fichiers en conflit
        (`git diff --name-only --diff-filter=U`), annuler le merge, puis les
        présenter à l'utilisateur.
-     - Hook `commit-msg` en échec → lire sa sortie, annuler le merge, corriger
+     - Hook git `commit-msg` en échec → lire sa sortie, annuler le merge, corriger
        `<git_dir>/MERGE_COMMIT_MSG.txt`, puis reprendre l'étape 3.
-     - Hook `pre-merge-commit` en échec → lire sa sortie, annuler le merge,
+     - Hook git `pre-merge-commit` en échec → lire sa sortie, annuler le merge,
        corriger la cause par un commit sur la branche de travail, puis
        reprendre cette phase.
-     - Second échec du même hook → présenter sa sortie à l'utilisateur et
+     - Second échec du même hook git → présenter sa sortie à l'utilisateur et
        s'arrêter.
    - `git branch -d` refusé → signaler le message ; le merge est acquis.
 5. Indiquer à l'utilisateur le hash et le sujet du commit de merge
@@ -400,5 +400,5 @@ Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
   `gh pr create`, `gh pr edit`,
   `git branch -D`, `git worktree remove`, `git worktree prune`, `git fetch`
   et toute commande `git -C` restent soumis à une
-  demande de confirmation : sous Copilot CLI, seules les
+  demande de confirmation. Sous Copilot CLI, seules les
   [règles](#règles) ci-dessus encadrent les commandes git et gh.
