@@ -299,20 +299,27 @@ class JournalVersionTest(unittest.TestCase):
 
     def test_close_postcondition_detects_lost_section(self):
         # Cas casse : la relecture du journal ecrit ne retrouve pas la version close.
+        import contextlib
         import importlib.util
+        import io
         import unittest.mock
         spec = importlib.util.spec_from_file_location("journal_version", SCRIPT)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
+        # Version et date propres au journal fictif FR, jamais au depot reel.
+        version = "1.5.0"
         cwd = os.getcwd()
+        err = io.StringIO()
         try:
             os.chdir(self.repo)
             with unittest.mock.patch.dict(os.environ, self.env), \
-                    unittest.mock.patch.object(mod.Repo, "read", side_effect=[FR, FR]):
-                code = mod.main(["--close", "1.5.0", "--date", "2026-10-12"])
+                    unittest.mock.patch.object(mod.Repo, "read", side_effect=[FR, FR]), \
+                    contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+                code = mod.main(["--close", version, "--date", "2026-10-12"])
         finally:
             os.chdir(cwd)
         self.assertEqual(code, 1)
+        self.assertIn(f"la section {version} ne reprend pas la section close", err.getvalue())
 
     def test_close_refuses_empty_section(self):
         self.set_repo(FR.replace("- Outil A.", "").replace("- Correction B.", ""), tags=["1.4.1"])
