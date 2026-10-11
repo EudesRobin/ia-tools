@@ -28,6 +28,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   le commit, merge de la branche de travail sur la branche par défaut par un
   commit de merge (`--no-ff`), selon la règle du projet, puis suppression de
   la branche.
+- `release` : publication dans un dépôt sans dépôt distant — clôture mergée
+  sur la branche par défaut par la livraison locale de la skill
+  `pull-request`, vérification sans intégration continue, tag annoté local
+  portant les notes de la version, vérifié par `--release`.
+  `journal_version.py` affiche la clé `distant`, refuse des dépôts distants
+  sans `origin`, et `--check` bloque sur une modification non committée.
 
 ### 🔄 Modifications
 

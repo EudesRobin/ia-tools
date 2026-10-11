@@ -105,6 +105,7 @@ class JournalVersionTest(unittest.TestCase):
         f = {
             "git rev-parse --show-toplevel": ok(self.repo.as_posix() + "\n"),
             "git rev-parse --absolute-git-dir": ok((self.repo / ".git").as_posix() + "\n"),
+            "git remote": ok("origin\n"),
             "git symbolic-ref --short refs/remotes/origin/HEAD": ok("origin/main\n"),
             "git tag --list --sort=-v:refname": ok("".join(t + "\n" for t in tags)),
             "git ls-remote --tags origin": ok("".join(f"abc\trefs/tags/{t}\n" for t in remote)),
@@ -415,6 +416,97 @@ class JournalVersionTest(unittest.TestCase):
             "gh release view 1.4.1 --json url,isDraft": fail("release not found"),
         })
         self.assertEqual(self.field(self.run_script("--release", "1.4.1")[1], "release"), "absente")
+
+    # --------------------------------------------------------- depot local
+
+    def set_local(self, changelog, tags=(), shared=None, **over):
+        """Depot sans origin : branche par defaut master, journal de master."""
+        self.set_repo(changelog, tags=tags, remote=["1.4.1"], **{
+            "git remote": ok(""),
+            "git rev-parse --verify --quiet refs/heads/main": fail(),
+            "git rev-parse --verify --quiet refs/heads/master": ok("m1\n"),
+            "git show master:CHANGELOG.md": ok(changelog if shared is None else shared),
+            **over})
+
+    def test_local_state_uses_local_tags_and_base(self):
+        # Cas casse : en mode distant, ls-remote (1.4.1 seul) donnerait l'etape tag.
+        self.set_local(CLOSED, tags=["1.5.0", "1.4.1"])
+        code, out = self.run_script()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "distant"), "aucun (depot local)")
+        self.assertEqual(self.field(out, "base"), "master")
+        self.assertEqual(self.field(out, "etape"), "rien")
+        self.set_local(CLOSED, tags=["1.4.1"])
+        self.assertEqual(self.field(self.run_script()[1], "etape"), "tag (1.5.0, close sur master)")
+
+    def test_local_step_waits_for_merge(self):
+        self.set_local(CLOSED, tags=["1.4.1"], shared=FR)
+        self.assertEqual(self.field(self.run_script()[1], "etape"),
+                         "attente_merge (1.5.0, close localement, absente de master)")
+
+    def test_local_check_without_origin_nor_ci(self):
+        empty = CLOSED.replace("### 🚀 Nouveautés\n\n- Outil A.\n\n### 🐛 Corrections\n\n- Correction B.\n\n## [1.4.1]",
+                               "## [1.4.1]", 1)
+        empty = empty.replace("## [1.5.0] - 2026-10-12\n\n", "## [1.5.0] - 2026-10-12\n\n### 🚀 Nouveautés\n\n- Outil A.\n\n", 1)
+        self.set_local(empty, tags=["1.4.1"], **{
+            "git branch --show-current": ok("master\n"), "git rev-parse HEAD": ok("h1\n")})
+        code, out = self.run_script("--check", "1.5.0")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "ci"), "sans objet (depot local)")
+        self.assertEqual(self.field(out, "verdict"), "pret")
+        # Cas casse : verification lancee depuis la branche de travail.
+        self.set_local(empty, tags=["1.4.1"], **{
+            "git branch --show-current": ok("feat/x\n"), "git rev-parse HEAD": ok("h1\n")})
+        self.assertIn("branche courante differente de master", self.run_script("--check", "1.5.0")[1])
+
+    def tag_fixtures(self, kind="tag", contents="### 🐛 Corrections\n\n- Correction C.\n", ancestor=True):
+        self.set_local(FR, tags=["1.4.1"], **{
+            "git rev-list -n 1 1.4.1": ok("t1\n"),
+            "git cat-file -t 1.4.1": ok(kind + "\n"),
+            "git merge-base --is-ancestor t1 master": ok() if ancestor else fail(),
+            "git tag -l --format=%(contents) 1.4.1": ok(contents)})
+
+    def test_local_release_checks_tag(self):
+        self.tag_fixtures()
+        code, out = self.run_script("--release", "1.4.1")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "verdict"), "conforme")
+        self.tag_fixtures(contents="1.4.1\n\n### 🐛 Corrections\n\n- Correction C.\n")
+        self.assertEqual(self.run_script("--release", "1.4.1")[0], 0)
+        # Cas casses : tag leger, notes differentes, tag hors de la branche par defaut.
+        self.tag_fixtures(kind="commit")
+        code, out = self.run_script("--release", "1.4.1")
+        self.assertEqual(code, 1, out)
+        self.assertEqual(self.field(out, "annote"), "non (tag leger)")
+        self.tag_fixtures(contents="1.4.1\n")
+        self.assertEqual(self.field(self.run_script("--release", "1.4.1")[1], "notes"), "differentes du journal")
+        self.tag_fixtures(ancestor=False)
+        self.assertTrue(self.field(self.run_script("--release", "1.4.1")[1], "sur_base").startswith("non"))
+
+    def test_check_blocks_uncommitted_changes(self):
+        # Cas casse : cloture ecrite dans la copie de travail, jamais committee.
+        empty = CLOSED.replace("### 🚀 Nouveautés\n\n- Outil A.\n\n### 🐛 Corrections\n\n- Correction B.\n\n## [1.4.1]",
+                               "## [1.4.1]", 1)
+        empty = empty.replace("## [1.5.0] - 2026-10-12\n\n", "## [1.5.0] - 2026-10-12\n\n### 🚀 Nouveautés\n\n- Outil A.\n\n", 1)
+        self.set_local(empty, tags=["1.4.1"], **{
+            "git branch --show-current": ok("master\n"), "git rev-parse HEAD": ok("h1\n"),
+            "git status --porcelain --untracked-files=no": ok(" M CHANGELOG.md\n")})
+        code, out = self.run_script("--check", "1.5.0")
+        self.assertEqual(code, 1, out)
+        self.assertIn("modifications non committees : CHANGELOG.md", out)
+
+    def test_remotes_without_origin_refused(self):
+        self.set_repo(FR, tags=["1.4.1"], **{"git remote": ok("upstream\n")})
+        code, out = self.run_script()
+        self.assertEqual(code, 1, out)
+        self.assertIn("sans origin (upstream)", out)
+
+    def test_notes_with_title(self):
+        target = self.dir / "NOTES.md"
+        code, out = self.run_script("--notes", "1.4.1", "--title", "1.4.1", "--output", str(target))
+        self.assertEqual(code, 0, out)
+        self.assertEqual(target.read_bytes().decode("utf-8"), "1.4.1\n\n### 🐛 Corrections\n\n- Correction C.\n")
+        self.assertEqual(self.run_script("--title", "x")[0], 1)
 
 
 if __name__ == "__main__":
