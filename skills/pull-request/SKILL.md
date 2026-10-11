@@ -2,10 +2,13 @@
 name: pull-request
 description: >-
   Créer la branche de travail, y committer les modifications, la pousser et
-  ouvrir ou mettre à jour la pull request GitHub par gh, en appliquant les
+  ouvrir ou mettre à jour la pull request GitHub par gh — ou, dans un dépôt
+  sans dépôt distant, merger la branche de travail sur la branche par défaut —,
+  en appliquant les
   conventions de commit et le template de PR du projet. À utiliser quand
   l'utilisateur demande de committer, de faire un commit, de créer une branche
-  pour ses modifications, de pousser sa branche et d'ouvrir une pull request
+  pour ses modifications, de merger sa branche dans la branche principale d'un
+  dépôt sans dépôt distant, de pousser sa branche et d'ouvrir une pull request
   (PR), de pousser de nouveaux commits sur une PR existante, de mettre à jour
   une PR ou d'en reprendre la description, ou signale qu'une PR est mergée et
   demande de revenir sur la branche principale, de la mettre à jour, de
@@ -23,6 +26,9 @@ allowed-tools:
   - Bash(git add:*)
   - Bash(git switch:*)
   - Bash(git commit:*)
+  - Bash(git merge --no-ff:*)
+  - Bash(git merge --abort)
+  - Bash(git branch -d:*)
   - Bash(git pull --ff-only)
   - Bash(gh pr view:*)
 ---
@@ -30,7 +36,9 @@ allowed-tools:
 # Committer et ouvrir une pull request
 
 Mener des modifications locales jusqu'à une *pull request* GitHub : branche
-de travail, commit, push, puis création ou mise à jour de la PR par `gh`. Les
+de travail, commit, push, puis création ou mise à jour de la PR par `gh`. Dans
+un dépôt sans dépôt distant, la livraison s'achève par le merge de la branche
+sur la branche par défaut. Les
 conventions appliquées sont celles du projet ; à défaut, celles de
 [conventions-defaut.md](conventions-defaut.md). Le merge de la PR, fait par
 l'utilisateur, est hors du périmètre de la skill ; le nettoyage du dépôt local
@@ -46,10 +54,22 @@ Cas d'usage et suivi :
   existante : tâche en sept phases ; la règle de suivi des tâches s'applique.
   La livraison se termine à la [phase 7](#7-vérifier-la-pr-publiée), sans
   attendre le merge.
+- **Livraison locale** — dans un dépôt sans dépôt distant (`distants : aucun`),
+  quand l'utilisateur demande de merger la branche de travail ou que les
+  instructions du projet font du merge sur la branche par défaut la suite
+  normale d'un commit : [phases 1](#1-établir-létat) à [4](#4-committer), puis
+  [phase 8](#8-merger-localement), sans liste de tâches. Les phases
+  s'enchaînent sans demande de confirmation, dans une même réponse. Les
+  annonces et les points d'arrêt prévus restent, et le résultat final se
+  réduit au hash et au sujet du commit de merge. Le cas se confirme en fin de
+  [phase 2](#2-déterminer-les-conventions).
 - **Post-merge** — « la PR est mergée », « supprime la branche locale »,
   « nettoie le worktree » : lire et suivre [post-merge.md](post-merge.md),
-  qui porte ses cinq phases et sa propre liste de tâches. Les phases 1 à 7
-  ci-dessous ne s'appliquent pas.
+  qui porte ses cinq phases et sa propre liste de tâches. Les phases 1 à 8
+  ci-dessous ne s'appliquent pas. Dans un dépôt sans dépôt distant, le
+  post-merge est sans objet : la [phase 8](#8-merger-localement) supprime déjà
+  la branche de travail, et une autre branche se supprime par
+  `git branch -d <branche>` sur demande.
 
 Pour la livraison complète, créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat)**, et la ré-afficher en entier à chaque changement
@@ -108,9 +128,9 @@ par une demande de confirmation.
 
 Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
 d'environnement — git ou gh absent, gh non authentifié, sortie de gh
-illisible, liste des PR inaccessible, branche par défaut indéterminée, dossier
-hors d'un dépôt git —, à corriger avant de relancer le
-script.
+illisible, liste des PR inaccessible, branche par défaut indéterminée avec
+`--github` ou `--post-merge`, dossier hors d'un dépôt git —, à corriger avant
+de relancer le script.
 
 ## Instructions
 
@@ -121,7 +141,7 @@ Relever dans sa sortie :
 
 - `branche`, `base` et `distants` ;
 - `git_dir`, chemin absolu du dossier git, où sont écrits les fichiers de
-  travail des phases 4 et 5 ;
+  travail des phases 4, 5 et 8 ;
 - `modifications`, `a_pousser` et `avance_sur_base` ;
 - `sensibles` et `exclusions_diff`, employés à la [phase 4](#4-committer) ;
 - `pr`, en livraison complète.
@@ -131,14 +151,14 @@ de seconde PR, et employer `gh pr edit` à la
 [phase 6](#6-obtenir-laccord-puis-publier). Aucune modification, aucun commit à
 pousser et aucun commit en avance sur la base, sans description de PR à
 reprendre → signaler qu'il n'y a rien à livrer et s'arrêter.
-`distants : aucun` → seul le commit est possible, car la livraison complète
-exige un dépôt distant.
+`distants : aucun` → la livraison complète, qui exige un dépôt distant, est
+impossible : ne restent possibles que le commit seul et la livraison locale.
 
 ### 2. Déterminer les conventions
 
 Lire les fichiers que `etat_depot.py` a trouvés, sauf ceux déjà chargés dans la
-session, et y relever les règles de message de commit, de nommage de branche et
-de PR :
+session, et y relever les règles de message de commit, de nommage de branche,
+de PR et, en livraison locale, de merge sur la branche par défaut :
 
 1. `conventions` : fichier d'instructions de l'agent hôte, `AGENTS.md`, guide
    de contribution, et les fichiers vers lesquels ils renvoient ;
@@ -151,11 +171,17 @@ instructions globales chargées dans la session se déclarent prioritaires sur
 les règles de projet. Sans règle de projet sur un point, appliquer les
 instructions globales, puis, à défaut,
 [conventions-defaut.md](conventions-defaut.md). Annoncer en une ligne la source
-retenue pour chaque point (commit, branche, PR).
+retenue pour chaque point (commit, branche, PR ou merge).
 
 `base` porte la mention « à confirmer par les règles du projet » → la branche
 par défaut est celle que désignent ces règles, à défaut celle que donne le
-script.
+script. `base : indeterminee` → celle que désignent ces règles, à défaut la
+demander à l'utilisateur.
+
+Avec `distants : aucun`, une règle du projet qui fait du merge sur la branche
+par défaut la suite normale d'un commit fait traiter la demande comme une
+livraison locale, même formulée comme un commit seul. Sans une telle règle, le cas demandé est
+conservé : le merge n'a lieu que si l'utilisateur l'a demandé.
 
 ### 3. Créer la branche
 
@@ -200,8 +226,10 @@ Sur une branche de travail existante, poursuivre sur celle-ci.
    la cause, relancer le commit. Le commit refusé n'existe pas : ne pas employer
    `--amend` pour le reprendre.
 
-Pour le commit seul, la skill s'arrête ici : indiquer à l'utilisateur le hash
-et le sujet du commit.
+Pour le commit seul, cas confirmé en fin de
+[phase 2](#2-déterminer-les-conventions), la skill s'arrête ici : indiquer à
+l'utilisateur le hash et le sujet du commit. La livraison locale se poursuit à
+la [phase 8](#8-merger-localement).
 
 ### 5. Rédiger titre et description
 
@@ -277,6 +305,53 @@ dont la correction se borne à rétablir le contenu validé → le corriger par
 Indiquer à l'utilisateur l'URL de la PR. Les fichiers de travail restent dans
 le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 
+### 8. Merger localement
+
+Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
+
+1. Relancer `python {AGENT_DIR}/skills/pull-request/etat_depot.py` et lire
+   `modifications` et `sensibles`. Une modification que la
+   [phase 4](#4-committer) a laissée de côté à dessein (fichier cité par
+   `sensibles` ou sans rapport avec la demande) → la nommer à l'utilisateur
+   et ne poursuivre qu'avec son accord. Toute autre modification hors des
+   commits → la signaler et s'arrêter.
+2. Appliquer la règle de merge déterminée à la
+   [phase 2](#2-déterminer-les-conventions). Une précondition de merge fixée par
+   le projet — validation par l'utilisateur, vérifications au vert — est
+   remplie avant l'étape 3 ; sans précondition, aucun accord n'est demandé.
+   Rédiger le message du commit de merge selon la convention de commit, en
+   résumant la branche de travail, et l'écrire dans
+   `<git_dir>/MERGE_COMMIT_MSG.txt`.
+3. Merger la branche de travail sur la branche par défaut, puis supprimer la
+   branche de travail, sauf règle contraire du projet :
+
+   ```text
+   git switch <base>
+   git merge --no-ff -F "<git_dir>/MERGE_COMMIT_MSG.txt" <branche>
+   git branch -d <branche>
+   ```
+
+   `git branch -d` refuse de supprimer une branche non mergée : ne pas lui
+   substituer `-D`.
+4. Traiter les échecs :
+   - `git switch <base>` refusé → signaler le message et s'arrêter.
+   - `git merge` en échec : le merge reste en cours ; l'annuler par
+     `git merge --abort` avant toute autre commande, puis revenir sur la
+     branche de travail (`git switch <branche>`).
+     - Conflit → relever d'abord les fichiers en conflit
+       (`git diff --name-only --diff-filter=U`), annuler le merge, puis les
+       présenter à l'utilisateur.
+     - Hook git `commit-msg` en échec → lire sa sortie, annuler le merge, corriger
+       `<git_dir>/MERGE_COMMIT_MSG.txt`, puis reprendre l'étape 3.
+     - Hook git `pre-merge-commit` en échec → lire sa sortie, annuler le merge,
+       corriger la cause par un commit sur la branche de travail, puis
+       reprendre cette phase.
+     - Second échec du même hook git → présenter sa sortie à l'utilisateur et
+       s'arrêter.
+   - `git branch -d` refusé → signaler le message ; le merge est acquis.
+5. Indiquer à l'utilisateur le hash et le sujet du commit de merge
+   (`git log -1 --format="%h %s"`).
+
 ## Règles
 
 - **Aucune attribution d'outil d'IA** — ni `Co-Authored-By` désignant un agent,
@@ -289,7 +364,8 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
   `head=identique` et retenue dans le plan accepté par l'utilisateur, ou à une
   branche dont l'utilisateur demande explicitement la suppression.
 - Ne jamais committer ni pousser directement sur la branche par défaut ou sur
-  une branche protégée.
+  une branche protégée. Seule exception : le commit de merge de la
+  [phase 8](#8-merger-localement), en livraison locale.
 - Obtenir l'accord explicite de l'utilisateur avant tout `git push`, toute
   création et toute modification de PR, hors la correction prévue à la
   [phase 7](#7-vérifier-la-pr-publiée).
@@ -304,7 +380,10 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 
 ## Limites
 
-- GitHub seul, par `gh` : GitLab, Bitbucket et Azure DevOps ne sont pas couverts.
+- La livraison complète et le post-merge visent GitHub seul, par `gh` :
+  GitLab, Bitbucket et Azure DevOps ne sont pas couverts.
+- Le merge local se fait par commit de merge seulement : un projet qui prescrit
+  le fast-forward ou le squash pour ce merge n'est pas couvert.
 - Les PR depuis un fork, les PR empilées et la signature des commits ne sont
   pas traitées.
 - Le merge de la PR, la revue et le suivi de l'intégration continue sont hors du
@@ -317,8 +396,9 @@ le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 - `sensibles` repère un fichier à son nom seulement : un secret écrit dans un
   fichier au nom ordinaire n'est pas signalé.
 - `allowed-tools` n'est appliqué que par Claude Code, où `git push`,
-  `git pull --rebase`, `git rebase`, `gh pr create`, `gh pr edit`,
+  `git pull --rebase`, `git rebase`, `git merge` sans `--no-ff`,
+  `gh pr create`, `gh pr edit`,
   `git branch -D`, `git worktree remove`, `git worktree prune`, `git fetch`
   et toute commande `git -C` restent soumis à une
-  demande de confirmation : sous Copilot CLI, seules les
+  demande de confirmation. Sous Copilot CLI, seules les
   [règles](#règles) ci-dessus encadrent les commandes git et gh.
