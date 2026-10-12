@@ -26,7 +26,7 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 |---|---|
 | [`audit-docs`](./agents/audit-docs.md) | Audite la structure documentaire d'un projet : accessibilité des règles, duplication, solidité du harnais. Produit un constat étayé et un lot de modifications à appliquer ; n'écrit rien lui-même. |
 | [`audit-github`](./agents/audit-github.md) | Audite l'hygiène GitHub d'un dépôt : épinglage des actions, permissions, injections et fuites possibles dans les workflows, Dependabot, checks requis, badges, version de PowerShell déclarée — la compatibilité PowerShell ne donne lieu qu'à des avertissements. Les réglages du dépôt sur GitHub (protection de branche, rulesets) se lisent dans la sortie de `gh api` que l'appelant fournit. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
-| [`audit-outil`](./agents/audit-outil.md) | Audite une skill, un agent ou un hook : qualité d'écriture, étapes à confier à un script pour réduire le coût en tokens, données sensibles exposées au contexte de l'agent. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
+| [`audit-outil`](./agents/audit-outil.md) | Audite une skill, un agent, un hook ou une status line : qualité d'écriture, étapes à confier à un script pour réduire le coût en tokens, données sensibles exposées au contexte de l'agent. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
 | [`relecture-fr`](./agents/relecture-fr.md) | Relit un document français dans un contexte neuf et y relève les calques de l'anglais, les pronoms sans antécédent, les fautes d'accord et les écarts de registre. Rend un constat sourcé `fichier:ligne` ; n'écrit rien lui-même. |
 
 ### Hooks
@@ -170,9 +170,10 @@ dérouler. Exemple :
 
 ```text
 Lis @AGENTS.md et @docs/SETUP.md, puis installe ou mets à jour les skills,
-agents et hooks de ce dépôt pour Claude Code et Copilot CLI. Lance d'abord
-l'audit, présente-moi le périmètre et attends ma confirmation avant --apply.
-En cas de conflit, affiche l'écart avec --diff et laisse-moi choisir.
+agents, hooks et status lines de ce dépôt pour Claude Code et Copilot CLI.
+Lance d'abord l'audit, présente-moi le périmètre et attends ma confirmation
+avant --apply. En cas de conflit, affiche l'écart avec --diff et laisse-moi
+choisir.
 ```
 
 Ajouter `@docs/PREREQUIS.md` au prompt pour que l'agent vérifie d'abord les

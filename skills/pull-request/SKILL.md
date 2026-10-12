@@ -74,11 +74,11 @@ Cas d'usage et suivi :
 Pour la livraison complète, créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat)**, et la ré-afficher en entier à chaque changement
 d'état, avec les marqueurs `[ ]` non commencée, `[~]` en cours, `[x]` terminée,
-`[-]` abandonnée, cette dernière avec une raison courte sur la même ligne.
-Plusieurs `[~]` simultanées seulement si les étapes sont réellement menées en
-parallèle. Quand la session expose son propre outil de liste de tâches, c'est
-cet outil qui est employé et qui fait l'affichage ; sinon le bloc est écrit dans
-la réponse. Aucun des deux suivis n'est un repli.
+`[-]` abandonnée ; une étape abandonnée porte une raison courte sur la même
+ligne. Plusieurs `[~]` simultanées seulement si les étapes sont réellement
+menées en parallèle. Quand la session expose son propre outil de liste de
+tâches, c'est cet outil qui est employé et qui fait l'affichage ; sinon le bloc
+est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 
 **Tâches**
 - [ ] Phase 1 : établir l'état du dépôt et de la PR
