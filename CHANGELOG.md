@@ -51,6 +51,15 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   un constat quand les conventions du dépôt audité admettent la dépendance
   entre outils.
 
+### 🧹 Maintenance
+
+- Dépôt GitHub : les tags ne peuvent plus être déplacés ni supprimés, toute
+  action d'un workflow doit être épinglée par le SHA d'un commit, et les mises
+  à jour de sécurité de Dependabot sont activées : elles sont proposées dès
+  leur publication, sans le délai de 30 jours imposé aux autres mises à jour.
+- `scripts/validate.py` vérifie que l'intégration continue lance chaque test
+  `tests/test_*.py`.
+
 ## [1.4.1] - 2026-10-10
 
 ### 🐛 Corrections
