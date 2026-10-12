@@ -44,6 +44,9 @@ Verifie, avant une installation (docs/SETUP.md) ou un commit :
   - tout placeholder {NOM} d'un outil distribue est declare dans
     scripts/install.py, faute de quoi il serait installe tel quel ;
   - les tests test_*.py vivent sous tests/, jamais sous scripts/ ;
+  - chaque tests/test_*.py est lance par un step 'python tests/<nom>' de
+    .github/workflows/validate.yml, et tout test qu'il lance existe
+    (docs/CONTRIBUTING.md section 3) ;
   - les scripts Python compilent, les enregistrements du hook sont du JSON
     valide et designent un script existant, les scripts PowerShell de hooks/
     et de statuslines/ sont syntaxiquement corrects (controle saute si pwsh
@@ -130,6 +133,10 @@ STATUSLINE_FILES = ("STATUSLINE.md", "statusline.ps1")
 SKILL_KEYS = {"name", "description", "allowed-tools"}
 AGENT_KEYS = {"name", "description", "tools", "model"}
 TOOL_NAME_RE = re.compile(r"[A-Za-z][A-Za-z0-9_]*")
+
+# Workflow d'integration continue qui lance chaque test (CONTRIBUTING.md section 3).
+CI_WORKFLOW = ".github/workflows/validate.yml"
+CI_TEST_RUN_RE = re.compile(r"\bpython\s+tests/(test_\w+\.py)\b")
 
 # Enregistrements du hook local ; extensions devant etre lisibles en UTF-8.
 HOOK_REGISTRATIONS = (".claude/settings.json", ".github/hooks")
@@ -448,6 +455,33 @@ def check_scripts_and_config(errors: list[str]) -> None:
             file_path, _, detail = line.rpartition(".ps1:")
             rel = Path(file_path + ".ps1").relative_to(ROOT).as_posix()
             errors.append(f"{rel}:{detail} : erreur de syntaxe PowerShell")
+
+
+def check_ci_tests(errors: list[str]) -> None:
+    """Un test que l'integration continue ne lance pas ne protege rien : chaque
+    tests/test_*.py doit apparaitre dans un step 'run' du workflow, et le
+    workflow ne lance que des tests existants."""
+    text = read(ROOT / CI_WORKFLOW)
+    if text is None:
+        errors.append(f"{CI_WORKFLOW} manquant ou illisible")
+        return
+    try:
+        workflow = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        detail = str(exc).replace("\n", " ")
+        errors.append(f"{CI_WORKFLOW} : YAML invalide ({detail})")
+        return
+    jobs = workflow.get("jobs") if isinstance(workflow, dict) else None
+    launched: set[str] = set()
+    for job in (jobs or {}).values():
+        for step in (job or {}).get("steps") or []:
+            if isinstance(step, dict) and isinstance(step.get("run"), str):
+                launched.update(CI_TEST_RUN_RE.findall(step["run"]))
+    present = {p.name for p in (ROOT / "tests").glob("test_*.py")}
+    for name in sorted(present - launched):
+        errors.append(f"tests/{name} : non lance par {CI_WORKFLOW}")
+    for name in sorted(launched - present):
+        errors.append(f"{CI_WORKFLOW} : lance tests/{name}, introuvable")
 
 
 def tool_docs() -> list[tuple[str, Path]]:
@@ -843,6 +877,7 @@ def main() -> int:
     check_changelog(errors)
     check_placeholders(errors)
     check_scripts_and_config(errors)
+    check_ci_tests(errors)
 
     errors = list(dict.fromkeys(errors))  # un meme ecart peut remonter de deux controles
     if errors:
