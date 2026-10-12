@@ -16,18 +16,18 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 | Skill | Ce qu'elle fait |
 |---|---|
 | [`clean-android-tv`](./skills/clean-android-tv/SKILL.md) | Rend un téléviseur ou un boîtier Android TV plus réactif par adb : libère la mémoire vive en désactivant les applications préinstallées inutilisées, de façon réversible, et vérifie qu'une intervention antérieure tient toujours. Embarque `reference-adb.md`, `paquets.md` et `adb_tv.py`, script de relevés en lecture seule. |
-| [`pull-request`](./skills/pull-request/SKILL.md) | Crée la branche de travail, y committe les modifications, la pousse et ouvre ou met à jour la *pull request* GitHub par `gh` — ou, dans un dépôt sans dépôt distant, merge la branche de travail sur la branche par défaut —, selon les conventions et le template de PR du projet, puis, après le merge de la PR, nettoie le dépôt local : branche par défaut mise à jour, worktrees retirés, branches mergées supprimées. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet n'en déclare aucun ; `post-merge.md`, déroulé du nettoyage post-merge ; `etat_depot.py`, script en lecture seule qui relève l'état du dépôt. |
-| [`release`](./skills/release/SKILL.md) | Publie une version d'un projet GitHub ou d'un dépôt sans dépôt distant : propose le numéro selon le versionnage sémantique d'après le journal des modifications au format Keep a Changelog, clôt la version dans le journal et livre cette clôture par une *pull request* ou par un merge local, puis pose le tag annoté après le merge et vérifie la Release, ou le tag sans dépôt distant. Embarque `journal_version.py`, script qui relève l'état du journal et des tags, clôt la version et en extrait les notes. |
-| [`setup-harness`](./skills/setup-harness/SKILL.md) | Installe la section « Harnais » — lancer / tester / vérifier — dans le fichier d'instructions d'un projet tiers (`AGENTS.md`, à défaut celui de l'agent hôte). |
+| [`pull-request`](./skills/pull-request/SKILL.md) | Crée la branche de travail, y committe les modifications, la pousse, puis ouvre ou met à jour la *pull request* GitHub par `gh` ; dans un dépôt sans dépôt distant, merge la branche de travail sur la branche par défaut. Applique les conventions et le template de PR du projet. Après le merge de la PR, nettoie le dépôt local : branche par défaut mise à jour, worktrees retirés, branches mergées supprimées. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet ne déclare ni conventions ni template de PR ; `post-merge.md`, déroulé du nettoyage post-merge ; `etat_depot.py`, script en lecture seule qui relève l'état du dépôt. |
+| [`release`](./skills/release/SKILL.md) | Publie une version d'un projet GitHub ou d'un dépôt sans dépôt distant : propose le numéro de version selon le versionnage sémantique, à partir du journal des modifications au format Keep a Changelog, clôt la version dans le journal et livre cette clôture par une *pull request* ou par un merge local, puis pose le tag annoté après le merge et vérifie la Release ou, dans un dépôt sans dépôt distant, le tag. Embarque `journal_version.py`, script qui relève l'état du journal et des tags, clôt la version et en extrait les notes. |
+| [`setup-harness`](./skills/setup-harness/SKILL.md) | Ajoute la section « Harnais » — lancer / tester / vérifier — dans le fichier d'instructions d'un projet tiers (`AGENTS.md`, à défaut celui de l'agent hôte). |
 
 ### Agents
 
 | Agent | Ce qu'il fait |
 |---|---|
 | [`audit-docs`](./agents/audit-docs.md) | Audite la structure documentaire d'un projet : accessibilité des règles, duplication, solidité du harnais. Produit un constat étayé et un lot de modifications à appliquer ; n'écrit rien lui-même. |
-| [`audit-github`](./agents/audit-github.md) | Audite l'hygiène GitHub d'un dépôt : épinglage des actions, permissions, injections et fuites possibles dans les workflows, Dependabot, checks requis, badges, version de PowerShell déclarée — la compatibilité PowerShell n'y donne lieu qu'à des avertissements. Les réglages en ligne (protection de branche, rulesets) se lisent dans la sortie de `gh api` que l'appelant fournit. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
+| [`audit-github`](./agents/audit-github.md) | Audite l'hygiène GitHub d'un dépôt : épinglage des actions, permissions, injections et fuites possibles dans les workflows, Dependabot, checks requis, badges, version de PowerShell déclarée — la compatibilité PowerShell ne donne lieu qu'à des avertissements. Les réglages du dépôt sur GitHub (protection de branche, rulesets) se lisent dans la sortie de `gh api` que l'appelant fournit. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
 | [`audit-outil`](./agents/audit-outil.md) | Audite une skill, un agent ou un hook : qualité d'écriture, étapes à confier à un script pour réduire le coût en tokens, données sensibles exposées au contexte de l'agent. Rend un constat sourcé `fichier:ligne` et un lot de modifications proposées ; n'écrit rien lui-même. |
-| [`relecture-fr`](./agents/relecture-fr.md) | Relit un document français en contexte neuf : calques de l'anglais, pronoms sans antécédent, accords, registre. Rend un constat sourcé `fichier:ligne` ; n'écrit rien lui-même. |
+| [`relecture-fr`](./agents/relecture-fr.md) | Relit un document français dans un contexte neuf et y relève les calques de l'anglais, les pronoms sans antécédent, les fautes d'accord et les écarts de registre. Rend un constat sourcé `fichier:ligne` ; n'écrit rien lui-même. |
 
 ### Hooks
 
@@ -42,16 +42,15 @@ Chaque status line est propre à un agent hôte, nommé dans son chemin :
 
 | Status line | Ce qu'elle affiche |
 |---|---|
-| [`usage-session`](./statuslines/claude/usage-session/STATUSLINE.md) | Modèle, effort, remplissage du contexte en pourcentage et en tokens, puis quotas 5 h et 7 jours de l'abonnement ou, en facturation API, coût estimé de la session, sur une ligne alignée à droite. Script PowerShell sans appel au modèle : aucun token consommé. |
+| [`usage-session`](./statuslines/claude/usage-session/STATUSLINE.md) | Modèle, effort, remplissage du contexte en pourcentage et en tokens, puis quotas de l'abonnement sur 5 h et sur 7 jours ou, en facturation API, coût estimé de la session, sur une ligne alignée à droite. Script PowerShell sans appel au modèle : aucun token consommé. |
 
 ## Dépendances entre outils
 
 Un outil peut s'appuyer sur un autre outil du dépôt plutôt que d'en recopier la
 logique : l'outil dépendant vérifie la présence de l'outil employé et s'arrête
-si celui-ci est absent. Ce tableau est la
-carte de ces dépendances : `scripts/validate.py` la compare aux références
-réelles entre outils, et `scripts/install.py --tool` installe aussi les
-dépendances de l'outil demandé.
+si celui-ci est absent. Ce tableau est la carte de ces dépendances :
+`scripts/validate.py` la compare aux références réelles entre outils, et
+`scripts/install.py --tool` installe aussi les dépendances de l'outil demandé.
 
 | Outil | Dépend de | Pour |
 |---|---|---|
@@ -61,7 +60,7 @@ dépendances de l'outil demandé.
 
 ```
 ia-tools/
-├── AGENTS.md            instructions de dépôt, seule autorité
+├── AGENTS.md            instructions du dépôt, seule autorité
 ├── CLAUDE.md            renvoi vers AGENTS.md (point d'entrée de Claude Code)
 ├── README.md            ce fichier
 ├── CHANGELOG.md         journal des modifications, une section par version
@@ -70,7 +69,7 @@ ia-tools/
 ├── docs/                règles d'écriture, installation (SETUP.md), prérequis
 ├── skills/              une skill par sous-dossier
 ├── agents/              un agent par fichier ; agents/docs/<nom>/ pour ses références
-├── hooks/               un hook par sous-dossier ; hooks/README.md en donne l'état
+├── hooks/               un hook par sous-dossier ; hooks/README.md décrit leur enregistrement
 ├── statuslines/claude/  une status line par sous-dossier, propre à Claude Code
 ├── scripts/             outillage du dépôt (réservé au développement, non installé)
 │   ├── validate.py      validateur des sources
@@ -79,7 +78,7 @@ ia-tools/
 │   └── changelog.py     contrôle du journal des modifications, notes d'une version
 ├── tests/               tests des scripts, des scripts embarqués et des status lines
 ├── .githooks/           hooks git pre-commit et commit-msg (à activer dans chaque clone)
-├── .claude/             config Claude Code du dépôt (enregistrement du hook local)
+├── .claude/             configuration Claude Code du dépôt (enregistrement du hook local)
 └── .github/             renvoi pour Copilot (copilot-instructions.md),
                          enregistrement du hook local (hooks/), intégration
                          continue (workflows/) et Dependabot (dependabot.yml)
@@ -119,8 +118,9 @@ Une installation locale obsolète est remplacée par la version du dépôt. Un
 fichier modifié à la main est signalé comme conflit et laissé intact. Le script
 ne supprime aucun fichier local et ne modifie jamais le `settings.json` d'un
 agent hôte. Une status line est donc copiée mais reste inactive tant que sa clé
-n'est pas enregistrée ([ci-dessous](#activer-une-status-line)). Procédure
-détaillée : [SETUP.md](./docs/SETUP.md).
+`statusLine` n'est pas enregistrée dans ce fichier
+([ci-dessous](#activer-une-status-line)). Procédure détaillée :
+[SETUP.md](./docs/SETUP.md).
 
 Sans le script, un outil s'installe par simple copie, avec les outils dont il
 dépend ([carte](#dépendances-entre-outils)) : le dossier
@@ -130,15 +130,15 @@ dépend ([carte](#dépendances-entre-outils)) : le dossier
 `~/.claude` pour Claude Code et `~/.copilot` pour Copilot CLI. Une copie
 manuelle ne remplace pas les placeholders `{…}` qu'un outil pourrait contenir :
 le script reste la méthode de référence. Une skill ou un agent apparaît à la
-session suivante ; une status line, au rafraîchissement suivant une fois sa clé
-enregistrée.
+session suivante ; une status line, au rafraîchissement qui suit
+l'enregistrement de sa clé `statusLine`.
 
 ### Activer une status line
 
 Une status line est facultative. `install.py --apply` copie son script avec les
 autres outils, mais Claude Code ne l'affiche qu'une fois la clé `statusLine`
-enregistrée dans `~/.claude/settings.json`, fichier que le script n'écrit
-jamais.
+enregistrée dans `~/.claude/settings.json`, fichier que `install.py` ne
+modifie jamais.
 
 1. Copier le script et obtenir la clé à enregistrer :
 
@@ -151,7 +151,7 @@ jamais.
    avec le chemin absolu du script sur la machine.
 2. Ajouter ce fragment au premier niveau de `~/.claude/settings.json`, sans
    écraser le reste du fichier. Une clé `statusLine` existante désigne une autre
-   status line : la remplacer seulement si elle n'est plus voulue.
+   status line : ne la remplacer que si cette status line n'est plus souhaitée.
 3. Relancer la commande sans `--apply` : la clé doit être signalée
    `enregistree`. La status line apparaît au rafraîchissement suivant, sans
    redémarrage.
@@ -163,10 +163,10 @@ paramètres sont décrits dans son
 ### Par un prompt
 
 Dans une session de l'agent hôte ouverte à la racine du dépôt, un chemin de
-fichier précédé de `@` joint ce fichier au prompt. L'agent dispose ainsi
-d'emblée de la procédure d'installation, sans avoir à la rechercher dans le
-dépôt, et un
-modèle moins coûteux, choisi par `/model`, suffit à la dérouler. Exemple :
+fichier précédé de `@` joint ce fichier au prompt. Joindre `docs/SETUP.md` donne
+d'emblée à l'agent la procédure d'installation, sans qu'il ait à la rechercher
+dans le dépôt. Un modèle moins coûteux, choisi par `/model`, suffit alors à la
+dérouler. Exemple :
 
 ```text
 Lis @AGENTS.md et @docs/SETUP.md, puis installe ou mets à jour les skills,
@@ -175,8 +175,9 @@ l'audit, présente-moi le périmètre et attends ma confirmation avant --apply.
 En cas de conflit, affiche l'écart avec --diff et laisse-moi choisir.
 ```
 
-Ajouter `@docs/PREREQUIS.md` au prompt pour faire d'abord vérifier les prérequis :
-l'agent dresse la liste de ce qui manque et n'installe rien sans accord.
+Ajouter `@docs/PREREQUIS.md` au prompt pour que l'agent vérifie d'abord les
+prérequis : il dresse la liste de ce qui manque et n'installe rien sans
+l'accord de l'utilisateur.
 
 ## Contribuer
 
@@ -193,7 +194,7 @@ git config core.hooksPath .githooks
 ```
 
 Le hook `validate-tool` lance aussi le validateur en fin de tour d'une session
-ouverte dans le dépôt. Lancement manuel :
+ouverte dans le dépôt. Lancement manuel du validateur et des tests :
 
 ```powershell
 python scripts/validate.py
