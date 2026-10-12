@@ -519,9 +519,9 @@ signale un test placé sous `scripts/`. Écrits avec la seule bibliothèque
 standard, les tests couvrent les contrôles de `validate.py`, de
 `check_commit_msg.py` et de `changelog.py`, le merge intelligent
 d'`install.py`, l'affichage des status lines et les scripts embarqués des
-skills ; toute vérification ajoutée à `validate.py` ou à `check_commit_msg.py`
-y reçoit son cas volontairement cassé. Les règles
-ci-dessous s'appliquent aux tests comme aux scripts.
+skills ; tout contrôle ajouté à `validate.py`, à `check_commit_msg.py` ou à
+`changelog.py` y reçoit son cas construit pour échouer. Les règles ci-dessous
+s'appliquent aux tests comme aux scripts.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
   scripts de hook, où le contrat d'appel l'impose, et aux scripts de status
@@ -551,10 +551,11 @@ ci-dessous s'appliquent aux tests comme aux scripts.
   relire la sortie pour savoir s'il reste quelque chose à faire.
 - **Aucune dépendance nouvelle** sans l'inscrire dans
   [PREREQUIS.md](PREREQUIS.md).
-- **DoD** : le script doit avoir été **lancé sur une invocation réelle**, et
-  toute vérification ajoutée doit avoir été **vue en rouge** au moins une fois
-  sur un cas volontairement cassé ([AGENTS.md](../AGENTS.md), section
-  « Definition of Done »).
+- **DoD** : le script doit avoir été **lancé en situation réelle
+  d'utilisation**, et tout contrôle ajouté ou modifié doit avoir été **observé
+  en échec** au moins une fois sur un cas construit pour échouer
+  ([AGENTS.md](../AGENTS.md), section « Definition of Done — boucle de
+  vérification »).
 
 Un script qui écrit hors du dépôt n'écrase jamais un contenu qu'il ne saurait
 reconstituer : il le signale et laisse l'utilisateur trancher.

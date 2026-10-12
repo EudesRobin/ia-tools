@@ -33,7 +33,7 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 
 | Hook | Ce qu'il fait |
 |---|---|
-| [`validate-tool`](./hooks/validate-tool/HOOK.md) | Lance `scripts/validate.py` en fin de tour et empêche l'agent de rendre la main tant que le validateur est au rouge, sous Claude Code comme sous Copilot CLI. **Local au dépôt**, non distribué. |
+| [`validate-tool`](./hooks/validate-tool/HOOK.md) | Lance `scripts/validate.py` en fin de tour et empêche l'agent de rendre la main tant que le validateur est en échec, sous Claude Code comme sous Copilot CLI. **Local au dépôt**, non distribué. |
 
 ### Status lines
 
@@ -186,7 +186,7 @@ d'écriture des outils sont dans [CONVENTIONS.md](./docs/CONVENTIONS.md) ;
 Branche protégée, commits, *pull requests*, contrôles automatiques et
 publication des versions : [CONTRIBUTING.md](./docs/CONTRIBUTING.md). Activer
 une fois par clone les hooks git, qui refusent un commit tant que le validateur
-est au rouge ou que le message de commit est non conforme :
+est en échec ou que le message de commit est non conforme :
 
 ```powershell
 git config core.hooksPath .githooks

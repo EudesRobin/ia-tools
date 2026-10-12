@@ -51,6 +51,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   un constat quand les conventions du dépôt audité admettent la dépendance
   entre outils.
 
+### 📝 Documentation
+
+- Hook local `validate-tool` : sa documentation dit « en échec » au lieu de
+  « au rouge », terme désormais écarté pour qualifier l'état d'un contrôle.
+
 ### 🧹 Maintenance
 
 - Dépôt GitHub : les tags ne peuvent plus être déplacés ni supprimés, toute

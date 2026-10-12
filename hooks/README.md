@@ -9,7 +9,7 @@ Enregistré dans la table de routage : [DOC_MAP.md](../docs/DOC_MAP.md).
 
 | Hook | Portée |
 |---|---|
-| [`validate-tool`](./validate-tool/HOOK.md) | **Local au dépôt.** Lance `scripts/validate.py` en fin de tour et empêche l'agent de rendre la main tant que le validateur est au rouge. |
+| [`validate-tool`](./validate-tool/HOOK.md) | **Local au dépôt.** Lance `scripts/validate.py` en fin de tour et empêche l'agent de rendre la main tant que le validateur est en échec. |
 
 `validate-tool` est enregistré dans deux fichiers versionnés du dépôt, un par
 agent hôte : `.claude/settings.json` pour Claude Code et
