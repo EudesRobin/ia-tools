@@ -55,7 +55,8 @@ contourner l'échec d'un contrôle en supprimant ou en affaiblissant ce contrôl
   situation réelle d'utilisation et sa sortie a été lue ; tout contrôle ajouté
   ou modifié a d'abord été observé en échec sur un cas construit pour échouer.
   Le test `tests/test_<script>.py`, s'il existe, est au vert ; pour
-  `validate.py` et `check_commit_msg.py`, ce cas est inscrit dans le test.
+  `validate.py`, `check_commit_msg.py` et `changelog.py`, ce cas est inscrit
+  dans le test.
 - **Workflow** (`.github/workflows/*.yml`) — `zizmor --offline
   .github/workflows` est au vert, et l'intégration continue a été observée au
   vert sur la *pull request*.

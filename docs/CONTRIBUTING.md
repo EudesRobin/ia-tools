@@ -19,7 +19,7 @@ git config core.hooksPath .githooks
 ```
 
 - `pre-commit` lance `scripts/validate.py` et refuse le commit tant que le
-  validateur est au rouge ; une anomalie d'environnement (code 2) est signalée
+  validateur est en échec ; une anomalie d'environnement (code 2) est signalée
   sans bloquer le commit.
 - `commit-msg` lance `scripts/check_commit_msg.py` et refuse un message non
   conforme.

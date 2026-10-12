@@ -519,9 +519,9 @@ signale un test placé sous `scripts/`. Écrits avec la seule bibliothèque
 standard, les tests couvrent les contrôles de `validate.py`, de
 `check_commit_msg.py` et de `changelog.py`, le merge intelligent
 d'`install.py`, l'affichage des status lines et les scripts embarqués des
-skills ; tout contrôle ajouté à `validate.py` ou à `check_commit_msg.py` y
-reçoit son cas construit pour échouer. Les règles ci-dessous s'appliquent aux
-tests comme aux scripts.
+skills ; tout contrôle ajouté à `validate.py`, à `check_commit_msg.py` ou à
+`changelog.py` y reçoit son cas construit pour échouer. Les règles ci-dessous
+s'appliquent aux tests comme aux scripts.
 
 - **Python.** C'est le langage d'outillage du dépôt. PowerShell est réservé aux
   scripts de hook, où le contrat d'appel l'impose, et aux scripts de status
