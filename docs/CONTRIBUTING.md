@@ -3,7 +3,7 @@
 Les règles à suivre pour livrer une modification de ce dépôt : activation des
 hooks git, commits et *pull requests*, contrôles automatiques, publication d'une
 version. La définition de « terminé » figure dans [AGENTS.md](../AGENTS.md),
-section « Definition of Done ».
+section « Definition of Done — boucle de vérification ».
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
@@ -79,7 +79,7 @@ script), le maintien de toute donnée sensible hors du contexte de l'agent
 ([CONVENTIONS.md](CONVENTIONS.md) §1.3), la cohérence sémantique entre
 documents, ni le
 respect du DoD des scripts et des workflows : qu'un script modifié a été lancé,
-qu'une vérification ajoutée a été vue en rouge, que l'exécution de l'intégration
+qu'un contrôle ajouté a été observé en échec, que l'exécution de l'intégration
 continue a été observée au vert. Ces règles s'appliquent délibérément.
 
 ## 4. Publier une version

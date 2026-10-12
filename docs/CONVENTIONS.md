@@ -551,10 +551,10 @@ ci-dessous s'appliquent aux tests comme aux scripts.
   relire la sortie pour savoir s'il reste quelque chose à faire.
 - **Aucune dépendance nouvelle** sans l'inscrire dans
   [PREREQUIS.md](PREREQUIS.md).
-- **DoD** : le script doit avoir été **lancé sur une invocation réelle**, et
-  toute vérification ajoutée doit avoir été **vue en rouge** au moins une fois
-  sur un cas volontairement cassé ([AGENTS.md](../AGENTS.md), section
-  « Definition of Done »).
+- **DoD** : le script doit avoir été **lancé en situation réelle
+  d'utilisation**, et tout contrôle ajouté doit avoir été **observé en échec**
+  au moins une fois sur un cas volontairement cassé ([AGENTS.md](../AGENTS.md),
+  section « Definition of Done — boucle de vérification »).
 
 Un script qui écrit hors du dépôt n'écrase jamais un contenu qu'il ne saurait
 reconstituer : il le signale et laisse l'utilisateur trancher.
