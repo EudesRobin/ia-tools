@@ -177,7 +177,9 @@ laissée en prose, et un examen ouvert enfermé dans un script.
 - Chaque délai, nombre de tentatives ou seuil porte un commentaire qui le
   justifie.
 - Le document dit si le script se lance ou se lit.
-- Les dépendances sont déclarées.
+- Les dépendances logicielles — paquets et programmes que l'outil suppose
+  installés — sont énoncées dans l'outil lui-même, sans renvoi vers un document
+  du dépôt qui n'est pas distribué avec lui.
 - Une opération par lot, destructive ou à fort enjeu passe par *planifier →
   valider → appliquer*, avec un plan écrit dans un fichier et validé avant
   application.

@@ -234,8 +234,10 @@ les sections utiles dans l'ordre d'exécution.
 - **`## Suivi de progression`** — pour une skill de trois étapes ou plus, en
   tête du corps et avant le déroulé, dans une section dédiée dont la forme et
   l'ordre interne sont fixés par [qualite-outils.md](qualite-outils.md) §5.
-- **`## Prérequis`** — ce que la skill suppose installé, avec un renvoi vers
-  [PREREQUIS.md](PREREQUIS.md) plutôt qu'une procédure recopiée.
+- **`## Prérequis`** — ce que la skill suppose installé, énoncé dans la skill
+  elle-même ; ni la skill ni ses scripts ne renvoient vers
+  [PREREQUIS.md](PREREQUIS.md), qui s'adresse à qui développe l'outil dans ce
+  dépôt et n'est pas distribué ([§1.7](#17-auto-suffisance-des-outils)).
 - **`## Utilisation`** — la commande ou l'appel, dans un bloc de code.
 - **`## Instructions`** — le cœur, en **étapes numérotées**, dans l'ordre
   d'exécution. Chaque étape est impérative et se suffit à elle-même. Une skill
