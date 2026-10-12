@@ -50,6 +50,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `audit-outil`, `audit-docs` : la logique recopiée d'un outil voisin devient
   un constat quand les conventions du dépôt audité admettent la dépendance
   entre outils.
+- `audit-outil` : vérifie que les dépendances logicielles d'un outil — paquets
+  et programmes qu'il suppose installés — sont énoncées dans l'outil lui-même,
+  sans renvoi vers un document du dépôt qui n'est pas distribué avec lui.
 
 ### 📝 Documentation
 

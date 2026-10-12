@@ -1,4 +1,4 @@
-# Qualité d'écriture des outils — skills, agents, hooks
+# Qualité d'écriture des outils — skills, agents, hooks, status lines
 
 Les règles qui disent si un outil est **bien écrit**, par opposition à
 **correctement structuré**. La structure — arborescence, front-matter, moindre
@@ -10,26 +10,26 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 ## Portée
 
-Toutes les sections ne s'appliquent pas aux trois types d'outil.
+Les sections ne s'appliquent pas toutes aux quatre types d'outil.
 
-| Section | Skill | Agent | Hook |
-|---|---|---|---|
-| §1 Contraintes de chargement | oui | oui | non — `HOOK.md` n'a pas de front-matter |
-| §2 Concision | oui | oui | oui |
-| §3 Découpage | oui | oui | rarement — un hook tient en un fichier |
-| §4 Latitude laissée à l'agent | oui | oui | non — le comportement d'un hook est son script |
-| §5 Déroulés et suivi de progression | oui | oui | non |
-| §6 Règles de contenu | oui | oui | oui |
-| §7 Scripts embarqués | oui | rarement | oui — c'est la section qui le concerne le plus |
-| §8 Références aux outils MCP | oui | oui | non |
-| §9 Évaluation | oui | oui | oui |
+| Section | Skill | Agent | Hook | Status line |
+|---|---|---|---|---|
+| §1 Contraintes de chargement | oui | oui | non — `HOOK.md` n'a pas de front-matter | non — `STATUSLINE.md` n'a pas de front-matter |
+| §2 Concision | oui | oui | oui | oui |
+| §3 Découpage | oui | oui | rarement — `HOOK.md` reste court | rarement — `STATUSLINE.md` reste court |
+| §4 Latitude laissée à l'agent | oui | oui | non — le comportement d'un hook est son script | non — le comportement d'une status line est son script |
+| §5 Déroulés et suivi de progression | oui | oui | non | non |
+| §6 Règles de contenu | oui | oui | oui | oui |
+| §7 Scripts embarqués | oui | rarement | oui — c'est la section qui le concerne le plus | oui — c'est la section qui la concerne le plus |
+| §8 Références aux outils MCP | oui | oui | non | non |
+| §9 Évaluation | oui | oui | oui | oui |
 
 ---
 
 ## 1. Contraintes de chargement
 
 Ces contraintes sont contrôlées au chargement de l'outil. Les enfreindre ne
-produit pas une erreur visible : l'outil est ignoré silencieusement.
+produit aucune erreur visible : l'outil est ignoré silencieusement.
 
 **`name`**
 
@@ -65,19 +65,19 @@ l'agent le sait déjà.
 
 ## 3. Découpage : limiter la longueur du document canonique
 
-Le document canonique — `SKILL.md`, le fichier d'un agent — est une vue
+Le document canonique — `SKILL.md` ou le fichier d'un agent — est une vue
 d'ensemble qui renvoie au détail. Un fichier embarqué ne coûte rien tant qu'il
 n'est pas lu : c'est ce qui rend le découpage gratuit.
 
 - **Corps de moins de 500 lignes.** Au-delà, répartir le détail dans des
   fichiers embarqués.
-- **Références à un seul niveau.** Chaque fichier embarqué est lié directement
-  depuis le document canonique. Quand une référence renvoie à une autre
-  référence, l'agent peut survoler cette seconde référence au lieu de la lire,
-  et agir à partir d'une information incomplète.
+- **Références à un seul niveau.** Le document canonique renvoie directement à
+  chaque fichier embarqué. Quand un fichier embarqué renvoie à un autre, l'agent
+  peut survoler le second au lieu de le lire, et agir à partir d'une information
+  incomplète.
 - **Sommaire au-delà de 100 lignes.** Un fichier de référence long s'ouvre par
   un sommaire, pour que sa portée reste visible même en lecture partielle.
-- **Organiser par domaine, pas par séquence, et nommer les fichiers en
+- **Organiser par domaine, pas par ordre de lecture, et nommer les fichiers en
   conséquence.** Chaque fichier embarqué couvre un domaine que son nom décrit,
   et n'est ouvert que si la tâche relève de ce domaine. Un nom qui ne marque
   qu'un rang, comme `annexe1.md`, ne dit pas quand ouvrir le fichier.
@@ -89,11 +89,11 @@ Ajuster la précision de l'instruction à la fragilité de la tâche.
 | Latitude | Forme | Quand |
 |---|---|---|
 | Large | Prose, points d'attention | Plusieurs approches valables ; la décision dépend du contexte |
-| Moyenne | Template, ou script paramétré | Un motif est préférable, une part de variation est acceptable |
+| Moyenne | Template, ou script paramétré | Un pattern est préférable, une part de variation est acceptable |
 | Étroite | Une commande exacte, sans paramètre | L'opération est fragile, la constance est critique, la séquence est fixe |
 
 Une opération fragile appelle « lancer exactement cette commande, sans ajouter
-d'option ». Un examen ouvert appelle une liste de points d'attention et aucun
+d'option ». Un examen ouvert appelle une liste de points d'attention, et non un
 script. La plupart des outils de ce dépôt relèvent à juste titre de la latitude
 étroite : la choisir délibérément, pas par défaut.
 
@@ -113,17 +113,17 @@ ce qui suit.
 
 1. **Ouvrir la liste avant la première action** du déroulé, une ligne par étape,
    formulée à l'impératif. Les marqueurs sont exactement `[ ]` non commencée,
-   `[~]` en cours, `[x]` terminée, `[-]` abandonnée — cette dernière avec une
-   raison courte sur la même ligne. Une étape porte `[~]` dès que son travail
-   est engagé, et plusieurs peuvent le porter en même temps lorsqu'elles sont
-   réellement menées en parallèle — le marqueur décrit ce qui est en cours, pas
-   une intention.
+   `[~]` en cours, `[x]` terminée, `[-]` abandonnée ; une étape abandonnée porte
+   une raison courte sur la même ligne. Une étape porte `[~]` dès que son
+   travail est engagé, et plusieurs peuvent le porter en même temps lorsqu'elles
+   sont réellement menées en parallèle — le marqueur décrit ce qui est en cours,
+   pas une intention.
 
 2. **Ré-afficher la liste entière à chaque changement d'état** : une étape
    démarre, une étape se termine, une étape est ajoutée après avoir été
    découverte en cours de route, une étape est abandonnée. Plusieurs changements
-   survenant dans une même réponse produisent un seul rendu à jour, pas un par
-   changement. La forme rendue est toujours :
+   survenant dans une même réponse donnent lieu à un seul ré-affichage de la
+   liste à jour, pas à un par changement. La forme affichée est toujours :
 
    ```markdown
    **Tâches**
@@ -136,13 +136,13 @@ ce qui suit.
    à laquelle elle s'adosse.** Une étape ne passe à `[x]` que sur une preuve
    réelle — un contrôle au vert, une ligne réellement lue, un accord explicite
    de l'utilisateur —, jamais sur une simple déclaration :
-   `[x] Valider les outils — validateur au vert` est adossé au validateur,
+   `[x] Valider les outils — validateur au vert` est adossé au validateur ;
    `[x] Valider les outils` seul ne l'est pas.
 
 4. **Clore sur la liste terminée.** La dernière réponse de la tâche se termine
-   par le rendu final, pour qu'une étape sautée y apparaisse comme non terminée.
-   La liste est un artefact de travail, pas un résumé : ne jamais la
-   reconstituer après coup pour une tâche qui n'a pas été suivie pendant son
+   par la liste dans son état final, pour qu'une étape sautée y apparaisse comme
+   non terminée. La liste est un artefact de travail, pas un résumé : ne jamais
+   la reconstituer après coup pour une tâche qui n'a pas été suivie pendant son
    déroulement.
 
 **Les deux suivis.** Quand la session expose son propre outil de liste de
@@ -150,11 +150,11 @@ tâches, c'est cet outil qui est employé et qui fait l'affichage ; le bloc
 Markdown ne s'écrit pas en double à côté. Quand aucun outil de ce type n'est
 exposé, le bloc s'écrit dans la réponse. Les deux suivis satisfont le protocole
 **à égalité** : aucun n'est un repli ni un échec, et un outil ne prescrit pas
-d'en préférer un. Un outil qui nomme le suivi applicable le déduit des outils de
-session dont il dispose réellement, et non d'une hypothèse sur la session.
+d'en préférer un. Un outil qui nomme le suivi applicable le déduit de ce que la
+session expose réellement, et non d'une hypothèse sur la session.
 
 **Quand l'appliquer.** Le suivi s'impose dès que le travail compte trois étapes
-distinctes ou plus, plusieurs fichiers ou modules touchés, ou un déroulé en
+distinctes ou plus, touche plusieurs fichiers ou modules, ou se déroule en
 phases. En deçà — une modification en une seule étape, une commande unique, une
 question directe — le formalisme coûterait plus qu'il ne rapporterait (§2). Pour
 un outil qui couvre **plusieurs cas d'usage d'ampleur inégale** — certains en
@@ -163,8 +163,8 @@ dans l'outil : énumérer les cas qui demandent le suivi et ceux qui s'en passen
 une fois pour toutes, plutôt que de laisser l'agent rejuger la question à chaque
 exécution.
 
-**Où l'énoncer.** Le protocole occupe une **section dédiée**, titrée « Suivi de
-progression — impératif » ou « — indicatif », placée **en tête de l'outil** :
+**Où l'énoncer.** Le protocole occupe une **section dédiée**, intitulée « Suivi
+de progression — impératif » ou « — indicatif », placée **en tête de l'outil** :
 après l'introduction, avant le déroulé. Elle se lit donc avant la première
 action au lieu d'être découverte au milieu des étapes. Elle porte, dans cet
 ordre : la déclaration du nombre de phases, les marqueurs et l'obligation de
@@ -175,23 +175,23 @@ vérification et ce à quoi elle s'adosse.
 (« toujours suivre ce déroulé ») ou **indicatif** (§6). L'outil ne réénonce pas
 la règle : il déclare conduire une tâche en plusieurs phases, recopie les
 marqueurs et l'obligation de ré-affichage, et fournit sa propre liste de phases
-sous l'en-tête `**Tâches**`. Ne pas nommer l'outil de liste — écrire « la liste
-de tâches de la session », car le nom change d'un environnement à l'autre. Si la
-session conditionne l'accès à sa liste de tâches au champ `tools` d'un agent,
-accorder l'outil de liste de tâches dans ce champ
+sous l'en-tête `**Tâches**`. Ne pas nommer l'outil de liste de tâches — écrire
+« la liste de tâches de la session », car le nom change d'un environnement à
+l'autre. Si la session conditionne l'accès à sa liste de tâches au champ `tools`
+d'un agent, inscrire l'outil de liste de tâches dans ce champ
 ([CONVENTIONS.md](CONVENTIONS.md) §4.1).
 
-**Auto-suffisance.** Une skill ou un agent est distribué sans `docs/` et ne
-peut pas renvoyer vers ce document ([CONVENTIONS.md](CONVENTIONS.md) §1.7). Le protocole
-se **recopie** dans l'outil, adapté à son déroulé ; l'outil ne renvoie pas vers
-lui par un lien.
+**Auto-suffisance.** Une skill ou un agent est distribué sans `docs/` et ne peut
+pas renvoyer vers ce document ([CONVENTIONS.md](CONVENTIONS.md) §1.7). Le
+protocole se **recopie** dans l'outil, adapté à son déroulé, au lieu d'être cité
+par un lien.
 
-**Boucles de vérification.** La boucle est *lancer → observer → corriger →
-relancer*, et c'est le levier de qualité le plus fort. Le contrôle n'a pas à
-être un script : un document de style que l'agent relit et auquel il compare son
-travail en est un. Énoncer la boucle, sa condition de sortie (« ne poursuivre
-qu'une fois le contrôle au vert ») et le point de retour en cas d'échec
-(« reprendre à l'étape 2 »).
+**Boucles de vérification.** La boucle consiste à lancer le contrôle, lire le
+résultat, corriger les défauts relevés, puis le relancer ; c'est le levier de
+qualité le plus fort. Le contrôle n'a pas à être un script : un guide de style
+que l'agent relit et auquel il compare son travail tient le même rôle. Énoncer
+la boucle, sa condition de sortie (« ne poursuivre qu'une fois le contrôle au
+vert ») et le point de retour en cas d'échec (« reprendre à l'étape 2 »).
 
 ## 6. Règles de contenu
 
@@ -230,23 +230,25 @@ exécution à l'autre.
   jugement : choisir, arbitrer, rédiger, interpréter un cas imprévu. Le script
   n'est plus une option mais une obligation dès qu'une donnée sensible est en
   jeu ([CONVENTIONS.md](CONVENTIONS.md) §1.3).
-- **Résoudre plutôt que reporter.** Traiter les cas d'erreur dans le script —
-  fichier absent, autorisation refusée — au lieu de laisser remonter une
-  exception que l'agent devra interpréter.
+- **Résoudre plutôt que renvoyer à l'agent.** Traiter les cas d'erreur dans le
+  script — fichier absent, autorisation refusée — au lieu de laisser remonter
+  une exception que l'agent devra interpréter.
 - **Aucune constante injustifiée.** Chaque délai, chaque nombre de tentatives,
   chaque seuil porte un commentaire qui explique sa valeur. Une valeur que
   l'auteur ne sait pas justifier est une valeur sur laquelle l'agent ne peut pas
   raisonner non plus.
 - **Dire si le script se lance ou se lit** : « lancer `<script>` pour
   … » ou « lire `<script>` pour … ». Sans précision, le script est à lancer.
-- **Déclarer les dépendances.** Ne pas supposer qu'un paquet est installé ;
-  lister les dépendances, en renvoyant vers [PREREQUIS.md](PREREQUIS.md)
-  plutôt qu'en recopiant une procédure.
+- **Déclarer les dépendances logicielles.** Ne pas supposer en silence qu'un
+  paquet ou un programme est installé : l'outil énonce lui-même ce qu'il suppose
+  installé. [PREREQUIS.md](PREREQUIS.md) s'adresse à qui développe l'outil dans
+  ce dépôt ; ni l'outil ni ses scripts n'y renvoient, car `docs/` n'est pas
+  distribué ([CONVENTIONS.md](CONVENTIONS.md) §1.7).
 - **Passer par un état intermédiaire contrôlable.** Pour une opération par lot,
   destructive ou à fort enjeu, employer *planifier → valider → appliquer* :
-  faire écrire un plan dans un fichier, le valider par un script, et n'appliquer
-  qu'ensuite. Les erreurs sont détectées avant toute modification, et le plan se
-  reprend sans toucher aux fichiers d'origine.
+  faire écrire un plan dans un fichier, le valider par un script, et ne
+  l'appliquer qu'ensuite. Les erreurs sont détectées avant toute modification,
+  et le plan se reprend sans toucher aux fichiers d'origine.
 - **Rendre les messages de validation précis.** Un message qui désigne le
   fichier, le champ, la valeur trouvée et la valeur attendue permet de
   corriger l'erreur sans autre recherche ; « validation en échec » ne dit
@@ -255,8 +257,8 @@ exécution à l'autre.
 ## 8. Références aux outils MCP
 
 Quand un outil prescrit d'appeler un outil MCP, employer la forme qualifiée
-`Serveur:nom_outil`. Sans le préfixe de serveur, la résolution peut échouer, en
-particulier quand plusieurs serveurs MCP sont connectés.
+`Serveur:nom_outil`. Sans le préfixe de serveur, la résolution du nom de l'outil
+MCP peut échouer, en particulier quand plusieurs serveurs MCP sont connectés.
 
 ## 9. Évaluation et itération
 
@@ -267,7 +269,7 @@ installé puis validé par l'utilisateur avant tout commit et tout push
 
 **Les scénarios d'évaluation sont facultatifs** : les suggérer à l'utilisateur
 quand l'outil s'y prête, sans les exiger. Quand ils sont retenus, les
-construire avant la documentation, pour que l'outil réponde à des défaillances
+construire avant de rédiger l'outil, pour que l'outil réponde à des défaillances
 observées et non supposées :
 
 1. Faire traiter des tâches représentatives **sans** l'outil, et relever les
@@ -275,19 +277,20 @@ observées et non supposées :
 2. Construire au moins trois scénarios couvrant ces manques.
 3. Établir le résultat de référence sans l'outil.
 4. Écrire le minimum d'instructions qui comble les manques.
-5. Rejouer, comparer à la référence, affiner.
+5. Rejouer les scénarios avec l'outil, comparer les résultats obtenus au
+   résultat de référence, puis affiner les instructions.
 
 Un scénario tient en quelques lignes : les outils chargés, la demande, les
 fichiers d'entrée, et le comportement attendu sous forme d'énoncés observables.
 Rien n'automatise ici l'exécution de ces scénarios : elle est manuelle.
 
-**Itérer sur deux sessions.** Employer une session pour écrire et affiner
+**Itérer avec deux sessions.** Employer une session pour écrire et affiner
 l'outil, et une session neuve pour l'**utiliser** sur du travail réel. Observer
-la seconde et ramener les observations dans la première : quel fichier a été lu
+la seconde et en reporter les constats dans la première : quel fichier a été lu
 en premier, quelle référence n'a jamais été ouverte, quelle règle énoncée n'a
-pas été appliquée. Réorganiser d'après le comportement observé, pas d'après une
-supposition — une règle ignorée demande en général à être rendue plus visible ou
-formulée plus fermement, pas à être répétée.
+pas été appliquée. Réorganiser l'outil d'après le comportement observé, pas
+d'après une supposition — une règle ignorée demande en général à être rendue
+plus visible ou formulée plus fermement, pas à être répétée.
 
 ## 10. Écarts locaux — où `CONVENTIONS.md` prévaut
 
@@ -298,25 +301,25 @@ autorité.
 
 | Règle générale | Position de ce dépôt |
 |---|---|
-| `description` à la troisième personne (« Convertit un document… ») | Ce dépôt écrit les `description` des skills comme des agents à l'**infinitif** (« Convertir un document Markdown… »), forme idiomatique en français pour désigner une capacité. `CONVENTIONS.md` §2.1 et §4.1 font autorité |
-| Nom d'outil au gérondif (`processing-pdfs`) | Ce dépôt emploie le groupe nominal ou le verbe d'action — `clean-android-tv`, `setup-harness` |
-| `allowed-tools` obligatoire | `CONVENTIONS.md` §2.1 le rend facultatif ; le moindre privilège du §2.2 s'applique dès que le champ est renseigné |
+| `description` à la troisième personne (« Convertit un document… ») | Ce dépôt écrit les `description` des skills et des agents à l'**infinitif** (« Convertir un document Markdown… »), forme idiomatique en français pour désigner une capacité. `CONVENTIONS.md` §2.1 et §4.1 font autorité |
+| Nom d'outil formé sur un verbe en -ing (`processing-pdfs`) | Ce dépôt emploie le groupe nominal ou le verbe d'action — `clean-android-tv`, `setup-harness` |
+| `allowed-tools` obligatoire | `CONVENTIONS.md` §2.1 le rend facultatif ; le moindre privilège de son §2.2 s'applique dès que le champ est renseigné |
 | Liste de déclencheurs incluant la forme `/nom` | `CONVENTIONS.md` §2.1 exige « À utiliser quand… », formulé avec les mots de l'utilisateur ; la forme `/nom` n'est pas requise |
-| Placeholder d'un dossier d'agent, pour un outil installable sous plusieurs environnements | **Reprise.** Les outils sont installés pour Claude Code et Copilot CLI : la racine de l'agent hôte s'écrit `{AGENT_DIR}` (`CONVENTIONS.md` §1.2) |
-| Prose neutre entre outils (« l'agent », jamais « Claude ») | **Reprise**, avec une réserve : `CONVENTIONS.md` §1.9 admet de nommer Claude ou Copilot pour un comportement propre à l'un d'eux |
-| Au moins trois scénarios d'évaluation pour chaque outil | **Non repris.** Les scénarios sont facultatifs, suggérés à l'utilisateur et jamais exigés ; l'emploi de l'outil installé, validé par l'utilisateur avant tout commit et tout push ([CONTRIBUTING.md](CONTRIBUTING.md) §2), fait foi (§9) |
-| Séparateurs de chemin en `/` sans exception | **Non repris.** Ce dépôt ne fixe aucune convention de séparateur et n'a aucun script embarqué qui construise un chemin absolu ; la règle serait sans objet |
+| Placeholder de la racine de l'agent hôte, pour un outil installable sous plusieurs environnements | **Reprise.** Les outils sont installés pour Claude Code et Copilot CLI : la racine de l'agent hôte s'écrit `{AGENT_DIR}` (`CONVENTIONS.md` §1.2) |
+| Prose neutre quant à l'agent hôte (« l'agent », jamais « Claude ») | **Reprise**, avec une réserve : `CONVENTIONS.md` §1.9 admet de nommer Claude ou Copilot pour un comportement propre à l'un d'eux |
+| Au moins trois scénarios d'évaluation pour chaque outil | **Non reprise.** Les scénarios sont facultatifs, suggérés à l'utilisateur et jamais exigés ; l'emploi de l'outil installé, validé par l'utilisateur avant tout commit et tout push ([CONTRIBUTING.md](CONTRIBUTING.md) §2), fait foi (§9) |
+| Séparateurs de chemin en `/` sans exception | **Non reprise.** Ce dépôt ne fixe aucune convention de séparateur et n'a aucun script embarqué qui construise un chemin absolu ; la règle serait sans objet |
 
 ## 11. Checklist
 
 Les items marqués **[mécanique]** sont vérifiés par `scripts/validate.py`. Les
-autres relèvent du jugement : rien ne les vérifie mécaniquement ; ils dépendent
-de la seule prose de ce document.
+autres relèvent du jugement : rien ne les vérifie mécaniquement ; leur
+application ne repose que sur la prose de ce document.
 
 **Qualité de base**
 
-- [ ] **[mécanique]** `name` tient en 64 caractères et n'emploie que minuscules,
-      chiffres et traits d'union.
+- [ ] **[mécanique]** `name` tient en 64 caractères et n'emploie que des
+      minuscules, des chiffres et des traits d'union.
 - [ ] **[mécanique]** `name` et `description` ne contiennent aucune balise XML.
 - [ ] **[mécanique]** `description` est non vide et tient en 1 024 caractères.
 - [ ] **[mécanique]** Le corps tient en moins de 500 lignes.
@@ -326,7 +329,7 @@ de la seule prose de ce document.
 - [ ] Le détail est scindé en fichiers embarqués plutôt que de gonfler le corps.
 - [ ] Les références sont à un seul niveau depuis le document canonique.
 - [ ] Tout fichier de référence de plus de 100 lignes s'ouvre par un sommaire.
-- [ ] Aucune information datée, ou elle est reléguée dans une section dédiée.
+- [ ] Toute information datée est reléguée dans une section dédiée.
 - [ ] La terminologie est constante et conforme à [VOCABULARY.md](VOCABULARY.md).
 - [ ] Les exemples sont concrets plutôt qu'abstraits.
 - [ ] La latitude laissée à l'agent correspond à la fragilité de la tâche.
@@ -340,11 +343,12 @@ de la seule prose de ce document.
 
 - [ ] Les étapes déterministes sont confiées à un script, et l'agent ne garde
       que ce qui demande un jugement.
-- [ ] Aucune donnée sensible ne transite par le contexte de l'agent : un script
-      la lit et l'emploie ([CONVENTIONS.md](CONVENTIONS.md) §1.3).
+- [ ] Les données sensibles sont lues et employées par un script, sans
+      transiter par le contexte de l'agent ([CONVENTIONS.md](CONVENTIONS.md)
+      §1.3).
 - [ ] Le script traite ses propres cas d'erreur.
 - [ ] Chaque constante est justifiée par un commentaire.
-- [ ] Les dépendances sont déclarées.
+- [ ] Les dépendances logicielles sont déclarées.
 - [ ] Le document dit si le script se lance ou se lit.
 - [ ] Une validation existe pour toute opération destructive ou par lot.
 
@@ -352,5 +356,5 @@ de la seule prose de ce document.
 
 - [ ] L'outil a été employé sur du travail réel, dans une session neuve, pas
       seulement sur des cas construits.
-- [ ] Si l'outil s'y prête, des scénarios d'évaluation, dont la rédaction
-      reste facultative, ont été suggérés à l'utilisateur.
+- [ ] Si l'outil s'y prête, des scénarios d'évaluation, facultatifs, ont été
+      suggérés à l'utilisateur.
