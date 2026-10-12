@@ -32,17 +32,17 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
   hôte concerné ([§3.3](#33-status-lines-statuslinesclaudenom)).
 
 L'agent est un fichier à plat, pas un dossier : c'est la structure attendue sous
-`{AGENT_DIR}/agents/`, celle que [SETUP.md](SETUP.md) copie et celle que
-`scripts/validate.py` contrôle. Pour Copilot CLI, l'installation le renomme
-`<nom>.agent.md` ; le dépôt ne porte que `<nom>.md`.
+`{AGENT_DIR}/agents/`, celle que la procédure de [SETUP.md](SETUP.md) copie et
+celle que `scripts/validate.py` contrôle. Pour Copilot CLI, l'installation le
+renomme en `<nom>.agent.md` ; le dépôt ne porte que `<nom>.md`.
 
 ### 1.2 Aucun chemin local en dur
 
 Aucun fichier versionné ne doit contenir de chemin utilisateur réel
 (`C:\Users\<nom>\…`, `/home/<nom>/…`). Employer un placeholder `{NOM_VARIABLE}`,
-déclaré dans la table des variables de [SETUP.md](SETUP.md), que l'installation
-remplace par la valeur locale. Cette règle est contrôlée mécaniquement par
-`scripts/validate.py`.
+déclaré dans la table des placeholders de [SETUP.md](SETUP.md), que
+l'installation remplace par la valeur locale. Cette règle est contrôlée
+mécaniquement par `scripts/validate.py`.
 
 La racine de l'agent hôte s'écrit `{AGENT_DIR}` : `~/.claude` pour Claude Code,
 `~/.copilot` pour Copilot CLI. Un chemin propre à un seul agent hôte
@@ -50,15 +50,15 @@ La racine de l'agent hôte s'écrit `{AGENT_DIR}` : `~/.claude` pour Claude Code
 agent hôte.
 
 La forme `<...>` désigne une valeur renseignée à l'exécution, par l'utilisateur
-ou par l'agent (`<IP_TV>`, `<nom>`) : elle n'est jamais substituée à
-l'installation.
+ou par l'agent (`<IP_TV>`, `<nom>`) : elle n'est jamais remplacée lors
+de l'installation.
 
 ### 1.3 Aucun secret dans le dépôt
 
-Jetons, identifiants et paramètres personnels restent hors du dépôt. Un outil
-qui a besoin d'une valeur sensible la lit au moment de son exécution, ne
+Jetons d'accès, identifiants et paramètres personnels restent hors du dépôt. Un
+outil qui a besoin d'une valeur sensible la lit au moment de son exécution, ne
 l'affiche jamais, ne la consigne jamais dans un journal et ne la recopie jamais
-dans un message de commit ou une description de *pull request*.
+dans un message de commit ou une description de *pull request* (PR).
 
 Une **donnée sensible** — jeton d'accès, mot de passe, clé privée, cookie de
 session, contenu d'un fichier d'identifiants — ne transite pas non plus par le
@@ -82,8 +82,8 @@ neuf, et l'installation ne doit ni le créer, ni l'écraser, ni le supprimer.
 
 Aucun `Co-Authored-By: Claude`, aucun « Generated with Claude Code », aucun
 équivalent — ni dans un message de commit, ni dans le titre ou la description
-d'une *pull request*, ni dans une sortie produite par un outil. Cette règle
-prévaut sur le comportement par défaut de tout template.
+d'une PR, ni dans une sortie produite par un outil. Cette règle prévaut sur le
+comportement par défaut de tout template.
 
 ### 1.6 Enregistrer tout outil ajouté
 
@@ -105,25 +105,27 @@ s'installe **isolément** : l'utilisateur peut copier
   installé. `scripts/validate.py` refuse, dans une skill, un agent ou une
   status line, tout lien relatif qui sort du dossier de l'outil ; pour un
   agent, le périmètre admis est son fichier et `agents/docs/<nom>/`.
-- **Répéter plutôt que renvoyer vers ce qui n'est pas distribué.** Si un outil
-  a besoin d'une règle ou d'un template qui figure dans `docs/` ou ailleurs
-  hors des outils, le recopier dans l'outil. Cette duplication est délibérée :
-  elle garantit que l'outil fonctionne sans `docs/`. Elle doit alors être
-  déclarée au [§1.8](#18-règles-dupliquées-à-tenir-synchrones).
-- **S'appuyer sur un autre outil du dépôt plutôt que d'en recopier la
-  logique.** Un outil peut employer un autre outil du dépôt — skill ou agent,
-  ou l'un de leurs scripts embarqués — au lieu d'en reproduire le déroulé.
-  L'outil dépendant désigne l'outil employé par son chemin installé
+- **Répéter plutôt que renvoyer vers ce qui n'est pas distribué.** Si un outil a
+  besoin d'une règle ou d'un template qui figure dans `docs/` ou ailleurs hors
+  des outils, recopier cette règle ou ce template dans l'outil. Cette
+  duplication est délibérée : elle garantit que l'outil fonctionne sans `docs/`.
+  Elle doit alors être déclarée au
+  [§1.8](#18-règles-dupliquées-à-tenir-synchrones).
+- **S'appuyer sur un autre outil du dépôt plutôt que d'en recopier la logique.**
+  Un outil peut employer un autre outil du dépôt — skill ou agent, ou l'un de
+  leurs scripts embarqués — au lieu d'en reproduire le déroulé. L'outil
+  dépendant désigne l'outil employé par son chemin d'installation
   (`{AGENT_DIR}/skills/<autre>/…`, `{AGENT_DIR}/agents/<autre>.md`) ou par son
-  nom (« la skill `<autre>` », « l'agent `<autre>` »). Les prérequis de l'outil
-  dépendant vérifient la présence de l'outil employé sous `{AGENT_DIR}` ; si
-  l'outil employé est absent, l'outil dépendant s'arrête et indique comment
-  l'installer : `python scripts/install.py --tool <autre> --apply` depuis un
-  clone du dépôt, à défaut une copie de son dossier. Toute dépendance est
-  déclarée dans la carte de [README.md](../README.md#dépendances-entre-outils) :
-  `scripts/validate.py` compare cette carte aux références réelles entre
-  outils, dans les deux sens, et `scripts/install.py --tool` installe aussi
-  les dépendances de l'outil demandé.
+  nom (« la skill `<autre>` », « l'agent `<autre>` »). L'outil dépendant
+  vérifie, dans ses prérequis, la présence de l'outil employé sous `{AGENT_DIR}`
+  ; si l'outil employé est absent, l'outil dépendant s'arrête et indique comment
+  installer l'outil employé : `python scripts/install.py --tool <autre> --apply`
+  depuis un clone du dépôt, à défaut une copie de son dossier. Toute dépendance
+  est déclarée dans la carte de
+  [README.md](../README.md#dépendances-entre-outils) : `scripts/validate.py`
+  compare cette carte aux références réelles entre outils, dans les deux sens,
+  et `scripts/install.py --tool` installe aussi les dépendances de l'outil
+  demandé.
 
 ### 1.8 Règles dupliquées à tenir synchrones
 
@@ -144,7 +146,8 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 | Donnée sensible tenue hors du contexte de l'agent | ce document [§1.3](#13-aucun-secret-dans-le-dépôt), [agents/audit-outil.md](../agents/audit-outil.md) et [agents/audit-github.md](../agents/audit-github.md) |
 | Duplication entre outils exclue des constats, sauf dans un dépôt qui admet la dépendance entre outils | [agents/audit-outil.md](../agents/audit-outil.md) et [agents/audit-docs.md](../agents/audit-docs.md) |
 
-La ligne relative à la lecture d'`AGENTS.md` tient au chargement : chaque
+La ligne relative à la lecture d'`AGENTS.md` s'explique par le chargement des
+instructions : chaque
 agent hôte lit son propre fichier d'entrée, et `AGENTS.md` doit être atteint
 depuis chacun d'eux. Les lignes du suivi des tâches, des conventions de commit,
 du registre, de la commande d'enregistrement, de la grille de qualité et de la
@@ -209,8 +212,8 @@ allowed-tools:          # FACULTATIF — moindre privilège, voir §2.2
   emploierait réellement, pas avec le vocabulaire interne de la skill. La
   première partie s'écrit **à l'infinitif** — « Convertir un document
   Markdown… », jamais « Convertit… » ni « Cette skill convertit… » : c'est la
-  forme qui désigne une capacité en français, et elle est uniforme sur tout le
-  dépôt.
+  forme qui désigne une capacité en français, et elle est employée uniformément
+  dans tout le dépôt.
 - **`allowed-tools`** — facultatif. Il est préférable de le renseigner dans
   toute nouvelle skill dont le périmètre d'outils est identifiable. Ce champ n'est
   appliqué que par Claude Code ; Copilot CLI l'ignore, si bien qu'il ne remplace
@@ -231,9 +234,9 @@ autorisé par son chemin complet ([§2.4](#24-fichiers-embarqués)). N'ajouter
 Après le front-matter : un titre `#` lisible, une phrase d'introduction, puis
 les sections utiles dans l'ordre d'exécution.
 
-- **`## Suivi de progression`** — pour une skill de trois étapes ou plus, en
-  tête du corps et avant le déroulé, dans une section dédiée dont la forme et
-  l'ordre interne sont fixés par [qualite-outils.md](qualite-outils.md) §5.
+- **`## Suivi de progression`** — section placée en tête du corps et avant le
+  déroulé, pour une skill de trois étapes ou plus ; sa forme et son ordre
+  interne sont fixés par [qualite-outils.md](qualite-outils.md) §5.
 - **`## Prérequis`** — ce que la skill suppose installé, énoncé dans la skill
   elle-même ; ni la skill ni ses scripts ne renvoient vers
   [PREREQUIS.md](PREREQUIS.md), qui s'adresse à qui développe l'outil dans ce
@@ -245,8 +248,9 @@ les sections utiles dans l'ordre d'exécution.
   liste de tâches de la session, selon le protocole de suivi de progression
   ([qualite-outils.md](qualite-outils.md) §5) : elle fournit sa propre liste de
   phases sous l'en-tête `**Tâches**` plutôt que de réénoncer la règle. Ce
-  qu'elle reprend se **recopie** dans la skill, adapté à son déroulé : le
-  [§1.7](#17-auto-suffisance-des-outils) interdit d'y renvoyer par un lien. Une
+  qu'elle reprend du protocole se **recopie** dans la skill, adapté à son
+  déroulé : le [§1.7](#17-auto-suffisance-des-outils) interdit de renvoyer par
+  un lien à [qualite-outils.md](qualite-outils.md). Une
   skill de deux étapes en est dispensée ; une skill qui couvre plusieurs cas
   d'usage d'ampleur inégale énumère ceux qui demandent le suivi et ceux qui s'en
   passent, plutôt que de laisser l'agent rejuger la question à chaque exécution.
@@ -261,7 +265,7 @@ toute commande ou tout template à reproduire tel quel.
 
 Les scripts, feuilles de style et documents de référence sont placés à côté de
 `SKILL.md`, dans le dossier de la skill, et sont référencés par un chemin
-relatif à ce dossier. La skill appelle le script plutôt que d'en réimplanter la
+relatif à ce dossier. La skill appelle le script plutôt que d'en recopier la
 logique dans ses instructions. L'installation copie le dossier entier, fichier
 par fichier ([SETUP.md](SETUP.md) §3) : aucune déclaration n'est nécessaire pour
 qu'un fichier embarqué soit installé.
@@ -272,24 +276,24 @@ bibliothèque standard : Python est déjà requis par l'installation
 [§7](#7-scripts-doutillage-du-dépôt-scripts-et-tests-tests) sur les identifiants, les messages
 sans accents, la sortie compacte et les codes de sortie `0` / `1` / `2`.
 
-La skill l'autorise dans `allowed-tools` par une règle portant son chemin
-complet, où seuls les arguments varient :
+La skill autorise le script dans `allowed-tools` par une règle portant son
+chemin complet, où seuls les arguments varient :
 `Bash(python {AGENT_DIR}/skills/<nom>/<script>.py *)`, à laquelle s'ajoute la
 règle `Bash(python --version)` pour la vérification du prérequis. Claude Code
 compare le texte littéral de la commande à cette règle, sans développer de
 chemin : la skill prescrit donc d'écrire l'appel exactement sous la forme
-`python {AGENT_DIR}/skills/<nom>/<script>.py …`, sans guillemets, le shell
-développant lui-même un `~` placé hors guillemets ; seul Windows
-PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé. Un `*` placé
-avant le chemin complet laisserait passer tout code, comme `Bash(python:*)`.
-Un chemin qui contient une espace impose des guillemets : l'appel passe alors
-par une demande de confirmation, ce que la section « Utilisation » de la skill
-signale, sans renvoyer à la procédure d'installation.
+`python {AGENT_DIR}/skills/<nom>/<script>.py …`, sans guillemets. Le shell
+développe lui-même un `~` placé hors guillemets ; seul Windows PowerShell 5.1 ne
+le fait pas, et le chemin s'y écrit développé. Un `*` placé avant le chemin
+complet laisserait passer tout code, comme `Bash(python:*)`. Un chemin qui
+contient une espace impose des guillemets : l'appel passe alors par une demande
+de confirmation, ce que la section « Utilisation » de la skill signale, sans
+renvoyer à la procédure d'installation.
 
 Le script est testé par `tests/test_<script>.py` sans le matériel ni le
 service qu'il pilote : un faux exécutable y rejoue des sorties enregistrées.
 `scripts/validate.py` contrôle la syntaxe du script. Dans un script embarqué,
-une majuscule entre accolades serait prise pour un placeholder
+un nom en majuscules entre accolades serait pris pour un placeholder
 ([§1.2](#12-aucun-chemin-local-en-dur)), y compris dans une f-string : l'éviter.
 
 ---
@@ -315,19 +319,19 @@ Pas de front-matter. Sections attendues :
   contexte (extension de fichier, présence d'un marqueur de projet, contenu du
   payload reçu) et sortir silencieusement sinon. Un hook doit être sans
   effet là où il ne s'applique pas.
-- **Un hook distribué ne bloque jamais.** Sortie 0 en toutes circonstances, les
-  erreurs étant écrites sur la sortie d'erreur standard. Un hook installé
-  globalement s'exécute dans tous les projets : une défaillance ne doit jamais
-  interrompre le travail en cours.
+- **Un hook distribué ne bloque jamais.** Code de sortie 0 en toutes
+  circonstances, les erreurs étant écrites sur la sortie d'erreur standard. Un
+  hook installé globalement s'exécute dans tous les projets : une défaillance ne
+  doit jamais interrompre le travail en cours.
 - **Cas particulier : les hooks de vérification.** Un hook dont l'objet *est* de
   bloquer, comme `hooks/validate-tool/`, bloque volontairement la fin du tour
   quand son contrôle échoue. C'est la seule catégorie autorisée à le faire, et
-  elle est réservée aux hooks enregistrés **localement à un dépôt**, jamais
+  elle est réservée aux hooks enregistrés **au niveau d'un dépôt**, jamais
   globalement. Un tel hook doit se prémunir contre les boucles : il plafonne le
   nombre de blocages consécutifs dans un même tour, puis se termine sans
   bloquer. Il ne bloque pas non plus en cas d'anomalie d'environnement
-  (interpréteur ou dépendance absents), qui n'est pas un défaut du travail
-  produit.
+  (interpréteur ou dépendance logicielle absents), qui n'est pas un défaut du
+  travail produit.
 - **Contrat commun aux deux agents hôtes.** Un hook destiné à Claude Code et à
   Copilot CLI bloque en écrivant sur la sortie standard l'objet JSON
   `{"decision": "block", "reason": "…"}` et en se terminant avec le code 0 :
@@ -342,10 +346,10 @@ Pas de front-matter. Sections attendues :
 Une status line est un dossier dont Claude Code exécute le script à chaque
 rafraîchissement de sa barre d'état. Elle est **propre à Claude Code**, ce que
 signale le dossier `claude/` de son chemin : `scripts/install.py` ne l'examine
-pour aucun autre agent hôte, et `scripts/validate.py` refuse sous
-`statuslines/` tout dossier qui ne nomme pas un agent hôte doté de status lines
-par `install.py`. L'installation ne reprend pas ce dossier intermédiaire : la cible
-est `~/.claude/statuslines/<nom>/`.
+pour aucun autre agent hôte, et `scripts/validate.py` refuse sous `statuslines/`
+tout dossier qui ne porte pas le nom d'un agent hôte pour lequel `install.py`
+gère des status lines. L'installation ne reprend pas ce dossier intermédiaire :
+la cible est `~/.claude/statuslines/<nom>/`.
 
 - **`STATUSLINE.md`**, sans front-matter, reprend les sections de `HOOK.md`
   ([§3.1](#31-structure-de-hookmd)) : « Ce qu'elle affiche », avec ce qu'elle
@@ -354,10 +358,10 @@ est `~/.claude/statuslines/<nom>/`.
   ([§1.7](#17-auto-suffisance-des-outils)).
 - **`statusline.ps1`** lit le payload JSON sur son entrée standard et écrit une
   ligne sur sa sortie standard. Il ne fait aucun appel au modèle.
-- **Elle n'échoue jamais.** Sur un payload absent, illisible ou incomplet, le
-  script produit un affichage réduit et se termine avec le code 0, sans rien
-  écrire sur la sortie d'erreur.
-  Tout champ facultatif du payload est lu de façon tolérante.
+- **Elle n'échoue jamais.** Quand le payload est absent, illisible ou incomplet,
+  le script produit un affichage réduit et se termine avec le code 0, sans rien
+  écrire sur la sortie d'erreur. Tout champ facultatif du payload est lu de
+  façon tolérante.
 - **Elle est sans état.** Elle n'écrit aucun fichier : elle s'exécute plusieurs
   fois par minute.
 - **Compatible avec PowerShell 5.1 et 7.** Pas d'opérateur propre à
@@ -395,12 +399,13 @@ tools: Read, Grep, Glob # OBLIGATOIRE — moindre privilège
 ---
 ```
 
-- **`description`** — c'est elle qui décide de la délégation automatique. Y
-  énoncer les conditions de déclenchement aussi explicitement que dans une skill,
-  et, comme pour une skill, l'écrire **à l'infinitif** — « Auditer la structure
-  documentaire… », jamais « Audite… » ([§2.1](#21-front-matter)).
+- **`description`** — c'est d'après elle que l'agent hôte décide de la
+  délégation automatique. Y énoncer les conditions de déclenchement aussi
+  explicitement que dans une skill, et, comme pour une skill, en écrire la
+  première partie **à l'infinitif** — « Auditer la structure documentaire… »,
+  jamais « Audite… » ([§2.1](#21-front-matter)).
 - **`tools`** — noms d'outils simples (`Read`, `Grep`, `Glob`, `Edit`, `Write`,
-  `Bash`), et non les motifs restreints à un préfixe `Bash(cmd:*)` des skills.
+  `Bash`), et non les règles restreintes à un préfixe `Bash(cmd:*)` des skills.
   Appliquer le moindre privilège : **omettre `Write`, `Edit` et `Bash` sauf
   besoin réel**. Un agent d'analyse privé d'outil d'écriture ne peut pas
   rapporter une modification qu'il n'a pas faite — c'est une garantie, pas une
@@ -425,15 +430,15 @@ tools: Read, Grep, Glob # OBLIGATOIRE — moindre privilège
 ### 4.2 Corps
 
 Un titre `#`, une introduction courte qui pose la persona, puis les sections qui
-décrivent **comment l'agent raisonne** : ses conventions, ses contrôles, ses
+décrivent **comment l'agent raisonne** : ses conventions, ses critères, ses
 garde-fous, et un déroulé numéroté. La `description` du front-matter dit *quand*
 l'agent intervient ; le corps dit *comment* il procède.
 
 Un agent dont le déroulé compte **trois étapes ou plus** prescrit de suivre ce
 déroulé dans la liste de tâches de la session, aux mêmes conditions qu'une skill
-([§2.3](#23-structure-du-corps)) : protocole recopié et non lié, liste de phases
-fournie sous l'en-tête `**Tâches**`, cas d'usage énumérés pour un agent qui en
-couvre plusieurs, outil de liste accordé dans `tools`
+([§2.3](#23-structure-du-corps)) : protocole recopié et non désigné par un lien,
+liste de phases fournie sous l'en-tête `**Tâches**`, cas d'usage énumérés pour
+un agent qui en couvre plusieurs, outil de liste de tâches accordé dans `tools`
 ([§4.1](#41-front-matter)), section dédiée en tête du corps et avant le déroulé.
 Deux exigences s'ajoutent, propres aux sous-agents : **nommer le suivi** qui
 s'applique d'après les outils accordés, et **répéter la liste terminée en tête
@@ -470,25 +475,25 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
       étapes ou plus — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]`
       `[-]`, contrôlés par `scripts/validate.py` — ou son omission délibérément
       assumée ([qualite-outils.md](qualite-outils.md) §5).
-- [ ] **`python scripts/validate.py` sort au vert.**
+- [ ] **`python scripts/validate.py` est au vert.**
 
 ## 6. Checklist — ajouter un document de fond
 
 Un document de fond explique le *pourquoi* des règles (harnais, injection de
-contexte, stratégie de modèles…). Ce n'est pas un outil : rien des §§1.1 à 4 ne
-s'y applique, hormis le registre de rédaction. Il n'est pas terminé tant que
-tout ceci n'est pas fait :
+contexte, stratégie de modèles…). Ce n'est pas un outil : aucune règle des §§1.1
+à 4 ne s'y applique, hormis le registre de rédaction. Il n'est pas terminé tant
+que tout ceci n'est pas fait :
 
 - [ ] Il est **enregistré dans [DOC_MAP.md](DOC_MAP.md)**, dans la table
       « Où chercher », avec une entrée formulée par intention (« Avant de… »).
-- [ ] Il est **atteint par la table**. `DOC_MAP.md` est le point de routage
-      par intention, et tout nouveau document de fond y entre. `AGENTS.md` ne
-      lie directement un document de fond que lorsqu'une de ses propres règles
-      en dépend — c'est le cas de `CONVENTIONS.md`, cité par le DoD et par la
-      règle de registre, de `VOCABULARY.md`, cité par le DoD, de `SETUP.md`,
-      cité par la règle d'installation, et de `CONTRIBUTING.md`, cité par la
-      règle git. **Ne pas ajouter à `AGENTS.md` de
-      liste parallèle à celle de la table** : c'est ce que cette exigence
+- [ ] Il est **atteint par la table**. `DOC_MAP.md` est le point de routage par
+      intention, et tout nouveau document de fond y entre. `AGENTS.md` ne
+      renvoie directement à un document de fond que lorsqu'une de ses propres
+      règles en dépend — c'est le cas de `CONVENTIONS.md`, cité par le DoD
+      (*Definition of Done*) et par la règle de registre, de `VOCABULARY.md`,
+      cité par le DoD, de `SETUP.md`, cité par la règle d'installation, et de
+      `CONTRIBUTING.md`, cité par la règle git. **Ne pas ajouter à `AGENTS.md`
+      de liste parallèle à celle de la table** : c'est ce que cette exigence
       prévient, pas le lien ponctuel et justifié.
 - [ ] Il porte son **lien de retour**, sous son introduction :
       `Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).`
@@ -505,14 +510,14 @@ sont des règles en prose, à appliquer délibérément.
 ## 7. Scripts d'outillage du dépôt (`scripts/`) et tests (`tests/`)
 
 Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
-`{AGENT_DIR}` et rien des §§1.1 à 4 ne s'y applique, hormis les règles d'or 1.2,
-1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt lui-même —
-`validate.py` contrôle les sources, `install.py` porte le merge intelligent de
-[SETUP.md](SETUP.md), `check_commit_msg.py` contrôle les messages de commit
-pour le hook git `commit-msg` et l'intégration continue, ainsi que le titre et
-la description d'une *pull request* pour cette dernière
-([CONTRIBUTING.md](CONTRIBUTING.md) §3), et `changelog.py` contrôle le journal
-des modifications et en extrait la section d'une version
+`{AGENT_DIR}` et aucune règle des §§1.1 à 4 ne s'y applique, hormis les règles
+d'or 1.2, 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt
+lui-même. `validate.py` contrôle les sources ; `install.py` porte le merge
+intelligent de [SETUP.md](SETUP.md) ; `check_commit_msg.py` contrôle les
+messages de commit pour le hook git `commit-msg` et pour l'intégration continue,
+qui lui soumet en outre le titre et la description d'une PR
+([CONTRIBUTING.md](CONTRIBUTING.md) §3) ; `changelog.py` contrôle le journal des
+modifications et en extrait la section d'une version
 ([CONTRIBUTING.md](CONTRIBUTING.md) §4.2).
 
 Les tests `test_*.py` se trouvent sous `tests/`, jamais sous `scripts/`, qui ne
@@ -547,11 +552,12 @@ s'appliquent aux tests comme aux scripts.
 - **Sortie compacte.** Un récapitulatif par classe, le détail seulement pour ce
   qui appelle une suite. Un contrôle verbeux encombre le contexte et cesse
   d'être relancé.
-- **Codes de sortie `0` / `1` / `2`** : `0` vert, `1` contrôle en échec ou erreur d'usage, `2`
-  anomalie d'environnement — dépendance absente —, distincte d'un défaut du
-  travail produit. Le code de retour porte le verdict : la session n'a pas à
-  relire la sortie pour savoir s'il reste quelque chose à faire.
-- **Aucune dépendance nouvelle** sans l'inscrire dans
+- **Codes de sortie `0` / `1` / `2`** : `0` vert, `1` contrôle en échec ou
+  erreur d'usage, `2` anomalie d'environnement — dépendance logicielle absente
+  —, distincte d'un défaut du travail produit. Le code de sortie porte le
+  verdict : l'agent n'a pas à relire la sortie pour savoir s'il reste quelque
+  chose à faire.
+- **Aucune dépendance logicielle nouvelle** sans l'inscrire dans
   [PREREQUIS.md](PREREQUIS.md).
 - **DoD** : le script doit avoir été **lancé en situation réelle
   d'utilisation**, et tout contrôle ajouté ou modifié doit avoir été **observé
@@ -572,6 +578,6 @@ reconstituer : il le signale et laisse l'utilisateur trancher.
 | Fichier canonique | `SKILL.md` (front-matter) | le fichier lui-même (front-matter) | `HOOK.md` (sans front-matter) | `STATUSLINE.md` (sans front-matter) |
 | Identité | `name` = nom du dossier | `name` = nom du fichier | nom du dossier | nom du dossier |
 | Déclenchement | `description` / `/nom` | `description` ou délégation explicite | événement de session | rafraîchissement de la barre d'état |
-| Restriction d'outils | `allowed-tools` (motifs restreints à un préfixe ; Claude Code seul) | `tools` (noms simples, forme Claude) | garde-fous dans le script | sans objet : aucun appel au modèle |
+| Restriction d'outils | `allowed-tools` (règles restreintes à un préfixe ; Claude Code seul) | `tools` (noms simples, forme Claude Code) | garde-fous dans le script | sans objet : aucun appel au modèle |
 | Fichiers embarqués | scripts, styles, références | `agents/docs/<nom>/` | le script | `statusline.ps1` |
-| Installation | copie du dossier sous `{AGENT_DIR}/skills/` | copie du fichier sous `{AGENT_DIR}/agents/`, renommé `<nom>.agent.md` pour Copilot CLI | copie **et** enregistrement, propre à chaque agent hôte | copie sous `~/.claude/statuslines/` **et** clé `statusLine` fusionnée à la main ; Claude Code seul |
+| Installation | copie du dossier sous `{AGENT_DIR}/skills/` | copie du fichier sous `{AGENT_DIR}/agents/`, renommé en `<nom>.agent.md` pour Copilot CLI | copie **et** enregistrement, propre à chaque agent hôte | copie sous `~/.claude/statuslines/` **et** clé `statusLine` mergée à la main ; Claude Code seul |

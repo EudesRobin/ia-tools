@@ -1,4 +1,4 @@
-# SETUP — installer / mettre à jour les outils
+# SETUP — installer ou mettre à jour les outils
 
 Procédure d'installation et de mise à jour des outils de ce dépôt pour chaque
 agent hôte : Claude Code et Copilot CLI. **Le dépôt est la source de vérité** :
@@ -8,13 +8,13 @@ par défaut, sa version est adoptée. Un arbitrage n'est demandé que sur un
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 > **Prérequis système** (Python ≥ 3.10, Git, `adb`, PowerShell, bibliothèque
-> `pyyaml`) — outils supposés présents par certaines skills, par la status line
-> `usage-session` et par l'outillage du dépôt : voir
+> `pyyaml`) — dépendances logicielles que supposent installées certaines skills,
+> la status line `usage-session` et l'outillage du dépôt : voir
 > [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires au merge
 > intelligent décrit ci-dessous ; les autres ne concernent qu'une skill, une
 > status line ou la contribution au dépôt.
 
-## 1. Agents hôtes, cibles et variables
+## 1. Agents hôtes, cibles et placeholders
 
 ### Agents hôtes
 
@@ -27,7 +27,7 @@ procédure ne repose pas sur ce comportement.
 | Claude Code | `claude` | `~/.claude` | `<nom>.md` |
 | Copilot CLI | `copilot` | `~/.copilot` | `<nom>.agent.md` — extension exigée par Copilot CLI |
 
-Sous Windows, `~` = `C:\Users\<user>`.
+Sous Windows, `~` désigne `C:\Users\<user>`.
 
 ### Cibles
 
@@ -35,7 +35,7 @@ Sous Windows, `~` = `C:\Users\<user>`.
 |-------------|-------------------------|-----------------------------------------------------------|
 | Skill       | `skills/<nom>/`         | `{AGENT_DIR}/skills/<nom>/`                               |
 | Agent       | `agents/<nom>.md`       | `{AGENT_DIR}/agents/<nom>.md`, ou `<nom>.agent.md` pour Copilot CLI |
-| Docs agents | `agents/docs/<nom>/`    | `{AGENT_DIR}/agents/docs/<nom>/`                          |
+| Documents d'agent | `agents/docs/<nom>/` | `{AGENT_DIR}/agents/docs/<nom>/`                          |
 | Hook        | `hooks/<nom>/`          | `{AGENT_DIR}/hooks/<nom>/` + enregistrement propre à l'agent hôte (§5) |
 | Status line | `statuslines/claude/<nom>/` | `~/.claude/statuslines/<nom>/` + clé `statusLine` de `~/.claude/settings.json` (§6) ; Claude Code seul |
 
@@ -49,27 +49,27 @@ ne sont jamais copiés vers `{AGENT_DIR}`. Le hook `validate-tool` est délibér
 **local au dépôt** — voir
 [hooks/validate-tool/HOOK.md](../hooks/validate-tool/HOOK.md).
 
-### Variables substituées à l'installation
+### Placeholders substitués à l'installation
 
-La substitution de ces variables est la **seule** différence légitime entre le
-contenu d'un fichier du dépôt et celui de sa cible locale. Le dépôt contient
-des placeholders `{NOM_VARIABLE}` que l'installation remplace par la valeur
-propre à l'agent hôte visé.
+La substitution des placeholders est la **seule** différence légitime entre le
+contenu d'un fichier du dépôt et celui de sa cible locale. Le dépôt contient des
+placeholders `{NOM_VARIABLE}` que l'installation remplace par la valeur propre à
+l'agent hôte visé.
 
 | Placeholder | Valeur |
 |-------------|--------|
 | `{AGENT_DIR}` | `~/.claude` pour Claude Code, `~/.copilot` pour Copilot CLI ; le chemin absolu de la cible quand `--target` est fourni |
 
-Toute variable ajoutée se déclare dans la fonction `variables()` de
-`scripts/install.py`, sans quoi elle n'est pas substituée. La forme `<...>`
+Tout placeholder ajouté se déclare dans la fonction `variables()` de
+`scripts/install.py`, sans quoi il n'est pas substitué. La forme `<...>`
 désigne une valeur renseignée à l'exécution et n'est jamais substituée.
 
 ## 2. Procédure — merge intelligent
 
-Le merge intelligent est porté par **`scripts/install.py`**. Ne pas le refaire,
-ne pas écrire de comparaison ad hoc : le script rend les sources, compare,
-classe et applique les cas sûrs, pour chaque agent hôte. Ce qui reste à la
-session, c'est l'arbitrage des conflits.
+Le merge intelligent est porté par **`scripts/install.py`**. Ne pas le
+reproduire à la main, ne pas écrire de comparaison ad hoc : le script rend les
+sources, compare, classe et applique les cas sûrs, pour chaque agent hôte.
+L'arbitrage des conflits reste à la charge de la session.
 
 ```powershell
 python scripts/install.py                     # audit : n'écrit rien
@@ -83,17 +83,18 @@ python scripts/install.py --scope statusline --agent claude
 
 Le périmètre par défaut est `skills,agents,hooks,statusline`, tous outils
 compris, pour les agents hôtes `claude,copilot`. Le périmètre `statusline` n'est
-examiné que pour Claude Code, seul agent hôte doté de status lines. `--agent` restreint l'installation aux agents
-hôtes nommés. `--tool` restreint l'examen et l'écriture aux outils nommés,
-séparés par des virgules, et à leurs dépendances déclarées dans la carte de
-[README.md](../README.md#dépendances-entre-outils) ([CONVENTIONS.md](CONVENTIONS.md) §1.7)
-qui relèvent du périmètre examiné ; le script signale chaque dépendance ainsi
-ajoutée. `--target` permet de viser une autre racine que
-`{AGENT_DIR}` et n'est admis qu'avec un seul agent hôte ; une cible dont le
-chemin contient une espace oblige à appeler les scripts embarqués entre
-guillemets, forme que ne couvre plus la règle `allowed-tools` de leur skill
-([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la
-même sortie au format JSON.
+examiné que pour Claude Code, seul agent hôte doté de status lines. `--agent`
+restreint l'installation aux agents hôtes nommés. `--tool` restreint l'examen et
+l'écriture aux outils nommés, séparés par des virgules, et à celles de leurs
+dépendances qui relèvent du périmètre examiné. Ces dépendances sont déclarées
+dans la carte de [README.md](../README.md#dépendances-entre-outils)
+([CONVENTIONS.md](CONVENTIONS.md) §1.7) ; le script signale chaque dépendance
+ainsi ajoutée. `--target` permet de viser une autre racine que `{AGENT_DIR}` et
+n'est admis qu'avec un seul agent hôte. Une cible dont le chemin contient une
+espace oblige à appeler les scripts embarqués par un chemin entre guillemets,
+forme que ne couvre plus la règle `allowed-tools` de leur skill
+([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la même sortie au
+format JSON.
 
 **Chaque agent hôte est traité séparément.** Classes, écritures et conflits
 sont établis pour chacun ; un conflit chez l'un n'empêche pas l'écriture chez
@@ -111,8 +112,8 @@ le laisse intact.
 |---|---|---|
 | `identique` | le rendu et la cible ne diffèrent pas | rien |
 | `absent` | la cible n'existe pas | écrit le rendu |
-| `obsolete` | la cible est le rendu d'une révision antérieure du dépôt : installation propre devenue obsolète | écrit le rendu, sans confirmation |
-| `conflit` | l'écart ne s'explique ni par les variables ni par une révision : **édition locale manuelle**, ou outil homonyme de l'utilisateur | **rien**, pour aucun fichier du même outil chez cet agent hôte |
+| `obsolete` | la cible est le rendu d'une révision antérieure du dépôt : installation intacte devenue obsolète | écrit le rendu, sans confirmation |
+| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | **rien**, pour aucun fichier du même outil chez cet agent hôte |
 | `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
 
 ### Ce que le script rapporte
@@ -141,16 +142,16 @@ d'écriture ne reste chez aucun agent hôte, `1` sinon.
    outils ») prend les valeurs par défaut du script.
 2. **Arbitrer chaque conflit** : afficher l'écart par `--diff <chemin>` (avec
    `--agent` pour ne viser qu'un seul agent hôte), puis demander à l'utilisateur
-   de choisir — adopter la version du dépôt / garder la version locale /
-   fusionner écart par écart — et
-   appliquer le choix. Le script n'écrit jamais un fichier en conflit.
+   de choisir — adopter la version du dépôt, garder la version locale ou merger
+   écart par écart — et appliquer le choix. Le script n'écrit jamais un fichier
+   en conflit.
 3. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
-4. **Ne relancer l'audit qu'après un arbitrage** : `--apply` vérifie
-   lui-même ses écritures. Chaque fichier arbitré en faveur du dépôt doit être
-   classé `identique`. Un fichier gardé en version locale ou fusionné écart par
-   écart reste classé `conflit`, et le code de sortie vaut alors `1`.
+4. **Ne relancer l'audit qu'après un arbitrage** : `--apply` vérifie lui-même
+   ses écritures. Chaque fichier arbitré en faveur du dépôt doit être classé
+   `identique`. Un fichier gardé en version locale ou mergé écart par écart
+   reste classé `conflit`, et le code de sortie vaut alors `1`.
 5. **Récapituler**, par agent hôte, en reprenant les lignes d'état par outil
    que donne la sortie, complétées du résultat de chaque arbitrage.
 
@@ -189,16 +190,16 @@ hook.
 - Enregistrement, propre à chaque agent hôte : clé `hooks` de
   `~/.claude/settings.json` pour Claude Code, fichier
   `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
-  `{AGENT_DIR}/settings.json` en bloc** : n'y fusionner que les entrées de hook
-  concernées. Pas d'adoption automatique du fichier entier. Copilot CLI admet
-  aussi une clé `hooks` dans `~/.copilot/settings.json`, son fichier de
+  `{AGENT_DIR}/settings.json` en bloc** : n'y merger que les entrées de hook
+  concernées. Le fichier entier n'est jamais adopté automatiquement. Copilot CLI
+  admet aussi une clé `hooks` dans `~/.copilot/settings.json`, son fichier de
   configuration principal ; le dépôt retient le fichier dédié, qui laisse
-  `~/.copilot/settings.json` intact.
-  `scripts/install.py` **n'écrit jamais** ces fichiers d'enregistrement : il
-  affiche ce qui reste à faire ; l'enregistrement se fait à la main.
+  `~/.copilot/settings.json` intact. `scripts/install.py` **n'écrit jamais** ces
+  fichiers d'enregistrement : il affiche ce qui reste à faire ; l'enregistrement
+  se fait à la main.
 
 Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
-(§1). `--scope hooks` le constate et ne touche à rien.
+(§1). `--scope hooks` constate cette absence et ne touche à rien.
 
 ## 6. Status lines
 
@@ -214,8 +215,8 @@ l'enregistrement de la clé `statusLine`.
   `scripts/install.py` **n'écrit jamais** ce fichier : il lit la clé et lui
   attribue l'un des états `enregistree` (elle désigne une status line du
   dépôt), `absente`, `autre` (elle désigne un autre script) ou `illisible`
-  (JSON invalide), puis affiche le fragment à fusionner. **Ne jamais écraser
-  `~/.claude/settings.json` en bloc** : n'y fusionner que la clé `statusLine`,
+  (JSON invalide), puis affiche le fragment à merger. **Ne jamais écraser
+  `~/.claude/settings.json` en bloc** : n'y merger que la clé `statusLine`,
   après accord de l'utilisateur quand la clé existante désigne un autre
   script. L'état de cette clé n'influe pas sur le code de sortie.
 
@@ -227,10 +228,11 @@ mise à jour du script ne demande aucune modification de la clé.
 ## 7. Après installation
 
 - Skills et agents : le `name` apparaît dans la liste des outils à la
-  **prochaine session** de l'agent hôte, pas immédiatement. Le vérifier dans
-  chaque agent hôte : liste des skills et des agents d'une session Claude Code ; commandes
-  `/skills` et `/agent` de Copilot CLI.
+  **prochaine session** de l'agent hôte, pas immédiatement. Vérifier sa présence
+  dans chaque agent hôte : liste des skills et des agents d'une session Claude
+  Code ; commandes `/skills` et `/agent` de Copilot CLI.
 - Hooks : tester le déclenchement réel. La présence du script et de son
-  enregistrement ne prouve pas qu'il fonctionne.
-- Status line : elle s'affiche au rafraîchissement suivant de la session, sans
-  redémarrage. Vérifier qu'elle apparaît et que ses valeurs sont renseignées.
+  enregistrement ne prouve pas que le hook fonctionne.
+- Status line : elle s'affiche au rafraîchissement suivant de la barre d'état,
+  sans redémarrage. Vérifier qu'elle apparaît et que ses valeurs sont
+  renseignées.
