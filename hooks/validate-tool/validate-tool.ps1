@@ -1,7 +1,7 @@
 #Requires -Version 7
 <#
     Hook Stop — lance scripts/validate.py en fin de tour et empeche de rendre la
-    main tant qu'il est rouge.
+    main tant qu'il est en echec.
 
     Contrairement aux hooks distribues (voir docs/CONVENTIONS.md section 3.2),
     celui-ci bloque volontairement : c'est son objet meme. Il est enregistre
@@ -45,7 +45,7 @@ function Get-PayloadField([string] $nom) {
 }
 
 # --- 2. Parametres ----------------------------------------------------------
-# Blocages consecutifs admis avant de rendre la main au rouge (anti-boucle).
+# Blocages consecutifs admis avant de rendre la main malgre l'echec (anti-boucle).
 # Copilot CLI plafonne de son cote a 8.
 $MaxBlocages = 3
 
@@ -102,7 +102,7 @@ if (Test-Path -LiteralPath $compteur) { $n = [int](Get-Content -LiteralPath $com
 if ($n -ge $MaxBlocages) {
     Remove-Item -LiteralPath $compteur -ErrorAction SilentlyContinue
     [Console]::Error.WriteLine(
-        "validate-tool : validateur toujours rouge apres $MaxBlocages blocages, main rendue.")
+        "validate-tool : validateur toujours en echec apres $MaxBlocages blocages, main rendue.")
     exit 1
 }
 Set-Content -LiteralPath $compteur -Value ($n + 1) -NoNewline
@@ -110,7 +110,7 @@ Set-Content -LiteralPath $compteur -Value ($n + 1) -NoNewline
 # --- 6. Bloquer et remonter les ecarts --------------------------------------
 $texte = ($sortie | Out-String).Trim()
 $raison = @"
-Le validateur du depot est rouge : le travail n'est pas termine.
+Le validateur du depot est en echec : le travail n'est pas termine.
 
 $texte
 

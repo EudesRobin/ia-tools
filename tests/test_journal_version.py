@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests de skills/release/journal_version.py, sans depot reel ni GitHub : un
 faux git et un faux gh renvoient des sorties enregistrees. Chaque refus et
-chaque verification sont vus en rouge sur un cas volontairement casse
+chaque verification sont observes en echec sur un cas construit pour echouer
 (AGENTS.md, DoD des scripts).
 
 Usage : python tests/test_journal_version.py
@@ -197,7 +197,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertTrue(self.field(self.run_script()[1], "prefixe_tag").startswith("indetermine"))
 
     def test_tag_prefix_option(self):
-        # Cas casse : prefixe indetermine, choisi par l'utilisateur.
+        # Cas construit pour echouer : prefixe indetermine, choisi par l'utilisateur.
         self.set_repo(EN.split("[unreleased]")[0], tags=[])
         code, out = self.run_script("--tag-prefix", "v")
         self.assertEqual(self.field(out, "prefixe_tag"), "v")
@@ -243,13 +243,13 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(self.field(self.run_script()[1], "etape"), "tag (1.5.0, close sur origin/main)")
 
     def test_step_waits_for_merge(self):
-        # Cas casse : cloture faite sur la branche de travail, PR non mergee.
+        # Cas construit pour echouer : cloture faite sur la branche de travail, PR non mergee.
         self.set_repo(CLOSED, tags=["1.4.1"], shared=FR)
         self.assertEqual(self.field(self.run_script()[1], "etape"),
                          "attente_merge (1.5.0, close localement, absente de origin/main)")
 
     def test_step_local_tag_not_pushed(self):
-        # Cas casse : tag cree localement, push echoue.
+        # Cas construit pour echouer : tag cree localement, push echoue.
         self.set_repo(CLOSED, tags=["1.5.0", "1.4.1"], remote=["1.4.1"])
         self.assertTrue(self.field(self.run_script()[1], "etape").startswith("tag (1.5.0"))
 
@@ -263,7 +263,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(self.field(self.run_script()[1], "etape"), "rien")
 
     def test_step_uses_base_not_stale_local(self):
-        # Cas casse : reprise sur main sans pull, journal local encore plein.
+        # Cas construit pour echouer : reprise sur main sans pull, journal local encore plein.
         self.set_repo(FR, tags=["1.4.1"], shared=CLOSED)
         self.assertTrue(self.field(self.run_script()[1], "etape").startswith("tag (1.5.0"))
 
@@ -298,7 +298,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertIn("## Unreleased\n\n## v1.0.1 - 2026-10-12\n", self.changelog())
 
     def test_close_postcondition_detects_lost_section(self):
-        # Cas casse : la relecture du journal ecrit ne retrouve pas la version close.
+        # Cas construit pour echouer : la relecture du journal ecrit ne retrouve pas la version close.
         import contextlib
         import importlib.util
         import io
@@ -389,7 +389,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(self.field(out, "sha"), "h1")
 
     def test_check_blocks(self):
-        # Cas casses : aucune execution, execution en cours, tag present, HEAD en retard.
+        # Cas construits pour echouer : aucune execution, execution en cours, tag present, HEAD en retard.
         self.check_fixtures([])
         code, out = self.run_script("--check", "1.5.0")
         self.assertEqual(code, 1, out)
@@ -436,7 +436,7 @@ class JournalVersionTest(unittest.TestCase):
             **over})
 
     def test_local_state_uses_local_tags_and_base(self):
-        # Cas casse : en mode distant, ls-remote (1.4.1 seul) donnerait l'etape tag.
+        # Cas construit pour echouer : en mode distant, ls-remote (1.4.1 seul) donnerait l'etape tag.
         self.set_local(CLOSED, tags=["1.5.0", "1.4.1"])
         code, out = self.run_script()
         self.assertEqual(code, 0, out)
@@ -461,7 +461,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(code, 0, out)
         self.assertEqual(self.field(out, "ci"), "sans objet (depot local)")
         self.assertEqual(self.field(out, "verdict"), "pret")
-        # Cas casse : verification lancee depuis la branche de travail.
+        # Cas construit pour echouer : verification lancee depuis la branche de travail.
         self.set_local(empty, tags=["1.4.1"], **{
             "git branch --show-current": ok("feat/x\n"), "git rev-parse HEAD": ok("h1\n")})
         self.assertIn("branche courante differente de master", self.run_script("--check", "1.5.0")[1])
@@ -480,7 +480,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(self.field(out, "verdict"), "conforme")
         self.tag_fixtures(contents="1.4.1\n\n### 🐛 Corrections\n\n- Correction C.\n")
         self.assertEqual(self.run_script("--release", "1.4.1")[0], 0)
-        # Cas casses : tag leger, notes differentes, tag hors de la branche par defaut.
+        # Cas construits pour echouer : tag leger, notes differentes, tag hors de la branche par defaut.
         self.tag_fixtures(kind="commit")
         code, out = self.run_script("--release", "1.4.1")
         self.assertEqual(code, 1, out)
@@ -491,7 +491,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertTrue(self.field(self.run_script("--release", "1.4.1")[1], "sur_base").startswith("non"))
 
     def test_check_blocks_uncommitted_changes(self):
-        # Cas casse : cloture ecrite dans la copie de travail, jamais committee.
+        # Cas construit pour echouer : cloture ecrite dans la copie de travail, jamais committee.
         empty = CLOSED.replace("### 🚀 Nouveautés\n\n- Outil A.\n\n### 🐛 Corrections\n\n- Correction B.\n\n## [1.4.1]",
                                "## [1.4.1]", 1)
         empty = empty.replace("## [1.5.0] - 2026-10-12\n\n", "## [1.5.0] - 2026-10-12\n\n### 🚀 Nouveautés\n\n- Outil A.\n\n", 1)

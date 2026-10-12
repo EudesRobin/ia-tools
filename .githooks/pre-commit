@@ -1,5 +1,5 @@
 #!/bin/sh
-# Refuse le commit tant que le validateur est rouge (AGENTS.md, Definition of Done).
+# Refuse le commit tant que le validateur est en echec (AGENTS.md, Definition of Done).
 # Code 2 du validateur : anomalie d'environnement, signalee sans bloquer.
 # Activation, une fois par clone : git config core.hooksPath .githooks
 PY=python; command -v "$PY" >/dev/null 2>&1 || PY=python3

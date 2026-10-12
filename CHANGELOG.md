@@ -64,6 +64,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   leur publication, sans le délai de 30 jours imposé aux autres mises à jour.
 - `scripts/validate.py` vérifie que l'intégration continue lance chaque test
   `tests/test_*.py`.
+- Hook local `validate-tool` et hook git `pre-commit` : leurs messages et
+  commentaires disent « en échec » au lieu de « rouge ».
+- Tests du dépôt (`tests/`) : leurs docstrings et commentaires disent
+  « observé en échec » et « cas construit pour échouer » au lieu de « vu en
+  rouge » et « cas volontairement cassé ».
 
 ## [1.4.1] - 2026-10-10
 

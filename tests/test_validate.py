@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Tests de scripts/validate.py : chaque controle est vu en rouge sur un cas
-volontairement casse, et le depot reel reste au vert (AGENTS.md, DoD des
+"""Tests de scripts/validate.py : chaque controle est observe en echec sur un
+cas construit pour echouer, et le depot reel reste au vert (AGENTS.md, DoD des
 scripts). Chaque cas opere sur une copie du depot dans un dossier temporaire.
 
 Usage : python tests/test_validate.py

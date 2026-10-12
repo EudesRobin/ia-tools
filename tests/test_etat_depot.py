@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Tests de skills/pull-request/etat_depot.py, sans depot GitHub : un faux git
 et un faux gh renvoient des sorties enregistrees et journalisent leurs appels.
-Chaque garde-fou sur les donnees sensibles est vu en rouge sur un cas
-volontairement casse (AGENTS.md, DoD des scripts).
+Chaque garde-fou sur les donnees sensibles est observe en echec sur un cas
+construit pour echouer (AGENTS.md, DoD des scripts).
 
 Usage : python tests/test_etat_depot.py
 Code de sortie : 0 si tout passe, 1 sinon.
@@ -306,7 +306,7 @@ class EtatDepotTest(unittest.TestCase):
         self.assertLess(len(out.splitlines()), 20, "sortie trop longue")
 
     def test_post_merge_diverging_head_never_deletable(self):
-        # Cas casse : le head local porte un commit absent de la PR mergee.
+        # Cas construit pour echouer : le head local porte un commit absent de la PR mergee.
         self.fixtures(self.post_merge_fixtures(**{
             self.FOR_EACH_REF: ok("feat/a fff999\n"),
             "git cat-file -e aaa111^{commit}": ok(),
@@ -352,7 +352,7 @@ class EtatDepotTest(unittest.TestCase):
                       self.fields(out, "mergee"))
 
     def test_post_merge_ignored_files_only(self):
-        # Cas casse : seuls des fichiers ignores, que git worktree remove supprime sans avertir.
+        # Cas construit pour echouer : seuls des fichiers ignores, que git worktree remove supprime sans avertir.
         tree = (self.dir / "arbre-b").as_posix()
         self.fixtures(self.post_merge_fixtures(**{
             f"git -C {tree} status --porcelain=v1 --untracked-files=all --ignored": ok("!! .env\n"),
