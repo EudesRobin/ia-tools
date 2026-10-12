@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tests de scripts/changelog.py : journal conforme admis, chaque ecart de
-structure vu en rouge, extraction d'une section, et refus d'une plage qui
+structure observe en echec, extraction d'une section, et refus d'une plage qui
 modifie un outil sans entree du journal (depot git temporaire).
 
 Usage : python tests/test_changelog.py

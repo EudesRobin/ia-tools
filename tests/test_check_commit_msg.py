@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Tests de scripts/check_commit_msg.py : messages conformes admis, chaque
-ecart vu en rouge, y compris par les modes --range (depot git temporaire) et
+ecart observe en echec, y compris par les modes --range (depot git temporaire) et
 --pr (variables d'environnement).
 
 Usage : python tests/test_check_commit_msg.py

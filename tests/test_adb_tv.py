@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Tests de skills/clean-android-tv/adb_tv.py, sans televiseur : un faux adb
 renvoie des sorties enregistrees. Chaque controle de check-plan et de compare
-est vu en rouge sur un cas volontairement casse (AGENTS.md, DoD des scripts).
+est observe en echec sur un cas construit pour echouer (AGENTS.md, DoD des
+scripts).
 
 Usage : python tests/test_adb_tv.py
 Code de sortie : 0 si tout passe, 1 sinon.
