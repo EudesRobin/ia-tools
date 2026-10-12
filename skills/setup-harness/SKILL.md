@@ -41,11 +41,12 @@ sur la seule absence d'erreur.
 Cette skill est une tâche en cinq phases : la règle de suivi des tâches
 s'applique. Créer la liste ci-dessous **avant la phase 1**, et la ré-afficher en
 entier à chaque changement d'état, avec les marqueurs `[ ]` non commencée, `[~]`
-en cours, `[x]` terminée, `[-]` abandonnée, cette dernière avec une raison
-courte sur la même ligne. Plusieurs `[~]` simultanées seulement si les étapes
-sont réellement menées en parallèle. Quand la session expose son propre outil
-de liste de tâches, c'est cet outil qui est employé et qui fait l'affichage ;
-sinon le bloc est écrit dans la réponse. Aucun des deux suivis n'est un repli.
+en cours, `[x]` terminée, `[-]` abandonnée ; une étape abandonnée porte une
+raison courte sur la même ligne. Plusieurs `[~]` simultanées seulement si les
+étapes sont réellement menées en parallèle. Quand la session expose son propre
+outil de liste de tâches, c'est cet outil qui est employé et qui fait
+l'affichage ; sinon le bloc est écrit dans la réponse. Aucun des deux suivis
+n'est un repli.
 
 **Tâches**
 - [ ] Phase 1 : détecter la stack et le fichier cible du projet courant

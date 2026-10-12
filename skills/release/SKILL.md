@@ -43,8 +43,8 @@ Release, que vérifie la [phase 6](#6-vérifier-la-release).
 La publication est une tâche en six phases, interrompue le temps que
 l'utilisateur merge la PR. Créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat-et-létape)**, et la ré-afficher en entier à chaque
-changement d'état, avec les marqueurs `[ ]` non commencée, `[~]` en cours,
-`[x]` terminée, `[-]` abandonnée, cette dernière avec une raison courte sur la
+changement d'état, avec les marqueurs `[ ]` non commencée, `[~]` en cours, `[x]`
+terminée, `[-]` abandonnée ; une étape abandonnée porte une raison courte sur la
 même ligne. Plusieurs `[~]` simultanées seulement si les étapes sont réellement
 menées en parallèle. Quand la session expose son propre outil de liste de
 tâches, c'est cet outil qui est employé et qui fait l'affichage ; sinon le bloc

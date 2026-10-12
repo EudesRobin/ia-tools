@@ -40,6 +40,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   version de PowerShell n'y produit que des avertissements mineurs. Sans
   `Bash`, l'agent lit les réglages en ligne dans la sortie de `gh api` que
   l'appelant lui fournit et, à défaut, les marque « non vérifié ».
+- `audit-outil` : audite aussi les status lines, avec leur colonne dans le
+  tableau de portée de la grille de qualité.
 
 ### 🔄 Modifications
 
@@ -56,6 +58,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 📝 Documentation
 
+- `pull-request`, `release`, `setup-harness`, `audit-outil` : formulations du
+  protocole de suivi et de la grille de qualité alignées sur celles de
+  `docs/qualite-outils.md`, sans changement de comportement.
 - Hook local `validate-tool` : sa documentation dit « en échec » au lieu de
   « au rouge », terme désormais écarté pour qualifier l'état d'un contrôle.
 
