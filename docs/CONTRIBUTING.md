@@ -1,9 +1,10 @@
 # Contribuer — commits, pull requests, contrôles et versions
 
 Les règles à suivre pour livrer une modification de ce dépôt : activation des
-hooks git, commits et *pull requests*, contrôles automatiques, publication d'une
-version. La définition de « terminé » figure dans [AGENTS.md](../AGENTS.md),
-section « Definition of Done — boucle de vérification ».
+hooks git, commits et *pull requests* (PR), contrôles automatiques, publication
+d'une version. La définition de « terminé » figure dans
+[AGENTS.md](../AGENTS.md), section « Definition of Done — boucle de
+vérification ».
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
@@ -12,7 +13,7 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 ## 1. Hooks git
 
 Avant le premier commit dans un clone, vérifier que `git config core.hooksPath`
-renvoie `.githooks`, et à défaut activer les hooks git :
+renvoie `.githooks`, et, à défaut, activer les hooks git :
 
 ```powershell
 git config core.hooksPath .githooks
@@ -27,22 +28,22 @@ git config core.hooksPath .githooks
 ## 2. Commits et pull requests
 
 - **Branche protégée.** `main` n'accepte aucun push direct : toute modification
-  passe par une branche et une *pull request*. Les checks `CI / validation`,
-  `CI / zizmor` et `CI / commits` sont requis, et la branche doit être à jour
-  avec `main` avant le merge.
+  passe par une branche et une PR. Les checks `CI / validation`, `CI / zizmor`
+  et `CI / commits` sont requis, et la branche doit être à jour avec `main`
+  avant le merge.
 - **Aucune attribution d'outil d'IA**, ni dans un message de commit, ni dans le
-  titre ou la description d'une *pull request* : voir
-  [CONVENTIONS.md](CONVENTIONS.md) §1.5, qui fait autorité.
-- **Format des messages et nommage des branches** : ceux de
+  titre ou la description d'une PR : voir [CONVENTIONS.md](CONVENTIONS.md) §1.5,
+  qui fait autorité.
+- **Format des messages et nommage des branches** : fixés par
   [conventions-defaut.md](../skills/pull-request/conventions-defaut.md). Le
-  script `check_commit_msg.py` en contrôle le préfixe, la longueur, l'absence de
-  point final au sujet et l'absence d'attribution d'IA ; la langue, la forme du
-  sujet et le rôle du corps restent à appliquer délibérément.
+  script `check_commit_msg.py` contrôle, dans chaque message, le préfixe, la
+  longueur, l'absence de point final dans le sujet et l'absence d'attribution
+  d'IA ; les règles de langue, de forme du sujet et de rôle du corps restent à
+  appliquer délibérément.
 - **Skill `pull-request`.** Installée, elle mène la livraison — commit, branche,
-  push, *pull request* — en appliquant ces règles. Sans elle, les appliquer à la
-  main.
-- **Journal des modifications.** Une *pull request* qui modifie un outil ou
-  `scripts/install.py` y ajoute une entrée
+  push, PR — en appliquant ces règles. Sans elle, les appliquer à la main.
+- **Journal des modifications.** Une PR qui modifie un outil ou
+  `scripts/install.py` ajoute une entrée au journal des modifications
   ([§4.2](#42-journal-des-modifications)).
 - **Outil testable localement.** Une skill, un hook ou une status line modifiés
   sont installés par `scripts/install.py` ([SETUP.md](SETUP.md)) puis validés
@@ -54,41 +55,45 @@ La liste des contrôles de `scripts/validate.py` figure dans son docstring, qui
 fait autorité. Ils sont lancés par trois mécanismes : le hook `validate-tool` en
 fin de tour d'une session ouverte dans le dépôt
 ([HOOK.md](../hooks/validate-tool/HOOK.md)), le hook git `pre-commit` à chaque
-commit, et l'intégration continue à chaque push sur `main` et à chaque *pull
-request*.
+commit, et l'intégration continue à chaque push sur `main` et à chaque PR.
 
 L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 
 - les tests `tests/test_*.py` des scripts et des status lines ;
 - l'analyse de sécurité des workflows par `zizmor` ;
-- sur une *pull request*, le contrôle du message de chaque commit, de
+- sur une PR, le contrôle du message de chaque commit, de
   l'absence d'attribution d'IA dans le titre et la description, et de la
   présence d'une entrée dans le journal des modifications
   ([§4.2](#42-journal-des-modifications)).
 
-Chaque écart y est aussi émis en annotation GitHub, affichée sur le diff de la
-*pull request*.
+Dans l'intégration continue, chaque écart est aussi émis en annotation GitHub,
+affichée sur le diff de la PR.
 
 Au push d'un tag de version, le workflow `release` crée la Release GitHub
 ([§4.3](#43-procédure)).
 
-Rien ne contrôle le registre de rédaction, le vocabulaire, la qualité d'écriture
-d'un outil (concision, latitude laissée à l'agent, pertinence de la liste de
-phases d'un outil multi-étapes, délégation des étapes déterministes à un
-script), le maintien de toute donnée sensible hors du contexte de l'agent
-([CONVENTIONS.md](CONVENTIONS.md) §1.3), la cohérence sémantique entre
-documents, ni le
-respect du DoD des scripts et des workflows : qu'un script modifié a été lancé,
-qu'un contrôle ajouté a été observé en échec, que l'exécution de l'intégration
-continue a été observée au vert. Ces règles s'appliquent délibérément.
+Rien ne contrôle :
+
+- le registre de rédaction et le vocabulaire ;
+- la qualité d'écriture d'un outil : concision, latitude laissée à l'agent,
+  pertinence de la liste de phases d'un outil multi-étapes, délégation des
+  étapes déterministes à un script ;
+- le maintien de toute donnée sensible hors du contexte de l'agent
+  ([CONVENTIONS.md](CONVENTIONS.md) §1.3) ;
+- la cohérence sémantique entre documents ;
+- le respect du DoD des scripts et des workflows : qu'un script modifié a été
+  lancé, qu'un contrôle ajouté a été observé en échec, que l'exécution de
+  l'intégration continue a été observée au vert.
+
+Ces exigences s'appliquent délibérément.
 
 ## 4. Publier une version
 
 Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`, et
 une **Release** GitHub associée à ce tag. Le numéro de version figure dans le
 tag et dans le journal des modifications, [CHANGELOG.md](../CHANGELOG.md), dont
-la section de la version fournit les notes de la Release. La skill `release`,
-si elle est installée, mène la procédure du [§4.3](#43-procédure).
+la section consacrée à cette version fournit les notes de la Release. La skill
+`release`, si elle est installée, mène la procédure du [§4.3](#43-procédure).
 
 ### 4.1 Numérotation
 
@@ -110,10 +115,11 @@ Incrémenter un numéro remet à zéro ceux qui le suivent : `1.4.2` devient
 
 `CHANGELOG.md` suit le format
 [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/). Sa première section,
-`## [Non publié]`, recueille les changements pas encore publiés ; chaque
-version publiée a sa section `## [X.Y.Z] - AAAA-MM-JJ`, de la plus récente à la
-plus ancienne, les dates ne croissant jamais. Les entrées sont rédigées pour qui
-installe les outils, sous les rubriques suivantes, dans cet ordre :
+`## [Non publié]`, recueille les changements pas encore publiés ; viennent
+ensuite les sections des versions publiées, une par version, au format
+`## [X.Y.Z] - AAAA-MM-JJ`, de la plus récente à la plus ancienne, les dates ne
+croissant jamais. Les entrées sont rédigées pour qui installe les outils, sous
+les rubriques suivantes, dans cet ordre :
 
 | Rubrique | Contenu | Préfixes de commit |
 |---|---|---|
@@ -127,24 +133,23 @@ installe les outils, sous les rubriques suivantes, dans cet ordre :
 | `### 📝 Documentation` | documentation seule | `docs` |
 | `### 🧹 Maintenance` | intégration continue, tests, scripts du dépôt, entretien | `build`, `test`, `chore`, `refactor` |
 
-- **Entrée obligatoire.** Une *pull request* qui modifie `skills/`, `agents/`,
-  `hooks/`, `statuslines/` ou `scripts/install.py` ajoute une entrée sous
-  `[Non publié]`. Aucune exemption n'est admise.
+- **Entrée obligatoire.** Une PR qui modifie `skills/`, `agents/`, `hooks/`,
+  `statuslines/` ou `scripts/install.py` ajoute une entrée sous `[Non publié]`.
+  Aucune exemption n'est admise.
 - **Contrôles.** `scripts/validate.py` vérifie la structure du journal ; sur une
-  *pull request*, `scripts/changelog.py --require-entry` vérifie la présence de
-  l'entrée.
+  PR, `scripts/changelog.py --require-entry` vérifie la présence de l'entrée.
 
 ### 4.3 Procédure
 
-1. **Clore la version** dans la *pull request* qui la termine : renommer
-   `## [Non publié]` en `## [X.Y.Z] - AAAA-MM-JJ`, ouvrir au-dessus une section
-   `## [Non publié]` vide, et mettre à jour les liens de comparaison en fin de
-   fichier. Vérifier que `python scripts/changelog.py --version X.Y.Z` affiche
-   les notes attendues.
-2. **Poser le tag après le merge**, jamais sur une branche de travail : le tag
-   désigne l'état de `main` que les utilisateurs installent. Vérifier au
-   préalable que l'exécution de l'intégration continue sur ce commit de `main`
-   est au vert, dans l'onglet *Actions* du dépôt GitHub.
+1. **Clore la version** dans la PR qui la termine : renommer `## [Non publié]`
+   en `## [X.Y.Z] - AAAA-MM-JJ`, ouvrir au-dessus une section `## [Non publié]`
+   vide, et mettre à jour les liens de comparaison en fin de fichier. Vérifier
+   que `python scripts/changelog.py --version X.Y.Z` affiche les notes
+   attendues.
+2. **Poser le tag après le merge, sur `main`**, jamais sur une branche de
+   travail : le tag désigne l'état de `main` que les utilisateurs installent.
+   Vérifier au préalable que l'exécution de l'intégration continue sur le commit
+   à taguer est au vert, dans l'onglet *Actions* du dépôt GitHub.
 
    ```powershell
    git switch main
@@ -153,11 +158,11 @@ installe les outils, sous les rubriques suivantes, dans cet ordre :
    git push origin <version>
    ```
 
-3. **Contrôler la Release.** Le workflow `release` vérifie que le commit est sur
-   `main` et que l'exécution de l'intégration continue sur ce commit est au
-   vert, puis crée la Release avec la section de la version. S'il échoue, en
-   corriger la cause, puis le relancer depuis l'onglet *Actions*, sans toucher
-   au tag.
+3. **Vérifier la Release.** Le workflow `release` s'assure que le commit du tag
+   est sur `main` et que l'exécution de l'intégration continue sur ce commit est
+   au vert, puis crée la Release avec la section du journal consacrée à cette
+   version. S'il échoue, en corriger la cause, puis le relancer depuis l'onglet
+   *Actions*, sans toucher au tag.
 
 - **Tag annoté** (`-a`) : il enregistre l'auteur et la date de publication, ce
   que ne fait pas un tag léger.

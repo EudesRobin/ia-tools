@@ -37,10 +37,10 @@ Le rendu est la source apres substitution des placeholders {NOM_VARIABLE}
 recopie les octets du rendu, ce qui preserve celles de l'arbre de travail.
 
 Garde-fou non negociable : le settings.json d'un agent hote et ses fichiers
-d'enregistrement de hooks ne sont jamais ecrits. Ce qui reste a fusionner est
+d'enregistrement de hooks ne sont jamais ecrits. Ce qui reste a merger est
 affiche, pas applique. Il en va de meme pour la cle statusLine d'une status
 line : l'audit lit settings.json, indique si la cle designe le script installe
-et affiche le fragment a fusionner.
+et affiche le fragment a merger.
 
 Un outil peut s'appuyer sur un autre outil du depot (CONVENTIONS.md 1.7) :
 la carte des dependances est le tableau de la section « Dependances entre
@@ -622,7 +622,7 @@ def print_report(agent: str, r: dict, apply: bool, can_apply: bool) -> None:
         else:
             label = "absente" if sl["etat"] == "absente" else "designe un autre script"
             print(f"  statusLine   {label} dans {sl['fichier']} ; jamais ecrite par ce script.")
-            print("    Fragment a fusionner a la main, sans ecraser le reste du fichier :")
+            print("    Fragment a merger a la main, sans ecraser le reste du fichier :")
             for fragment in sl["fragments"].values():
                 text = json.dumps({"statusLine": fragment}, indent=2)
                 print("\n".join("      " + line for line in text.splitlines()))

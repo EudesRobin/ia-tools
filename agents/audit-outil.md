@@ -49,7 +49,7 @@ n'est un repli.
 - [ ] Phase 2 : inventorier le document canonique, les fichiers embarqués et les scripts
 - [ ] Phase 3 : appliquer la grille de qualité, chaque constat sourcé `fichier:ligne`
 - [ ] Phase 4 : relever les étapes à confier à un script
-- [ ] Phase 5 : contrôler le traitement des données sensibles
+- [ ] Phase 5 : vérifier le traitement des données sensibles
 - [ ] Phase 6 : écarter les faux positifs
 - [ ] Phase 7 : rendre le rapport
 
@@ -288,7 +288,7 @@ valeur**, même si elle figure en clair dans un fichier lu.
    Citer `fichier:ligne` pour chaque constat et nommer la règle enfreinte.
 4. **Relever les étapes scriptables** (section « Délégation à un script »), y
    compris dans les scripts existants dont la sortie est trop abondante.
-5. **Contrôler les données sensibles** (section dédiée), dans le document
+5. **Vérifier les données sensibles** (section dédiée), dans le document
    canonique, les fichiers embarqués et le code des scripts.
 6. **Écarter les faux positifs.** Confronter chaque constat à « Ce qui ne se
    signale jamais » ; retirer ceux qui y tombent et noter leur motif. Ne

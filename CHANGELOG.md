@@ -58,6 +58,10 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 📝 Documentation
 
+- `audit-outil` : sa phase sur les données sensibles s'intitule « vérifier »
+  au lieu de « contrôler ».
+- Status line `usage-session` et hooks : « merger » remplace « fusionner » pour
+  l'ajout d'une clé ou d'entrées de hook dans `settings.json`.
 - `pull-request`, `release`, `setup-harness`, `audit-outil` : formulations du
   protocole de suivi et de la grille de qualité alignées sur celles de
   `docs/qualite-outils.md`, sans changement de comportement.
@@ -66,6 +70,7 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🧹 Maintenance
 
+- `install.py` : ses messages disent « merger » au lieu de « fusionner ».
 - Dépôt GitHub : les tags ne peuvent plus être déplacés ni supprimés, toute
   action d'un workflow doit être épinglée par le SHA d'un commit, et les mises
   à jour de sécurité de Dependabot sont activées : elles sont proposées dès
