@@ -20,14 +20,18 @@ l'ouverture d'une session dans ce dépôt. La procédure de
 
 ## Ajouter un hook distribué
 
-Un hook destiné à `{AGENT_DIR}` se compose de deux parties : un **script** et
-son `HOOK.md`, dans un sous-dossier de `hooks/`, et un **enregistrement** propre
-à chaque agent hôte — clé `hooks` de `~/.claude/settings.json` pour Claude Code,
-fichier `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
-`{AGENT_DIR}/settings.json` en bloc** : n'y merger que les entrées de hook
-concernées. Pour Copilot CLI, le fichier dédié `~/.copilot/hooks/<nom>.json`
-laisse `~/.copilot/settings.json` intact.
+Un hook destiné à `{AGENT_DIR}` se compose de deux parties : d'une part un
+**script** et son `HOOK.md`, dans un sous-dossier de `hooks/`, d'autre part un
+**enregistrement** propre à chaque agent hôte — clé `hooks` du fichier de
+paramètres `~/.claude/settings.json` pour Claude Code, fichier d'enregistrement
+dédié `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
+`~/.claude/settings.json` en bloc** : n'y merger que les entrées de hook
+concernées. Copilot CLI admet aussi une clé `hooks` dans son fichier de
+paramètres `~/.copilot/settings.json` ; le fichier d'enregistrement dédié laisse
+ce fichier intact. Un fichier d'enregistrement déjà présent n'est pas écrasé non
+plus : n'y merger que les entrées de hook concernées.
 
-Structure du `HOOK.md`, comportement du script et contrat commun aux deux
-agents hôtes : [docs/CONVENTIONS.md](../docs/CONVENTIONS.md) §3. Installation
-et précautions relatives à `settings.json` : [SETUP.md](../docs/SETUP.md) §5.
+Structure du `HOOK.md`, comportement du script et contrat commun aux deux agents
+hôtes : [docs/CONVENTIONS.md](../docs/CONVENTIONS.md) §3. Installation et
+précautions relatives aux fichiers de paramètres et d'enregistrement :
+[SETUP.md](../docs/SETUP.md) §5.

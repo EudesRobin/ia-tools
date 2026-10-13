@@ -45,9 +45,9 @@ git config core.hooksPath .githooks
 - **Journal des modifications.** Une PR qui modifie un outil ou
   `scripts/install.py` ajoute une entrée au journal des modifications
   ([§4.2](#42-journal-des-modifications)).
-- **Outil testable localement.** Une skill, un hook ou une status line modifiés
-  sont installés par `scripts/install.py` ([SETUP.md](SETUP.md)) puis validés
-  par l'utilisateur **avant** tout commit et tout push.
+- **Outil testable localement.** Une skill, un agent, un hook ou une status
+  line modifiés sont installés par `scripts/install.py` ([SETUP.md](SETUP.md))
+  puis validés par l'utilisateur **avant** tout commit et tout push.
 
 ## 3. Ce qui est vérifié mécaniquement
 
@@ -55,7 +55,8 @@ La liste des contrôles de `scripts/validate.py` figure dans son docstring, qui
 fait autorité. Ils sont lancés par trois mécanismes : le hook `validate-tool` en
 fin de tour d'une session ouverte dans le dépôt
 ([HOOK.md](../hooks/validate-tool/HOOK.md)), le hook git `pre-commit` à chaque
-commit, et l'intégration continue à chaque push sur `main` et à chaque PR.
+commit, et l'intégration continue à chaque push sur `main`, à chaque PR et à la
+demande (`workflow_dispatch`).
 
 L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 
@@ -66,8 +67,10 @@ L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
   présence d'une entrée dans le journal des modifications
   ([§4.2](#42-journal-des-modifications)).
 
-Dans l'intégration continue, chaque écart est aussi émis en annotation GitHub,
-affichée sur le diff de la PR.
+Dans l'intégration continue, chaque écart relevé par `scripts/validate.py` est
+aussi émis en annotation GitHub, affichée sur le diff de la PR quand l'écart
+cite un fichier ; ceux de `scripts/check_commit_msg.py` le sont dans le résumé
+de l'exécution.
 
 Au push d'un tag de version, le workflow `release` crée la Release GitHub
 ([§4.3](#43-procédure)).

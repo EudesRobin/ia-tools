@@ -59,8 +59,10 @@ console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 Usage : python scripts/install.py [--apply] [--agent ...] [--scope ...]
                                   [--tool ...] [--diff <chemin>]
                                   [--target <dossier>] [--json]
-Code de sortie : 0 si la validation passe et qu'aucun conflit ni echec
-d'ecriture ne reste chez aucun agent hote, 1 sinon.
+Code de sortie : 0 si la validation n'est pas en echec (une validation
+impossible en raison d'une anomalie d'environnement ne compte pas comme un
+echec) et qu'aucun conflit ni echec d'ecriture ne reste chez aucun agent hote,
+1 sinon.
 """
 
 import argparse
@@ -117,7 +119,7 @@ HOOK_REGISTRATION = {
 EXCLUDED_DIRS = {".idea", "__pycache__", "plugins", ".git"}
 EXCLUDED_NAMES = {"settings.json", "settings.local.json", ".gitignore"}
 
-# Validateur des sources, lance avant tout examen (docs/SETUP.md section 3).
+# Validateur des sources, lance avant tout examen (docs/SETUP.md section 2).
 VALIDATOR = ROOT / "scripts" / "validate.py"
 
 # Etat d'un outil : celui du plus en retard de ses fichiers. Libelles affiches,

@@ -77,6 +77,11 @@ pour *opportunity*, « basé sur » pour *based on*, « en charge de » pour *in
 charge of*, « échouer par » pour *to fail with*, « casser » pour *to break*,
 « depuis zéro » pour *from scratch*, « en ligne » pour *inline*.
 
+**Anglicismes.** Un terme anglais employé alors que le mot français est
+courant : « contrôle », pas « gate » ; « dérive », pas « drift ». Les termes
+anglais entrés dans l'usage technique ne sont pas des anglicismes à corriger
+(voir plus bas).
+
 **« la voie » comme traduction passe-partout de *way*.** L'idiome « ouvrir la
 voie » existe ; « voie de réouverture », « cette voie », « la voie adb » n'en
 sont que des extensions abusives. Nommer la chose : méthode, moyen, accès,
