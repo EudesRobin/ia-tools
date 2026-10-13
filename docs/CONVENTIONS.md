@@ -39,10 +39,10 @@ renomme en `<nom>.agent.md` ; le dépôt ne porte que `<nom>.md`.
 ### 1.2 Aucun chemin local en dur
 
 Aucun fichier versionné ne doit contenir de chemin utilisateur réel
-(`C:\Users\<nom>\…`, `/home/<nom>/…`). Employer un placeholder `{NOM_VARIABLE}`,
-déclaré dans la table des placeholders de [SETUP.md](SETUP.md), que
-l'installation remplace par la valeur locale. Cette règle est contrôlée
-mécaniquement par `scripts/validate.py`.
+(`C:\Users\<utilisateur>\…`, `/home/<utilisateur>/…`). Employer un placeholder
+`{NOM_VARIABLE}`, que l'installation remplace par la valeur locale et qui est
+déclaré dans la table des placeholders de [SETUP.md](SETUP.md). Cette règle est
+contrôlée mécaniquement par `scripts/validate.py`.
 
 La racine de l'agent hôte s'écrit `{AGENT_DIR}` : `~/.claude` pour Claude Code,
 `~/.copilot` pour Copilot CLI. Un chemin propre à un seul agent hôte
@@ -135,27 +135,34 @@ est modifiée, **mettre à jour toutes ses copies dans le même changement** :
 
 | Contenu dupliqué | Copies |
 |---|---|
-| Ne jamais écraser `settings.json` en bloc | [SETUP.md](SETUP.md), [hooks/README.md](../hooks/README.md) et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
+| Ne jamais écraser en bloc un fichier de paramètres (`settings.json`) ni le fichier d'enregistrement d'un hook pour Copilot CLI : n'y merger que les entrées concernées | [SETUP.md](SETUP.md) et [hooks/README.md](../hooks/README.md) ; pour le seul `~/.claude/settings.json`, chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 | Consigne de lire `AGENTS.md` avant toute action | [AGENTS.md](../AGENTS.md), [CLAUDE.md](../CLAUDE.md) et [.github/copilot-instructions.md](../.github/copilot-instructions.md) |
 | Règle de suivi des tâches — déclencheur, marqueurs `[ ]` `[~]` `[x]` `[-]`, ré-affichage intégral, équivalence des deux suivis | [docs/qualite-outils.md](qualite-outils.md) §5 et chaque outil multi-étapes de `skills/` et `agents/` |
 | Conventions de commit — préfixes admis, 50 mots au plus, sujet sans point final, absence d'attribution d'IA | `scripts/check_commit_msg.py` et [skills/pull-request/conventions-defaut.md](../skills/pull-request/conventions-defaut.md), qui ajoute la langue, la forme du sujet et le rôle du corps, que le script ne contrôle pas |
 | Activation des hooks git (`git config core.hooksPath .githooks`) | [CONTRIBUTING.md](CONTRIBUTING.md), [README.md](../README.md) et `.githooks/pre-commit`, `.githooks/commit-msg` |
-| Registre de rédaction et principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare | ce document [§1.9](#19-registre-de-rédaction), [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
-| Commande d'enregistrement d'une status line — interpréteur, `-ExecutionPolicy Bypass`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
+| Registre de rédaction — français formel et impersonnel, sans familiarité ni commentaire sur la démarche | ce document [§1.9](#19-registre-de-rédaction) et [agents/relecture-fr.md](../agents/relecture-fr.md) |
+| Principe sur les termes anglais — garder l'anglais courant, ne pas imposer une traduction rare, poser la question dans le doute, ne pas employer d'anglicisme quand le mot français est courant | [docs/VOCABULARY.md](VOCABULARY.md) §1 et [agents/relecture-fr.md](../agents/relecture-fr.md) |
+| Commande d'enregistrement d'une status line — interpréteur, options `-NoProfile -NonInteractive -ExecutionPolicy Bypass -File`, chemin en barres obliques | `statusline_command()` de `scripts/install.py`, [SETUP.md](SETUP.md) §6 et chaque `statuslines/claude/<nom>/STATUSLINE.md` |
 | Grille de qualité d'un outil — règles de [qualite-outils.md](qualite-outils.md) §§1 à 9, dont la délégation à un script, et checklist du §11 | [docs/qualite-outils.md](qualite-outils.md) et [agents/audit-outil.md](../agents/audit-outil.md) |
 | Donnée sensible tenue hors du contexte de l'agent | ce document [§1.3](#13-aucun-secret-dans-le-dépôt), [agents/audit-outil.md](../agents/audit-outil.md) et [agents/audit-github.md](../agents/audit-github.md) |
 | Duplication entre outils exclue des constats, sauf dans un dépôt qui admet la dépendance entre outils | [agents/audit-outil.md](../agents/audit-outil.md) et [agents/audit-docs.md](../agents/audit-docs.md) |
 
 La ligne relative à la lecture d'`AGENTS.md` s'explique par le chargement des
-instructions : chaque
-agent hôte lit son propre fichier d'entrée, et `AGENTS.md` doit être atteint
-depuis chacun d'eux. Les lignes du suivi des tâches, des conventions de commit,
-du registre, de la commande d'enregistrement, de la grille de qualité et de la
-donnée sensible relèvent du
-[§1.7](#17-auto-suffisance-des-outils) :
-`docs/` n'est pas distribué, et aucun outil ne peut y renvoyer. Un outil ne
-s'appuie sur un autre outil que par une dépendance déclarée, jamais par un lien
-relatif.
+instructions : chaque agent hôte lit son propre fichier d'entrée, et `AGENTS.md`
+doit être atteint depuis chacun d'eux. La ligne relative aux fichiers de
+paramètres et d'enregistrement, comme celle de l'activation des hooks git,
+s'explique par les lecteurs de ses copies : qui installe lit `SETUP.md`, qui
+écrit un hook lit `hooks/README.md`, qui contribue lit `CONTRIBUTING.md`, qui
+découvre le dépôt lit `README.md`, et chaque hook git rappelle la commande qui
+l'active. Les lignes du suivi des tâches, des conventions de commit, du
+registre, des termes anglais, de la commande d'enregistrement, de la grille de
+qualité et de la donnée sensible relèvent du
+[§1.7](#17-auto-suffisance-des-outils), comme la copie de la règle sur
+`settings.json` dans `STATUSLINE.md` : ni `docs/` ni `scripts/` ne sont
+distribués, et aucun outil ne peut y renvoyer. La ligne de la duplication entre
+outils en relève aussi : un outil ne s'appuie sur un autre outil que par une
+dépendance déclarée, jamais par un lien relatif ; sans dépendance, chacun porte
+sa copie.
 
 ### 1.9 Registre de rédaction
 
@@ -173,10 +180,8 @@ compris.
 - **Termes précis.** Le vocabulaire du projet est fixé par
   [VOCABULARY.md](VOCABULARY.md), qui fait autorité : s'y reporter avant
   d'introduire un terme, et y ajouter tout terme ayant fait l'objet d'une
-  hésitation. Les termes anglais largement employés en français (*front-matter*,
-  *hook*, *pull request*, *headless*, *payload*) s'écrivent tels quels ; ne pas
-  imposer une traduction française peu usitée. Inversement, ne pas employer
-  d'anglicisme quand le terme français est courant.
+  hésitation. Le traitement des termes anglais obéit au principe de
+  [VOCABULARY.md](VOCABULARY.md) §1.
 - **Tout en français.** Un document rédigé en français le reste, même si la
   demande est formulée dans une autre langue ; un nouveau document s'écrit en
   français.
@@ -250,8 +255,8 @@ les sections utiles dans l'ordre d'exécution.
   phases sous l'en-tête `**Tâches**` plutôt que de réénoncer la règle. Ce
   qu'elle reprend du protocole se **recopie** dans la skill, adapté à son
   déroulé : le [§1.7](#17-auto-suffisance-des-outils) interdit de renvoyer par
-  un lien à [qualite-outils.md](qualite-outils.md). Une
-  skill de deux étapes en est dispensée ; une skill qui couvre plusieurs cas
+  un lien à [qualite-outils.md](qualite-outils.md). Une skill de moins de
+  trois étapes est dispensée de ce suivi ; une skill qui couvre plusieurs cas
   d'usage d'ampleur inégale énumère ceux qui demandent le suivi et ceux qui s'en
   passent, plutôt que de laisser l'agent rejuger la question à chaque exécution.
 - **`## Règles`** — les règles impératives, sous forme de liste.
@@ -479,10 +484,10 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
 
 ## 6. Checklist — ajouter un document de fond
 
-Un document de fond explique le *pourquoi* des règles (harnais, injection de
-contexte, stratégie de modèles…). Ce n'est pas un outil : aucune règle des §§1.1
-à 4 ne s'y applique, hormis le registre de rédaction. Il n'est pas terminé tant
-que tout ceci n'est pas fait :
+Un document de fond énonce des règles du dépôt — conventions, procédures — ou en
+explique le *pourquoi* (harnais, injection de contexte, stratégie de modèles…).
+Ce n'est pas un outil : aucune règle des §§1.1 à 4 ne s'y applique, hormis le
+registre de rédaction. Il n'est pas terminé tant que tout ceci n'est pas fait :
 
 - [ ] Il est **enregistré dans [DOC_MAP.md](DOC_MAP.md)**, dans la table
       « Où chercher », avec une entrée formulée par intention (« Avant de… »).

@@ -8,6 +8,21 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🔄 Modifications
+
+- `relecture-fr` : signale explicitement l'anglicisme employé alors que le mot
+  français est courant ; sa liste des termes anglais admis est alignée sur
+  celle du dépôt.
+
+### 📝 Documentation
+
+- Hooks : l'enregistrement pour Copilot CLI passe par le fichier dédié
+  `~/.copilot/hooks/<nom>.json`, qui laisse `~/.copilot/settings.json` intact ;
+  comme `~/.claude/settings.json`, ce fichier n'est jamais écrasé en bloc et ne
+  reçoit que les entrées de hook concernées.
+- `install.py` : sa documentation précise qu'une validation impossible en
+  raison d'une anomalie d'environnement n'empêche pas le code de sortie `0`.
+
 ## [1.5.0] - 2026-10-13
 
 ### 🚀 Nouveautés

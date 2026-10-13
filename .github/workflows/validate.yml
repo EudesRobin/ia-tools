@@ -1,4 +1,5 @@
-# Controle du depot a chaque push sur main et a chaque pull request :
+# Controle du depot a chaque push sur main, a chaque pull request et a la
+# demande (workflow_dispatch) :
 # validateur des sources puis tests du validateur (AGENTS.md, Definition of Done),
 # analyse de securite des workflows par zizmor et, sur une pull request,
 # controle des messages de commit, du titre, de la description et de l'entree

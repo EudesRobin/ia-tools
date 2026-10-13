@@ -27,7 +27,7 @@ procédure ne repose pas sur ce comportement.
 | Claude Code | `claude` | `~/.claude` | `<nom>.md` |
 | Copilot CLI | `copilot` | `~/.copilot` | `<nom>.agent.md` — extension exigée par Copilot CLI |
 
-Sous Windows, `~` désigne `C:\Users\<user>`.
+Sous Windows, `~` désigne `C:\Users\<utilisateur>`.
 
 ### Cibles
 
@@ -68,8 +68,10 @@ désigne une valeur renseignée à l'exécution et n'est jamais substituée.
 
 Le merge intelligent est porté par **`scripts/install.py`**. Ne pas le
 reproduire à la main, ne pas écrire de comparaison ad hoc : le script rend les
-sources, compare, classe et applique les cas sûrs, pour chaque agent hôte.
-L'arbitrage des conflits reste à la charge de la session.
+sources, compare chaque rendu à sa cible, classe les écarts et applique les cas
+sûrs, pour chaque agent hôte. Le reste — confirmation du périmètre, arbitrage
+des conflits, traitement des fichiers en `local seul`, récapitulatif — revient à
+la session ([ci-dessous](#ce-qui-reste-à-la-session)).
 
 ```powershell
 python scripts/install.py                     # audit : n'écrit rien
@@ -132,8 +134,10 @@ le laisse intact.
   du rendu, classe l'outil en `echec`, sans interrompre le traitement des
   autres outils.
 
-Code de sortie : `0` si la validation passe et qu'aucun conflit ni échec
-d'écriture ne reste chez aucun agent hôte, `1` sinon.
+Code de sortie : `0` si la validation n'est pas en échec — une validation
+impossible en raison d'une anomalie d'environnement ne compte pas comme un
+échec — et qu'aucun conflit ni échec d'écriture ne reste chez aucun agent hôte,
+`1` sinon.
 
 ### Ce qui reste à la session
 
@@ -187,15 +191,19 @@ hook.
 
 - Scripts → `{AGENT_DIR}/hooks/<nom>/`, par le merge intelligent comme
   ci-dessus.
-- Enregistrement, propre à chaque agent hôte : clé `hooks` de
-  `~/.claude/settings.json` pour Claude Code, fichier
-  `~/.copilot/hooks/<nom>.json` pour Copilot CLI. **Ne jamais écraser
-  `{AGENT_DIR}/settings.json` en bloc** : n'y merger que les entrées de hook
-  concernées. Le fichier entier n'est jamais adopté automatiquement. Copilot CLI
-  admet aussi une clé `hooks` dans `~/.copilot/settings.json`, son fichier de
-  configuration principal ; le dépôt retient le fichier dédié, qui laisse
-  `~/.copilot/settings.json` intact. `scripts/install.py` **n'écrit jamais** ces
-  fichiers d'enregistrement : il affiche ce qui reste à faire ; l'enregistrement
+- Enregistrement, propre à chaque agent hôte :
+  - Claude Code : clé `hooks` du fichier de paramètres
+    `~/.claude/settings.json`. **Ne jamais écraser `~/.claude/settings.json` en
+    bloc** : n'y merger que les entrées de hook concernées.
+  - Copilot CLI : fichier d'enregistrement dédié `~/.copilot/hooks/<nom>.json`.
+    Copilot CLI admet aussi une clé `hooks` dans `~/.copilot/settings.json`, son
+    fichier de paramètres ; le dépôt retient le fichier d'enregistrement, qui
+    laisse `~/.copilot/settings.json` intact. Un fichier d'enregistrement déjà
+    présent n'est pas écrasé non plus : n'y merger que les entrées de hook
+    concernées.
+
+  `scripts/install.py` **n'écrit jamais** ni le fichier de paramètres ni le
+  fichier d'enregistrement : il affiche ce qui reste à faire ; l'enregistrement
   se fait à la main.
 
 Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
@@ -220,10 +228,16 @@ l'enregistrement de la clé `statusLine`.
   après accord de l'utilisateur quand la clé existante désigne un autre
   script. L'état de cette clé n'influe pas sur le code de sortie.
 
-La commande du fragment se compose du chemin absolu de la cible, en barres
-obliques, de l'interpréteur — `pwsh` s'il est présent, sinon `powershell` — et
-de `-ExecutionPolicy Bypass`, sans lequel PowerShell 5.1 refuse le script. Une
-mise à jour du script ne demande aucune modification de la clé.
+La commande du fragment a la forme suivante :
+
+```text
+pwsh -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "<chemin absolu de la cible, en barres obliques>"
+```
+
+L'interpréteur est `pwsh` s'il est présent, sinon `powershell`.
+`-ExecutionPolicy Bypass` est nécessaire : sans cette option, PowerShell 5.1
+refuse le script. Une mise à jour du script ne demande aucune modification de la
+clé.
 
 ## 7. Après installation
 

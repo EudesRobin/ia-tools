@@ -8,10 +8,10 @@ table fait partie de la chaîne d'instructions ; ce n'est pas du contexte
 facultatif.
 
 Certaines lignes pointent vers une **règle impérative**, à suivre
-obligatoirement ; les autres pointent vers des documents de fond qui expliquent
-*pourquoi* les règles sont ce qu'elles sont. La documentation propre à une
-skill ou à un agent donné se trouve à côté de l'outil qu'elle décrit, pas ici
-(voir [CONVENTIONS.md](CONVENTIONS.md) §6).
+obligatoirement ; les autres pointent vers des documents de contexte, à
+consulter au besoin — explication des règles, prérequis, état des contrôles. La
+documentation propre à une skill ou à un agent donné se trouve à côté de l'outil
+qu'elle décrit, pas ici (voir [CONVENTIONS.md](CONVENTIONS.md) §6).
 
 ## Où chercher
 

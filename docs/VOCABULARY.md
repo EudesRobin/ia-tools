@@ -14,8 +14,8 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 Un terme anglais s'écrit tel quel lorsqu'il est **couramment employé en français
 technique** — *hook*, *skill*, *front-matter*, *pull request*, *merge*, *shell*,
-*flag*, *root*, *cache*, *swap*, *payload*. Ne pas lui imposer une traduction
-française rare, qui obscurcit au lieu de clarifier.
+*flag*, *root*, *cache*, *swap*, *headless*, *payload*. Ne pas lui imposer une
+traduction française rare, qui obscurcit au lieu de clarifier.
 
 La règle vaut aussi contre les traductions qui **existent** mais ne s'emploient
 pas : *flag* ne devient ni « drapeau », calque raide, ni « indicateur », exact
@@ -60,7 +60,7 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **table de routage** | [DOC_MAP.md](DOC_MAP.md), l'autorité qui rattache chaque tâche au document qui la régit. | « carte de documentation », « doc map », « index » |
 | **découpage** | Le fait de limiter la longueur du document canonique d'un outil en sortant le détail dans des fichiers embarqués ([qualite-outils.md §3](qualite-outils.md#3-découpage--limiter-la-longueur-du-document-canonique)). | « divulgation progressive », « progressive disclosure » |
 | **latitude** | Ce qu'une instruction laisse décider à l'agent, à ajuster à la fragilité de la tâche ([qualite-outils.md §4](qualite-outils.md#4-latitude-laissée-à-lagent)). | « degré de liberté », « degrees of freedom » |
-| **document de fond** | Un document de `docs/` qui explique le *pourquoi* des règles, enregistré dans la table. Ce n'est pas un outil. | « document compagnon » — calque de *companion document* ; « doc annexe » |
+| **document de fond** | Un document de `docs/`, enregistré dans la table, qui énonce des règles du dépôt ou en explique le *pourquoi*. Ce n'est pas un outil. | « document compagnon » — calque de *companion document* ; « doc annexe » |
 | **lien de retour** | La ligne qui, depuis un document de fond, renvoie vers la table. | « lien retour » — composé sans préposition ; « backlink » |
 | **registre** | Le niveau de langue imposé par [CONVENTIONS.md §1.9](CONVENTIONS.md#19-registre-de-rédaction) : français formel, factuel, impersonnel. | « ton », « style » |
 | **template** (masculin) | Un texte ou un format à reproduire, tel quel ou en l'adaptant, selon qu'il est impératif ou indicatif ([qualite-outils.md §6](qualite-outils.md#6-règles-de-contenu)). Terme anglais courant en français technique (§1). | « gabarit » — correct, mais moins employé en français technique ; « modèle », ambigu avec le modèle de langage |
@@ -96,6 +96,8 @@ dense. Ne pas la remplacer dans les documents qui l'emploient.
 | **merge intelligent** | La procédure de [SETUP.md](SETUP.md) : rendre, comparer, adopter ou arbitrer, pour chaque agent hôte. | « fusion », « synchronisation » |
 | **placeholder** | `{NOM_VARIABLE}`, présent dans le dépôt et remplacé lors de l'installation par sa valeur locale — par exemple `{AGENT_DIR}`. À distinguer de la forme `<...>`, valeur renseignée à l'exécution et jamais substituée ([CONVENTIONS.md §1.2](CONVENTIONS.md#12-aucun-chemin-local-en-dur)). | « marqueur », « jeton » |
 | **agent hôte** | Le produit qui charge et exécute les outils : Claude Code ou Copilot CLI. Sa racine locale s'écrit `{AGENT_DIR}`. À distinguer de l'**agent**, artefact `agents/<nom>.md` de ce dépôt : ne pas l'abréger en « agent » dans un passage qui parle aussi des agents du dépôt. | « harnais », qui désigne autre chose (§2) ; « plateforme » ; « IDE » |
+| **fichier de paramètres** | Le fichier `settings.json` d'un agent hôte, qui porte l'ensemble de ses réglages, dont la clé `hooks` et la clé `statusLine`. Il n'est jamais écrasé en bloc ([SETUP.md](SETUP.md) §5 et §6). | « fichier d'enregistrement », réservé au fichier dédié d'un hook |
+| **fichier d'enregistrement** | Le fichier dédié qui enregistre un hook pour Copilot CLI, `~/.copilot/hooks/<nom>.json`. Pas plus que le fichier de paramètres, il n'est écrasé en bloc ([SETUP.md](SETUP.md) §5). | « fichier de paramètres », réservé à `settings.json` |
 | **rendu** | La source du dépôt après substitution des placeholders. C'est le rendu, jamais la source brute, que l'on compare au fichier local. | — |
 | **affichage** | La ligne qu'une status line écrit sur sa sortie standard et que Claude Code affiche. | « rendu », réservé à la source après substitution des placeholders |
 | **conflit** | Un écart qui ne s'explique ni par les placeholders ni par une révision antérieure du dépôt : une édition locale manuelle. Seul cas qui justifie un arbitrage. | « divergence » |
