@@ -8,6 +8,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🚀 Nouveautés
+
+- `install.py` : l'audit signale les commandes système absentes du PATH
+  (`git`, `gh`, `adb`, `pwsh` ou `powershell`) dont dépendent les outils
+  examinés, ainsi qu'un historique git indisponible ; il n'installe rien.
+
 ## [1.7.0] - 2026-10-24
 
 ### 🚀 Nouveautés

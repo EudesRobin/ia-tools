@@ -91,13 +91,18 @@ ia-tools/
 |---|---|
 | Un agent hôte : Claude Code ou Copilot CLI | utiliser les outils installés |
 | Python ≥ 3.10 | lancer `scripts/install.py`, le script `adb_tv.py` de la skill `clean-android-tv`, le script `etat_depot.py` de la skill `pull-request` et le script `journal_version.py` de la skill `release` |
-| Git, et le dépôt obtenu par `git clone` | reconnaître une installation obsolète : sans l'historique git, elle est signalée comme conflit |
+| Git (`git`), et le dépôt obtenu par `git clone` | reconnaître une installation obsolète ou un outil retiré, que `scripts/install.py` ne distingue pas d'une édition locale sans l'historique git ; les skills `pull-request` et `release` |
 | `adb` (platform-tools) | la skill `clean-android-tv` |
 | GitHub CLI (`gh`), authentifié | la skill `pull-request`, pour pousser la branche et ouvrir une PR, puis nettoyer le dépôt local en post-merge ; la skill `release`, pour vérifier l'intégration continue, puis créer et vérifier la Release |
 | PowerShell 5.1 (intégré à Windows) ou 7 (`pwsh`) | la status line `usage-session` |
 | `pyyaml` et PowerShell 7 (`pwsh`) | contribuer au dépôt : `scripts/validate.py` et hook `validate-tool` |
 
-Commandes de vérification et d'installation : [PREREQUIS.md](./docs/PREREQUIS.md).
+Ce tableau sert aussi de carte à `scripts/install.py` : chaque commande qu'il
+reconnaît (`git`, `gh`, `adb`, `pwsh`), nommée entre backticks dans la première
+colonne, est requise par chaque outil nommé entre backticks dans la seconde ;
+PowerShell 5.1 (`powershell`) tient lieu de `pwsh`. L'audit signale les
+commandes absentes du PATH pour les outils examinés. Commandes de vérification
+et d'installation : [PREREQUIS.md](./docs/PREREQUIS.md).
 
 ## Installation
 
@@ -187,9 +192,9 @@ Pour épargner un outil, demander à l'agent d'attendre l'accord de l'utilisateu
 avant `apply`, puis citer les identifiants des outils à écrire : l'agent lance
 `apply --confirm <id>,...`.
 
-Ajouter `@docs/PREREQUIS.md` au prompt pour que l'agent vérifie d'abord les
-prérequis : il dresse la liste de ce qui manque et n'installe rien sans
-l'accord de l'utilisateur.
+L'audit signale aussi les prérequis système absents du PATH pour les outils
+examinés, sans rien installer : [PREREQUIS.md](./docs/PREREQUIS.md) donne la
+commande d'installation de chacun.
 
 ## Contribuer
 

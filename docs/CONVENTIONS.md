@@ -474,6 +474,12 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
       dans la carte de [README.md](../README.md#dépendances-entre-outils), et
       sa présence est vérifiée dans les prérequis de l'outil dépendant
       ([§1.7](#17-auto-suffisance-des-outils)).
+- [ ] **Prérequis système** — toute commande système qu'exige l'outil
+      figure dans le tableau des prérequis de
+      [README.md](../README.md#prérequis), entre backticks dans la première
+      colonne, avec le nom de l'outil entre backticks dans la seconde ; une
+      commande que `scripts/install.py` ne reconnaît pas encore s'ajoute à
+      `PREREQUISITE_COMMANDS`.
 - [ ] **Aucun secret ni fichier produit à l'exécution** n'est versionné.
 - [ ] **Aucune donnée sensible ne transite par le contexte de l'agent** : un
       script la lit et l'emploie ([§1.3](#13-aucun-secret-dans-le-dépôt)).

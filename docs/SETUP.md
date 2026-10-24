@@ -154,8 +154,9 @@ n'examine aucun outil retiré.
   `retire`, sur une ligne qui annonce sa sauvegarde et sa suppression. Une
   section distincte propose l'enregistrement de la clé `statusLine`, sous un
   identifiant par status line (§6). Suivent, pour information, les fichiers
-  illisibles, les outils retirés laissés en place et les échecs d'écriture,
-  puis la commande `apply` à lancer.
+  illisibles, les outils retirés laissés en place, les échecs d'écriture,
+  l'indisponibilité de l'historique git et les prérequis système absents du
+  PATH pour les outils examinés, puis la commande `apply` à lancer.
 - **Identifiants sans état stocké.** Un identifiant est tiré de l'état examiné :
   il change dès que l'un des fichiers locaux de l'outil change. `apply` refait
   l'audit et refuse tout identifiant inconnu ou périmé, sans rien écrire.
@@ -168,7 +169,8 @@ n'examine aucun outil retiré.
 Code de sortie : `0` si la validation n'est pas en échec — une validation
 impossible en raison d'une anomalie d'environnement ne compte pas comme un
 échec — et qu'aucun conflit ni échec d'écriture ne reste chez aucun agent hôte,
-`1` sinon.
+`1` sinon. Un prérequis absent ou un historique git indisponible n'influe pas
+sur ce code.
 
 ### Ce qui reste à la session
 
