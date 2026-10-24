@@ -7,28 +7,45 @@ Agents hotes pris en charge, dont la racine est notee {AGENT_DIR} :
   copilot   ~/.copilot    agent installe sous <nom>.agent.md
 
 Pour chaque agent hote, classe chaque fichier distribue par ce depot face a sa
-cible locale, applique les cas surs sur demande, et laisse a la session les
-seuls conflits :
+cible locale, puis ecrit ce que l'utilisateur a confirme :
 
   absent      cible inexistante                        -> ecrire le rendu
   identique   rendu == cible                           -> rien
-  obsolete    cible == rendu d'une revision anterieure  -> ecrire le rendu
+  obsolete    cible == rendu d'une revision anterieure,
+              ou source brute non substituee           -> ecrire le rendu
   conflit     ni l'un ni l'autre : edition locale       -> arbitrage humain
   local-seul  present seulement en local, dans le dossier
               d'un outil du depot                     -> liste, jamais supprime
 
+Deux commandes. 'audit' (defaut) n'ecrit rien et rend un resume court : une
+ligne par agent hote, une ligne par action a confirmer, sous un identifiant
+court. 'apply' ecrit les actions confirmees : --all pour tous les cas surs
+(a installer, a mettre a jour), --confirm <id> pour une mise a jour,
+--confirm <id>=depot|local pour un conflit. Un conflit resolu en faveur du depot
+est d'abord sauvegarde sous {AGENT_DIR}/.ia-tools-backup/<horodatage>/.
+L'identifiant derive de l'etat examine : il change des que la cible ou la source
+change, et 'apply' refuse tout identifiant perime, sans qu'aucun etat soit
+stocke. 'apply' refait l'audit avant et apres ses ecritures.
+
+Aucune sortie ne cite le contenu d'un fichier, sauf 'hunks <id>', demande
+explicite, plafonnee a --max-lines lignes. Un conflit est resume par ses blocs,
+ses lignes et ses plages ; 'view <id>' depose la version du depot,
+placeholders substitues, dans un dossier temporaire hors de {AGENT_DIR}, et
+n'affiche que les deux chemins, que l'utilisateur compare dans son editeur.
+
 Un outil (une skill, un agent et ses documents) s'installe d'un bloc chez un
-agent hote : si l'un de ses fichiers y est en conflit, aucun de ses fichiers n'y
-est ecrit. Un outil homonyme cree par l'utilisateur n'est donc jamais complete
-ni modifie. Chaque agent hote est traite separement.
+agent hote : tant que l'un de ses conflits n'est pas arbitre par --confirm,
+aucun de ses fichiers n'y est ecrit. Un outil homonyme cree par l'utilisateur
+n'est donc jamais complete ni modifie sans son accord. Chaque agent hote est
+traite separement.
 
 Le rapport donne l'etat de chaque outil, celui du plus en retard de ses
 fichiers : a_jour, a_installer, a_mettre_a_jour, conflit ou illisible ; apres
---apply, installe, mis_a_jour ou echec a la place des etats ecrits. Chaque
+'apply', installe, mis_a_jour ou echec a la place des etats ecrits. Chaque
 ecriture est relue et comparee au rendu : une ecriture impossible ou divergente
 est classee en echec, sans interrompre les autres outils.
 
-scripts/validate.py est lance avant tout examen : en echec, --apply n'ecrit
+scripts/validate.py est lance avant tout examen : en echec, 'apply' n'ecrit
 rien ; une anomalie d'environnement (code 2, pyyaml absent) est signalee sans
 bloquer, l'installation n'exigeant que Python.
 
@@ -56,9 +73,13 @@ Les messages sont volontairement sans accents : ce script s'affiche dans une
 console PowerShell, dont l'encodage par defaut corrompt les caracteres accentues
 (voir docs/PREREQUIS.md, section « Encodage de la console »).
 
-Usage : python scripts/install.py [--apply] [--agent ...] [--scope ...]
-                                  [--tool ...] [--diff <chemin>]
-                                  [--target <dossier>] [--json]
+Usage : python scripts/install.py [audit] [--agent ...] [--scope ...]
+                                  [--tool ...] [--target <dossier>] [--json]
+        python scripts/install.py apply [--all] [--confirm <id>[=<choix>],...]
+                                  [options de l'audit]
+        python scripts/install.py view <id> | hunks <id> [--max-lines N]
+--apply (obsolete) equivaut a 'apply --all' ; --diff <chemin> resume l'ecart
+d'un fichier et donne son identifiant.
 Code de sortie : 0 si la validation n'est pas en echec (une validation
 impossible en raison d'une anomalie d'environnement ne compte pas comme un
 echec) et qu'aucun conflit ni echec d'ecriture ne reste chez aucun agent hote,
@@ -67,11 +88,14 @@ echec) et qu'aucun conflit ni echec d'ecriture ne reste chez aucun agent hote,
 
 import argparse
 import difflib
+import hashlib
 import json
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -115,8 +139,24 @@ HOOK_REGISTRATION = {
     "copilot": "hooks/<nom>.json",
 }
 
+# Commandes ; choix admis pour un conflit, passes par --confirm <id>=<choix>.
+COMMANDS = ("audit", "apply", "view", "hunks")
+CONFLICT_CHOICES = ("depot", "local")
+
+# Dossier de {AGENT_DIR} ou chaque version locale est sauvegardee avant d'etre
+# remplacee ; dossier du repertoire temporaire ou 'view' depose la version du
+# depot, placeholders substitues, a comparer a la version locale.
+BACKUP_DIR = ".ia-tools-backup"
+VIEW_DIR = "ia-tools-view"
+
+# Plafonds de sortie : le contenu d'un fichier n'entre pas dans le contexte de
+# la session, sauf extrait borne demande par 'hunks'.
+HUNKS_MAX_LINES = 40
+HUNK_LINE_WIDTH = 160
+SUMMARY_MAX_RANGES = 4
+
 # Jamais classe ni ecrit, dans le depot comme en local.
-EXCLUDED_DIRS = {".idea", "__pycache__", "plugins", ".git"}
+EXCLUDED_DIRS = {".idea", "__pycache__", "plugins", ".git", BACKUP_DIR}
 EXCLUDED_NAMES = {"settings.json", "settings.local.json", ".gitignore"}
 
 # Validateur des sources, lance avant tout examen (docs/SETUP.md section 2).
@@ -347,19 +387,21 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
     return out
 
 
-def classify(source: str, src: Path, dst: Path, subs: dict[str, str]) -> tuple[str, bytes]:
+def classify(source: str, src: Path, dst: Path, subs: dict[str, str]) -> tuple[str, bytes, bytes | None]:
+    """(classe, rendu, contenu local) d'un fichier source face a sa cible."""
     raw = read_bytes(src)
     if raw is None:
-        return "illisible", b""
+        return "illisible", b"", read_bytes(dst)
     rendered = render(raw, subs)
     local = read_bytes(dst)
     if local is None:
-        return "absent", rendered
+        return "absent", rendered, None
     if normalize(local) == normalize(rendered):
-        return "identique", rendered
-    if normalize(local) in previous_renders(source, subs):
-        return "obsolete", rendered
-    return "conflit", rendered
+        return "identique", rendered, local
+    # Copie manuelle sans substitution des placeholders : rien d'edite a la main.
+    if normalize(local) == normalize(raw) or normalize(local) in previous_renders(source, subs):
+        return "obsolete", rendered, local
+    return "conflit", rendered, local
 
 
 def write_checked(dst: Path, rendered: bytes) -> bool:
@@ -373,14 +415,30 @@ def write_checked(dst: Path, rendered: bytes) -> bool:
     return local is not None and normalize(local) == normalize(rendered)
 
 
-def tool_states(per_file: list, failed: list[str], applied: bool) -> dict[str, str]:
-    """Etat de chaque outil, tire des classes de ses fichiers (STATE_LABELS)."""
+def backup(target_root: Path, stamp: str, dst: Path, local: bytes) -> Path | None:
+    """Copie la version locale sous {AGENT_DIR}/.ia-tools-backup/<horodatage>/ ;
+    None si la copie est impossible, auquel cas la cible n'est pas ecrite."""
+    copy = target_root / BACKUP_DIR / stamp / dst.relative_to(target_root)
+    try:
+        copy.parent.mkdir(parents=True, exist_ok=True)
+        copy.write_bytes(local)
+    except (OSError, ValueError):
+        return None
+    return copy
+
+
+def tool_states(per_file: list[dict], failed: list[str], written_tools: set[str],
+                resolved: set[str]) -> dict[str, str]:
+    """Etat de chaque outil, tire des classes de ses fichiers (STATE_LABELS).
+    Un conflit resolu en faveur du depot compte comme un fichier obsolete."""
     by_tool: dict[str, list[str]] = {}
-    for source, _, status, _ in per_file:
-        by_tool.setdefault(tool_of(source), []).append(status)
+    for f in per_file:
+        status = "obsolete" if f["source"] in resolved else f["status"]
+        by_tool.setdefault(tool_of(f["source"]), []).append(status)
     failed_tools = {tool_of(source) for source in failed}
     states = {}
     for tool, statuses in by_tool.items():
+        written = tool in written_tools
         if "conflit" in statuses:
             state = "conflit"
         elif tool in failed_tools:
@@ -390,9 +448,9 @@ def tool_states(per_file: list, failed: list[str], applied: bool) -> dict[str, s
         elif all(s == "identique" for s in statuses):
             state = "a_jour"
         elif all(s == "absent" for s in statuses):
-            state = "installe" if applied else "a_installer"
+            state = "installe" if written else "a_installer"
         else:
-            state = "mis_a_jour" if applied else "a_mettre_a_jour"
+            state = "mis_a_jour" if written else "a_mettre_a_jour"
         states[tool] = state
     return states
 
@@ -412,17 +470,42 @@ def run_validation() -> tuple[str, str]:
     return ("indisponible" if r.returncode == 2 else "echec"), output
 
 
-def unified(agent: str, source: str, src: Path, dst: Path, subs: dict[str, str]) -> str:
-    rendered = render(read_bytes(src) or b"", subs)
-    local = read_bytes(dst) or b""
-    return "".join(
-        difflib.unified_diff(
-            normalize(local).decode("utf-8", errors="replace").splitlines(True),
-            normalize(rendered).decode("utf-8", errors="replace").splitlines(True),
-            fromfile=f"{agent}/local/{dst.name}",
-            tofile=f"depot/{source}",
-        )
-    )
+def text_lines(raw: bytes | None) -> list[str]:
+    return normalize(raw or b"").decode("utf-8", errors="replace").splitlines()
+
+
+def change_summary(local: bytes | None, rendered: bytes) -> str:
+    """Resume d'un ecart sans son contenu : nombre de blocs, lignes propres a
+    chaque version, plages de lignes dans la version locale."""
+    a, b = text_lines(local), text_lines(rendered)
+    ops = [
+        op for op in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes()
+        if op[0] != "equal"
+    ]
+    removed = sum(i2 - i1 for _, i1, i2, _, _ in ops)
+    added = sum(j2 - j1 for _, _, _, j1, j2 in ops)
+    # Numerotation a partir de 1 ; un ajout du depot se situe apres la ligne i1.
+    ranges = [
+        str(max(i1, 1)) if i2 == i1 else str(i2) if i2 - i1 == 1 else f"{i1 + 1}-{i2}"
+        for _, i1, i2, _, _ in ops
+    ]
+    shown = ", ".join(ranges[:SUMMARY_MAX_RANGES]) + (", ..." if len(ranges) > SUMMARY_MAX_RANGES else "")
+    return f"{len(ops)} bloc(s), local -{removed} / depot +{added} ligne(s), l.{shown}"
+
+
+def bounded_hunks(local: bytes | None, rendered: bytes, max_lines: int) -> list[str]:
+    """Blocs de l'ecart sans contexte, plafonnes a max_lines lignes, chacune
+    tronquee a HUNK_LINE_WIDTH caracteres ; la coupure est signalee."""
+    diff = list(
+        difflib.unified_diff(text_lines(local), text_lines(rendered), "local", "depot", n=0, lineterm="")
+    )[2:]
+    out = [
+        line if len(line) <= HUNK_LINE_WIDTH else line[:HUNK_LINE_WIDTH] + " [...]"
+        for line in diff[:max_lines]
+    ]
+    if len(diff) > max_lines:
+        out.append(f"[{len(diff) - max_lines} ligne(s) de diff non affichee(s)]")
+    return out
 
 
 def scopes_of(agent: str, scopes: list[str]) -> list[str]:
@@ -486,7 +569,7 @@ def hooks_notice(agent: str, scopes: list[str], target_root: Path) -> str | None
         return None
     return (
         "hooks : aucun hook distribue par ce depot (validate-tool est local au "
-        f"depot).\n  {target_root / HOOK_REGISTRATION[agent]} n'est pas touche."
+        f"depot) ; {target_root / HOOK_REGISTRATION[agent]} n'est pas touche."
     )
 
 
@@ -500,9 +583,35 @@ def parse_args() -> argparse.Namespace:
         description="Merge intelligent du depot vers chaque agent hote (docs/SETUP.md).",
     )
     p.add_argument(
+        "command",
+        nargs="?",
+        choices=COMMANDS,
+        default="audit",
+        help="audit (defaut, n'ecrit rien), apply, view <id>, hunks <id>",
+    )
+    p.add_argument("ident", nargs="?", metavar="ID", help="identifiant d'un conflit (view, hunks)")
+    p.add_argument(
+        "--all",
+        action="store_true",
+        help="apply : ecrire tous les cas surs (a installer, a mettre a jour)",
+    )
+    p.add_argument(
+        "--confirm",
+        action="append",
+        default=[],
+        metavar="ID[=CHOIX],...",
+        help=f"apply : actions confirmees ; choix d'un conflit parmi {'|'.join(CONFLICT_CHOICES)}",
+    )
+    p.add_argument(
+        "--max-lines",
+        type=int,
+        default=HUNKS_MAX_LINES,
+        help=f"hunks : nombre maximal de lignes affichees (defaut {HUNKS_MAX_LINES})",
+    )
+    p.add_argument(
         "--apply",
         action="store_true",
-        help="ecrire les cas surs (absent, obsolete) ; rien pour un outil en conflit",
+        help="obsolete, equivaut a 'apply --all' : retire dans une prochaine version MAJEUR",
     )
     p.add_argument(
         "--agent",
@@ -511,7 +620,7 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--scope",
-        default=",".join(DEFAULT_SCOPES),
+        default=None,
         help=f"perimetres separes par des virgules parmi {','.join(SCOPES)}",
     )
     p.add_argument(
@@ -524,7 +633,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--diff",
         metavar="CHEMIN",
-        help="afficher le diff unifie d'un fichier (chemin source du depot), par agent hote",
+        help="resume de l'ecart d'un fichier (chemin source du depot), par agent hote",
     )
     p.add_argument(
         "--target",
@@ -533,13 +642,17 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument("--json", action="store_true", help="sortie machine")
     args = p.parse_args()
-    if any(a == "--outil" or a.startswith("--outil=") for a in sys.argv[1:]):
+    argv = sys.argv[1:]
+    if any(a == "--outil" or a.startswith("--outil=") for a in argv):
         print("install.py : --outil est obsolete, employer --tool", file=sys.stderr)
+    if args.apply:
+        print("install.py : --apply est obsolete, employer 'apply --all'", file=sys.stderr)
+        args.command, args.all = "apply", True
     return args
 
 
 def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
-    """Classe, et ecrit si --apply, le perimetre d'un agent hote."""
+    """Classe le perimetre d'un agent hote, sans rien ecrire."""
     target_given = args.target is not None
     root_dir = args.target if target_given else AGENTS[agent]["root"]
     target_root = Path(root_dir).expanduser().resolve()
@@ -563,88 +676,255 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
     }
     per_file = []
     for source, src, dst in file_pairs:
-        status, rendered = classify(source, src, dst, subs)
+        status, rendered, local = classify(source, src, dst, subs)
         classes[status].append(source)
-        per_file.append((source, dst, status, rendered))
-
-    blocked = sorted({tool_of(rel) for rel in classes["conflit"]})
-    written: list[str] = []
-    failed: list[str] = []
-    if args.apply:
-        for source, dst, status, rendered in per_file:
-            if status in ("absent", "obsolete") and tool_of(source) not in blocked:
-                (written if write_checked(dst, rendered) else failed).append(source)
+        per_file.append(
+            {"source": source, "dst": dst, "status": status, "rendered": rendered, "local": local}
+        )
 
     return {
         "cible": str(target_root),
+        "target_root": target_root,
         "classes": classes,
         "local_seul": orphans,
-        "outils_bloques": blocked,
-        "ecrits": written,
-        "echecs": failed,
-        "outils": tool_states(per_file, failed, args.apply),
+        "outils_bloques": sorted({tool_of(rel) for rel in classes["conflit"]}),
+        "ecrits": [],
+        "echecs": [],
+        "resolus": [],
+        "sauvegarde": None,
+        "outils": tool_states(per_file, [], set(), set()),
         "examines": len(file_pairs),
         "notice": hooks_notice(agent, scopes, target_root),
         "ignores": ignores,
         "statusline": statusline_state(agent, scopes, target_root, wanted),
-        "file_pairs": file_pairs,
-        "subs": subs,
+        "per_file": per_file,
     }
 
 
-def print_report(agent: str, r: dict, apply: bool, can_apply: bool) -> None:
-    classes = r["classes"]
-    tools = r["outils"]
-    print(
-        f"install.py [{agent}] : {len(tools)} outil(s), {r['examines']} fichier(s) "
-        f"examines -> {r['cible']}"
-    )
-    for state, label in STATE_LABELS.items():
-        names = sorted(t for t, s in tools.items() if s == state)
-        if names:
-            print(f"  {label:<16} {len(names)}  {', '.join(names)}")
-    # Detail par fichier : seulement ce qui appelle une suite de la session.
-    for label, key in (("fichiers en conflit", "conflit"), ("illisibles", "illisible")):
-        if classes[key]:
-            print(f"  {label} : {', '.join(classes[key])}")
-    if r["echecs"]:
-        print(f"  ecriture impossible ou divergente : {', '.join(r['echecs'])}")
-    if r["local_seul"]:
-        print(f"  local seul : {', '.join(r['local_seul'])}")
-    if r["notice"]:
-        print(f"  {r['notice']}")
-    for scope in r["ignores"]:
-        print(f"  {scope} : non pris en charge pour {agent}, rien d'examine")
-    sl = r["statusline"]
-    if sl:
-        if sl["etat"] == "enregistree":
-            print(f"  statusLine   enregistree ({sl['outil']}) dans {sl['fichier']}")
-        elif sl["etat"] == "illisible":
-            print(f"  statusLine   {sl['fichier']} illisible (JSON invalide)")
-        else:
-            label = "absente" if sl["etat"] == "absente" else "designe un autre script"
-            print(f"  statusLine   {label} dans {sl['fichier']} ; jamais ecrite par ce script.")
-            print("    Fragment a merger a la main, sans ecraser le reste du fichier :")
-            for fragment in sl["fragments"].values():
-                text = json.dumps({"statusLine": fragment}, indent=2)
-                print("\n".join("      " + line for line in text.splitlines()))
-    if apply:
-        print(f"  ecrits et verifies : {len(r['ecrits'])} fichier(s)")
-    elif can_apply and (classes["absent"] or classes["obsolete"]):
-        print("  relancer avec --apply pour ecrire les cas surs")
-    if classes["conflit"]:
-        print(
-            f"  {len(classes['conflit'])} conflit(s) a arbitrer ; outils laisses "
-            f"intacts chez {agent} : {', '.join(r['outils_bloques'])}"
+def digest(raw: bytes | None) -> str:
+    return "-" if raw is None else hashlib.sha1(normalize(raw)).hexdigest()
+
+
+def build_actions(reports: dict[str, dict]) -> list[dict]:
+    """Actions proposees, chacune sous un identifiant court tire de l'etat
+    examine : il change des que la cible ou la source change, si bien qu'un
+    identifiant perime est refuse sans qu'aucun etat soit stocke."""
+    actions = []
+    for agent, r in reports.items():
+        by_tool: dict[str, list[dict]] = {}
+        for f in r["per_file"]:
+            by_tool.setdefault(tool_of(f["source"]), []).append(f)
+        for tool, files in sorted(by_tool.items()):
+            state = r["outils"][tool]
+            if state not in ("a_installer", "a_mettre_a_jour"):
+                continue
+            changing = [f for f in files if f["status"] in ("absent", "obsolete")]
+            key = "|".join(
+                [agent, "maj", tool]
+                + [f"{f['source']}:{f['status']}:{digest(f['local'])}" for f in changing]
+            )
+            actions.append({
+                "type": "maj", "agent": agent, "outil": tool, "etat": state,
+                "fichiers": len(changing), "choix": [], "key": key,
+            })
+        for f in r["per_file"]:
+            if f["status"] != "conflit":
+                continue
+            key = f"{agent}|conflit|{f['source']}|{digest(f['local'])}|{digest(f['rendered'])}"
+            actions.append({
+                "type": "conflit", "agent": agent, "outil": tool_of(f["source"]),
+                "chemin": f["source"], "cible": str(f["dst"]),
+                "resume": change_summary(f["local"], f["rendered"]),
+                "choix": list(CONFLICT_CHOICES), "key": key,
+            })
+    for length in (4, 6, 8, 40):
+        ids = [hashlib.sha1(a["key"].encode("utf-8")).hexdigest()[:length] for a in actions]
+        if len(set(ids)) == len(ids):
+            break
+    for action, ident in zip(actions, ids):
+        action["id"] = ident
+    return actions
+
+
+def parse_confirm(values: list[str], actions: list[dict]) -> tuple[dict[str, str], str | None]:
+    """{identifiant: choix} des actions confirmees, ou un message d'erreur.
+    Un identifiant inconnu ou perime fait tout refuser : rien n'est ecrit."""
+    by_id = {a["id"]: a for a in actions}
+    chosen: dict[str, str] = {}
+    for item in (i for value in values for i in parse_list(value)):
+        ident, _, choice = item.partition("=")
+        action = by_id.get(ident)
+        if action is None:
+            return {}, f"identifiant inconnu ou perime : {ident} ; relancer l'audit"
+        if action["type"] == "conflit" and choice not in CONFLICT_CHOICES:
+            return {}, (
+                f"{ident} : conflit sur {action['chemin']}, choix requis parmi "
+                f"{'|'.join(CONFLICT_CHOICES)} ({ident}=<choix>)"
+            )
+        if action["type"] == "maj" and choice:
+            return {}, f"{ident} : mise a jour sans choix, ecrire {ident} seul"
+        chosen[ident] = choice
+    return chosen, None
+
+
+def apply_agent(agent: str, r: dict, actions: list[dict], chosen: dict[str, str],
+                write_all: bool, stamp: str) -> None:
+    """Ecrit, chez un agent hote, les mises a jour confirmees et les conflits
+    resolus en faveur du depot. Les fichiers surs d'un outil en conflit ne sont
+    ecrits qu'une fois chacun de ses conflits arbitre."""
+    mine = [a for a in actions if a["agent"] == agent]
+    tools = {
+        a["outil"] for a in mine if a["type"] == "maj" and (write_all or a["id"] in chosen)
+    }
+    resolutions = {
+        a["chemin"]: chosen[a["id"]] for a in mine if a["type"] == "conflit" and a["id"] in chosen
+    }
+    for tool in {a["outil"] for a in mine if a["type"] == "conflit"}:
+        sources = [a["chemin"] for a in mine if a["type"] == "conflit" and a["outil"] == tool]
+        if all(s in resolutions for s in sources):
+            tools.add(tool)
+
+    written, failed, resolved = [], [], []
+    for f in r["per_file"]:
+        source, dst, status = f["source"], f["dst"], f["status"]
+        if tool_of(source) not in tools:
+            continue
+        if status == "conflit":
+            if resolutions.get(source) != "depot":
+                continue
+            if backup(r["target_root"], stamp, dst, f["local"]) is None:
+                failed.append(source)
+                continue
+            r["sauvegarde"] = str(r["target_root"] / BACKUP_DIR / stamp)
+            resolved.append(source)
+        elif status not in ("absent", "obsolete"):
+            continue
+        (written if write_checked(dst, f["rendered"]) else failed).append(source)
+
+    r["ecrits"], r["echecs"], r["resolus"] = written, failed, resolved
+    r["outils"] = tool_states(r["per_file"], failed, {tool_of(s) for s in written}, set(resolved))
+    unresolved = [s for s in r["classes"]["conflit"] if s not in resolved]
+    r["outils_bloques"] = sorted({tool_of(s) for s in unresolved})
+
+
+def command_options(args: argparse.Namespace) -> str:
+    """Options de la commande en cours, a reprendre dans la commande proposee."""
+    opts = []
+    if args.agent != ",".join(DEFAULT_AGENTS):
+        opts.append(f"--agent {args.agent}")
+    if args.scope is not None:
+        opts.append(f"--scope {args.scope}")
+    if args.tool:
+        opts.append(f"--tool {args.tool}")
+    if args.target is not None:
+        opts.append(f'--target "{args.target}"')
+    return "".join(f" {o}" for o in opts)
+
+
+def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.Namespace) -> None:
+    """Resume court : une ligne par agent hote, une ligne par action a confirmer,
+    jamais le contenu d'un fichier."""
+    for agent, r in reports.items():
+        counts: dict[str, int] = {}
+        for state in r["outils"].values():
+            counts[state] = counts.get(state, 0) + 1
+        detail = ", ".join(
+            f"{counts[s]} {label}" for s, label in STATE_LABELS.items() if s in counts
         )
-    print()
+        print(f"{agent:<8} {r['cible']} : {len(r['outils'])} outil(s) ; {detail or 'rien a examiner'}")
+
+    maj = [a for a in actions if a["type"] == "maj"]
+    conflicts = [a for a in actions if a["type"] == "conflit"]
+    if maj:
+        print("\na faire, cas surs (inclus dans --all) :")
+        for a in maj:
+            label = STATE_LABELS[a["etat"]]
+            print(f"  {a['id']}  {a['agent']:<8} {a['outil']}  {label} ({a['fichiers']} fichier(s))")
+    if conflicts:
+        print("\na arbitrer, edition locale ou outil homonyme (--confirm <id>=depot|local) :")
+        for a in conflicts:
+            print(f"  {a['id']}  {a['agent']:<8} {a['chemin']}")
+            print(f"        {a['resume']} ; voir : install.py view {a['id']}")
+
+    notes = []
+    for agent, r in reports.items():
+        notes += [f"{agent} : illisible : {s}" for s in r["classes"]["illisible"]]
+        notes += [f"{agent} : ecriture impossible ou divergente : {s}" for s in r["echecs"]]
+        notes += [f"{agent} : local seul, laisse intact : {s}" for s in r["local_seul"]]
+        if args.scope is not None:
+            if r["notice"]:
+                notes.append(f"{agent} : {r['notice']}")
+            notes += [f"{agent} : {s} non pris en charge, rien d'examine" for s in r["ignores"]]
+        sl = r["statusline"]
+        if sl and sl["etat"] != "enregistree":
+            if sl["etat"] == "illisible":
+                notes.append(f"{agent} : statusLine illisible, {sl['fichier']} n'est pas du JSON valide")
+            else:
+                label = "absente" if sl["etat"] == "absente" else "designe un autre script"
+                notes.append(
+                    f"{agent} : statusLine {label} dans {sl['fichier']}, jamais ecrite par "
+                    "ce script ; fragment a merger a la main, sans ecraser le reste :"
+                )
+                notes += [
+                    "    " + json.dumps({"statusLine": fragment})
+                    for fragment in sl["fragments"].values()
+                ]
+    if notes:
+        print("\npour information :")
+        for note in notes:
+            print(f"  {note}")
+
+    if maj or conflicts:
+        parts = ["--all"] if maj else []
+        if conflicts:
+            parts.append("--confirm <id>=<choix>,...")
+        print(f"\ncommande : python scripts/install.py apply{command_options(args)} {' '.join(parts)}")
+    else:
+        print("\nrien a installer ni a arbitrer.")
+
+
+def public(action: dict) -> dict:
+    return {k: v for k, v in action.items() if k != "key"}
+
+
+def find_conflict(actions: list[dict], ident: str | None) -> dict | None:
+    return next((a for a in actions if a["type"] == "conflit" and a["id"] == ident), None)
+
+
+def show_view(action: dict, report: dict) -> None:
+    """Depose la version du depot, placeholders substitues, dans un dossier
+    temporaire hors de {AGENT_DIR}, et n'affiche que les chemins : l'utilisateur lit le contenu dans son editeur,
+    la session ne le lit jamais."""
+    f = next(f for f in report["per_file"] if f["source"] == action["chemin"])
+    folder = Path(tempfile.gettempdir()) / VIEW_DIR / action["id"]
+    folder.mkdir(parents=True, exist_ok=True)
+    rendered = folder / f"depot-{f['dst'].name}"
+    rendered.write_bytes(f["rendered"])
+    print(f"[{action['agent']}] {action['chemin']} : {action['resume']}")
+    print(f"  local : {f['dst']}")
+    print(f"  depot : {rendered}")
+    print("  a ouvrir par l'utilisateur, dans son editeur ou son terminal :")
+    print(f'    code --diff "{f["dst"]}" "{rendered}"')
+    print(f'    git diff --no-index -- "{f["dst"]}" "{rendered}"')
+
+
+def show_hunks(action: dict, report: dict, max_lines: int) -> None:
+    """Extrait borne de l'ecart, demande explicitement : seule sortie de ce
+    script qui cite le contenu d'un fichier."""
+    # Le contenu cite peut porter des accents : l'encodage par defaut de la
+    # console (cp1252) ferait echouer l'ecriture.
+    sys.stdout.reconfigure(encoding="utf-8")
+    f = next(f for f in report["per_file"] if f["source"] == action["chemin"])
+    print(f"[{action['agent']}] {action['chemin']} : {action['resume']} (au plus {max_lines} lignes)")
+    for line in bounded_hunks(f["local"], f["rendered"], max_lines):
+        print(line)
 
 
 def main() -> int:
     args = parse_args()
 
     agents = parse_list(args.agent)
-    scopes = parse_list(args.scope)
+    scopes = parse_list(args.scope) if args.scope is not None else list(DEFAULT_SCOPES)
     for label, values, known in (
         ("agent hote", agents, AGENTS),
         ("perimetre", scopes, SCOPES),
@@ -661,6 +941,12 @@ def main() -> int:
             "install.py : --target exige un seul agent hote (--agent claude ou --agent copilot)",
             file=sys.stderr,
         )
+        return 1
+    if args.command in ("view", "hunks") and not args.ident:
+        print(f"install.py : {args.command} exige l'identifiant d'un conflit", file=sys.stderr)
+        return 1
+    if args.command == "apply" and not (args.all or args.confirm):
+        print("install.py : apply exige --all ou --confirm <id>,...", file=sys.stderr)
         return 1
 
     if args.tool:
@@ -682,50 +968,59 @@ def main() -> int:
         expanded = with_dependencies(wanted, declared_dependencies(text))
         added = sorted(expanded - wanted)
         if added:
-            args = argparse.Namespace(**{**vars(args), "tool": ",".join(sorted(expanded))})
+            args.tool = ",".join(sorted(expanded))
     else:
         added = []
 
-    if args.diff:
-        # Le diff cite le contenu des fichiers, accents et symboles compris :
-        # l'encodage par defaut de la console (cp1252) ferait echouer l'ecriture.
-        sys.stdout.reconfigure(encoding="utf-8")
-        wanted_path = args.diff.replace("\\", "/")
-        found = False
-        for agent in agents:
-            read_only_args = argparse.Namespace(**{**vars(args), "apply": False})
-            r = examine(agent, read_only_args, scopes)
-            for source, src, dst in r["file_pairs"]:
-                if source == wanted_path:
-                    found = True
-                    sys.stdout.write(
-                        unified(agent, source, src, dst, r["subs"])
-                        or f"[{agent}] {source} : aucun ecart\n"
-                    )
-        if not found:
-            print(
-                f"install.py : '{args.diff}' hors du perimetre {','.join(scopes)}",
-                file=sys.stderr,
-            )
+    if args.command in ("view", "hunks") or args.diff:
+        reports = {agent: examine(agent, args, scopes) for agent in agents}
+        actions = build_actions(reports)
+        if args.diff:
+            return show_diff_summary(args.diff, reports, actions, scopes)
+        action = find_conflict(actions, args.ident)
+        if action is None:
+            print(f"install.py : {args.ident} n'est pas un conflit en cours ; relancer l'audit",
+                  file=sys.stderr)
             return 1
+        if args.command == "view":
+            show_view(action, reports[action["agent"]])
+        else:
+            show_hunks(action, reports[action["agent"]], args.max_lines)
         return 0
 
     validation, validation_output = run_validation()
-    refused = args.apply and validation == "echec"
-    if refused:
-        args = argparse.Namespace(**{**vars(args), "apply": False})
     if validation != "ok":
         print(validation_output, file=sys.stderr)
+    if args.command == "apply" and validation == "echec":
+        print("install.py : validation (scripts/validate.py) en echec : rien n'est ecrit ;")
+        print("  corriger les sources avant d'installer.")
+        return 1
 
     reports = {agent: examine(agent, args, scopes) for agent in agents}
-    conflicts = sum(len(r["classes"]["conflit"]) for r in reports.values())
+    actions = build_actions(reports)
+    remaining = actions
+
+    if args.command == "apply":
+        chosen, error = parse_confirm(args.confirm, actions)
+        if error:
+            print(f"install.py : {error} ; rien n'est ecrit", file=sys.stderr)
+            return 1
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        for agent, r in reports.items():
+            apply_agent(agent, r, actions, chosen, args.all, stamp)
+        after = {agent: examine(agent, args, scopes) for agent in agents}
+        remaining = build_actions(after)
+        for agent, r in after.items():
+            r["echecs"] = reports[agent]["echecs"]
+
     failures = sum(len(r["echecs"]) for r in reports.values())
+    conflicts = sum(1 for a in remaining if a["type"] == "conflit")
     red = bool(conflicts or failures or validation == "echec")
 
     if args.json:
         keys = (
             "cible", "outils", "classes", "local_seul", "outils_bloques",
-            "ecrits", "echecs", "statusline",
+            "ecrits", "echecs", "resolus", "sauvegarde", "statusline",
         )
         print(
             json.dumps(
@@ -736,6 +1031,7 @@ def main() -> int:
                     "agents": {
                         agent: {k: r[k] for k in keys} for agent, r in reports.items()
                     },
+                    "actions": [public(a) for a in remaining],
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -744,35 +1040,50 @@ def main() -> int:
         return 1 if red else 0
 
     if validation == "ok":
-        print("install.py : validation (scripts/validate.py) OK\n")
+        print("install.py : validation OK")
     elif validation == "indisponible":
-        print("install.py : validation impossible (anomalie d'environnement, voir stderr) ;")
-        print("  installation poursuivie sans elle.\n")
+        print("install.py : validation impossible (anomalie d'environnement, voir stderr), poursuivie sans elle")
     else:
-        verdict = "--apply n'a rien ecrit" if refused else "--apply n'ecrira rien"
-        print(f"install.py : validation (scripts/validate.py) en echec : {verdict}.\n")
-
+        print("install.py : validation (scripts/validate.py) en echec : apply n'ecrira rien")
     if added:
-        print(f"install.py : dependances ajoutees : {', '.join(added)}\n")
+        print(f"install.py : dependances ajoutees : {', '.join(added)}")
+    if args.command == "apply":
+        for agent, r in reports.items():
+            line = f"{agent} : {len(r['ecrits'])} fichier(s) ecrit(s) et verifie(s)"
+            if r["resolus"]:
+                line += f", dont {len(r['resolus'])} conflit(s) resolu(s) ; sauvegarde : {r['sauvegarde']}"
+            print(line)
+        print("\napres apply :")
+        print_summary(after, remaining, args)
+    else:
+        print()
+        print_summary(reports, remaining, args)
+    return 1 if red else 0
+
+
+def show_diff_summary(path: str, reports: dict[str, dict], actions: list[dict], scopes: list[str]) -> int:
+    """--diff <chemin> : classe du fichier chez chaque agent hote et, pour un
+    conflit, son resume et son identifiant ; jamais le contenu."""
+    wanted = path.replace("\\", "/")
+    found = False
     for agent, r in reports.items():
-        print_report(agent, r, args.apply, validation != "echec")
-
-    if validation == "echec":
-        print("install.py : corriger les sources (scripts/validate.py) avant d'installer.")
-    if failures:
-        print(
-            f"install.py : {failures} ecriture(s) impossible(s) ou divergente(s) ; "
-            "relancer apres correction."
-        )
-    if conflicts:
-        print(
-            f"install.py : {conflicts} conflit(s) a arbitrer (docs/SETUP.md section 2)."
-        )
-        print("  install.py --diff <chemin> [--agent <nom>] affiche l'ecart d'un fichier.")
-    if red:
+        for f in r["per_file"]:
+            if f["source"] != wanted:
+                continue
+            found = True
+            action = next(
+                (a for a in actions if a["type"] == "conflit" and a["agent"] == agent
+                 and a["chemin"] == wanted),
+                None,
+            )
+            if action is None:
+                print(f"[{agent}] {wanted} : {f['status']}")
+            else:
+                print(f"[{agent}] {wanted} : conflit {action['id']}, {action['resume']}")
+                print(f"  voir : install.py view {action['id']} ; extrait borne : install.py hunks {action['id']}")
+    if not found:
+        print(f"install.py : '{path}' hors du perimetre {','.join(scopes)}", file=sys.stderr)
         return 1
-
-    print("install.py : OK")
     return 0
 
 

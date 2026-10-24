@@ -50,7 +50,8 @@ Un outil peut s'appuyer sur un autre outil du dépôt plutôt que d'en recopier 
 logique : l'outil dépendant vérifie la présence de l'outil employé et s'arrête
 si celui-ci est absent. Ce tableau est la carte de ces dépendances :
 `scripts/validate.py` la compare aux références réelles entre outils, et
-`scripts/install.py --tool` installe aussi les dépendances de l'outil demandé.
+L'option `--tool` de `scripts/install.py` inclut aussi les dépendances de
+l'outil demandé.
 
 | Outil | Dépend de | Pour |
 |---|---|---|
@@ -103,24 +104,29 @@ Commandes de vérification et d'installation : [PREREQUIS.md](./docs/PREREQUIS.m
 ### Par le script
 
 ```powershell
-python scripts/install.py                  # audit : n'écrit rien
-python scripts/install.py --apply          # installe ou met à jour, pour les deux agents hôtes
-python scripts/install.py --agent copilot --apply            # un seul agent hôte
-python scripts/install.py --tool clean-android-tv --apply    # un seul outil et ses dépendances
+python scripts/install.py                  # audit : résumé court, n'écrit rien
+python scripts/install.py apply --all      # installe ou met à jour, pour les deux agents hôtes
+python scripts/install.py apply --all --agent copilot            # un seul agent hôte
+python scripts/install.py apply --all --tool clean-android-tv    # un seul outil et ses dépendances
+python scripts/install.py apply --confirm <id>=depot             # arbitre un conflit
 ```
 
-La sortie donne, pour chaque agent hôte, l'état de chaque outil : à jour, à
-installer, à mettre à jour ou en conflit. Le script valide d'abord les sources
-du dépôt et n'écrit rien si la validation échoue ; chaque fichier écrit est relu
-et comparé à la version du dépôt.
+L'audit donne, pour chaque agent hôte, le nombre d'outils dans chaque état — à
+jour, à installer, à mettre à jour, en conflit —, puis une ligne par action à
+confirmer, sous un identifiant court, et la commande `apply` à lancer. Le script
+valide d'abord les sources du dépôt et n'écrit rien si la validation échoue ;
+chaque fichier écrit est relu et comparé à la version du dépôt, placeholders
+substitués.
 
 Une installation locale obsolète est remplacée par la version du dépôt. Un
-fichier modifié à la main est signalé comme conflit et laissé intact. Le script
-ne supprime aucun fichier local et ne modifie jamais le `settings.json` d'un
-agent hôte. Une status line est donc copiée mais reste inactive tant que sa clé
-`statusLine` n'est pas enregistrée dans ce fichier
-([ci-dessous](#activer-une-status-line)). Procédure détaillée :
-[SETUP.md](./docs/SETUP.md).
+fichier modifié à la main est signalé comme conflit et laissé intact tant que
+l'utilisateur n'a pas choisi, au moyen de l'identifiant du conflit, entre la
+version du dépôt et la version locale ; `install.py view <id>` désigne les deux
+fichiers à comparer dans un éditeur. Le script ne supprime aucun fichier local
+et ne modifie jamais le `settings.json` d'un agent hôte. Une status line est
+donc copiée mais reste inactive tant que sa clé `statusLine` n'est pas
+enregistrée dans ce fichier ([ci-dessous](#activer-une-status-line)). Procédure
+détaillée : [SETUP.md](./docs/SETUP.md).
 
 Sans le script, un outil s'installe par simple copie, avec les outils dont il
 dépend ([carte](#dépendances-entre-outils)) : le dossier
@@ -135,26 +141,26 @@ l'enregistrement de sa clé `statusLine`.
 
 ### Activer une status line
 
-Une status line est facultative. `install.py --apply` copie son script avec les
-autres outils, mais Claude Code ne l'affiche qu'une fois la clé `statusLine`
-enregistrée dans `~/.claude/settings.json`, fichier que `install.py` ne
-modifie jamais.
+Une status line est facultative. `install.py apply --all` copie son script avec
+les autres outils, mais Claude Code ne l'affiche qu'une fois la clé
+`statusLine` enregistrée dans `~/.claude/settings.json`, fichier que
+`install.py` ne modifie jamais.
 
 1. Copier le script et obtenir la clé à enregistrer :
 
    ```powershell
-   python scripts/install.py --scope statusline --agent claude --apply
+   python scripts/install.py apply --all --scope statusline --agent claude
    ```
 
-   La sortie indique l'état de la clé `statusLine`. Si elle est absente ou
-   désigne un autre script, la sortie affiche le fragment JSON à enregistrer,
-   avec le chemin absolu du script sur la machine.
+   Si la clé `statusLine` est absente ou désigne un autre script, la sortie le
+   signale et affiche le fragment JSON à enregistrer, avec le chemin absolu du
+   script sur la machine.
 2. Ajouter ce fragment au premier niveau de `~/.claude/settings.json`, sans
    écraser le reste du fichier. Une clé `statusLine` existante désigne une autre
    status line : ne la remplacer que si cette status line n'est plus souhaitée.
-3. Relancer la commande sans `--apply` : la clé doit être signalée
-   `enregistree`. La status line apparaît au rafraîchissement suivant, sans
-   redémarrage.
+3. Lancer l'audit `python scripts/install.py --scope statusline --agent
+   claude` : la clé ne doit plus être signalée. La status line apparaît au
+   rafraîchissement suivant, sans redémarrage.
 
 Retirer la clé `statusLine` désactive la status line. Ce qu'elle affiche et ses
 paramètres sont décrits dans son
@@ -162,18 +168,17 @@ paramètres sont décrits dans son
 
 ### Par un prompt
 
-Dans une session de l'agent hôte ouverte à la racine du dépôt, un chemin de
-fichier précédé de `@` joint ce fichier au prompt. Joindre `docs/SETUP.md` donne
-d'emblée à l'agent la procédure d'installation, sans qu'il ait à la rechercher
-dans le dépôt. Un modèle moins coûteux, choisi par `/model`, suffit alors à la
-dérouler. Exemple :
+Dans une session de l'agent hôte ouverte à la racine du dépôt, le prompt
+ci-dessous suffit : la sortie du script indique à l'agent chaque commande à
+lancer, sans qu'il ait à lire `docs/SETUP.md` ni le contenu des fichiers
+comparés. Un modèle moins coûteux, choisi par `/model`, permet de mener
+l'installation.
 
 ```text
-Lis @AGENTS.md et @docs/SETUP.md, puis installe ou mets à jour les skills,
-agents, hooks et status lines de ce dépôt pour Claude Code et Copilot CLI.
-Lance d'abord l'audit, présente-moi le périmètre et attends ma confirmation
-avant --apply. En cas de conflit, affiche l'écart avec --diff et laisse-moi
-choisir.
+Installe ou mets à jour les outils de ce dépôt : lance
+`python scripts/install.py`, montre-moi son résumé tel quel, puis lance la
+commande apply qu'il indique avec les identifiants et les choix que je
+confirme.
 ```
 
 Ajouter `@docs/PREREQUIS.md` au prompt pour que l'agent vérifie d'abord les

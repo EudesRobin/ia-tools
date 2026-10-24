@@ -67,20 +67,24 @@ désigne une valeur renseignée à l'exécution et n'est jamais substituée.
 ## 2. Procédure — merge intelligent
 
 Le merge intelligent est porté par **`scripts/install.py`**. Ne pas le
-reproduire à la main, ne pas écrire de comparaison ad hoc : le script rend les
-sources, compare chaque rendu à sa cible, classe les écarts et applique les cas
-sûrs, pour chaque agent hôte. Le reste — confirmation du périmètre, arbitrage
-des conflits, traitement des fichiers en `local seul`, récapitulatif — revient à
-la session ([ci-dessous](#ce-qui-reste-à-la-session)).
+reproduire à la main, ne pas écrire de comparaison ad hoc et ne pas lire le
+contenu des fichiers comparés : le script substitue les placeholders, compare
+chaque fichier du dépôt à sa cible, classe les écarts, écrit ce que
+l'utilisateur a confirmé et vérifie ses écritures, pour chaque agent hôte. La
+session lance l'audit, transmet son résumé, recueille les choix de
+l'utilisateur et lance l'écriture
+([ci-dessous](#ce-qui-reste-à-la-session)).
 
 ```powershell
-python scripts/install.py                     # audit : n'écrit rien
-python scripts/install.py --apply             # écrit les cas sûrs
-python scripts/install.py --diff <chemin>     # écart d'un fichier en conflit
-python scripts/install.py --scope skills,agents
-python scripts/install.py --agent copilot
-python scripts/install.py --tool clean-android-tv --apply
-python scripts/install.py --scope statusline --agent claude
+python scripts/install.py                          # audit : résumé court, n'écrit rien
+python scripts/install.py apply --all              # écrit tous les cas sûrs
+python scripts/install.py apply --confirm <id>     # écrit la mise à jour d'un seul outil
+python scripts/install.py apply --confirm <id>=depot,<id>=local   # arbitre des conflits
+python scripts/install.py view <id>                # fichiers à comparer, pour l'utilisateur
+python scripts/install.py hunks <id>               # extrait borné de l'écart
+python scripts/install.py --diff <chemin>          # résumé et identifiant d'un fichier
+python scripts/install.py --scope skills,agents --agent copilot
+python scripts/install.py apply --all --tool clean-android-tv
 ```
 
 Le périmètre par défaut est `skills,agents,hooks,statusline`, tous outils
@@ -96,43 +100,61 @@ n'est admis qu'avec un seul agent hôte. Une cible dont le chemin contient une
 espace oblige à appeler les scripts embarqués par un chemin entre guillemets,
 forme que ne couvre plus la règle `allowed-tools` de leur skill
 ([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la même sortie au
-format JSON.
+format JSON. Les options `--apply`, équivalente à `apply --all`, et `--outil`,
+ancien nom de `--tool`, sont obsolètes et seront retirées dans une prochaine
+version `MAJEUR`.
 
-**Chaque agent hôte est traité séparément.** Classes, écritures et conflits
-sont établis pour chacun ; un conflit chez l'un n'empêche pas l'écriture chez
-l'autre.
+**Chaque agent hôte est traité séparément.** Le classement, les écritures et les
+conflits sont propres à chacun ; un conflit chez l'un n'empêche pas l'écriture
+chez l'autre.
 
-**Un outil s'installe d'un bloc.** Si l'un des fichiers d'un outil est en
-conflit chez un agent hôte, `--apply` n'écrit aucun de ses fichiers chez cet
-agent hôte, y compris ceux classés `absent`. Une skill ou un agent homonyme créé par
-l'utilisateur n'est ainsi jamais complété ni modifié : le script le signale et
-le laisse intact.
+**Un outil s'installe d'un bloc.** Tant que l'un des conflits d'un outil n'est
+pas arbitré chez un agent hôte, `apply` n'écrit aucun de ses fichiers chez cet
+agent hôte, y compris ceux classés `absent`. Une skill ou un agent homonyme créé
+par l'utilisateur n'est ainsi jamais complété ni modifié sans son accord.
 
 ### Ce que le script classe
 
-| Classe | Ce que c'est | Ce que fait `--apply` |
+| Classe | Ce que c'est | Ce que fait `apply` |
 |---|---|---|
-| `identique` | le rendu et la cible ne diffèrent pas | rien |
-| `absent` | la cible n'existe pas | écrit le rendu |
-| `obsolete` | la cible est le rendu d'une révision antérieure du dépôt : installation intacte devenue obsolète | écrit le rendu, sans confirmation |
-| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | **rien**, pour aucun fichier du même outil chez cet agent hôte |
+| `identique` | le fichier du dépôt, placeholders substitués, et la cible ne diffèrent pas | rien |
+| `absent` | la cible n'existe pas | l'écrit, avec `--all` ou l'identifiant de l'outil |
+| `obsolete` | la cible est une révision antérieure du dépôt, ou une copie manuelle dont les placeholders n'ont pas été substitués : installation intacte devenue obsolète | la remplace, avec `--all` ou l'identifiant de l'outil |
+| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | rien sans `--confirm <id>=<choix>` ; `depot` sauvegarde la version locale puis la remplace, `local` la garde ; une fois chaque conflit de l'outil arbitré, ses autres fichiers sont écrits |
 | `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
+
+La version locale remplacée par le choix `depot` est sauvegardée sous
+`{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, en conservant son chemin relatif ;
+ce dossier n'est jamais examiné.
 
 ### Ce que le script rapporte
 
 - **Validation préalable.** Le script lance `scripts/validate.py` avant tout
-  examen. Si la validation échoue, `--apply` n'écrit rien. Une anomalie
+  examen. Si la validation échoue, `apply` n'écrit rien. Une anomalie
   d'environnement (`pyyaml` absent) est signalée sans bloquer l'installation.
-- **État de chaque outil**, par agent hôte : l'état le plus défavorable parmi
-  ceux de ses fichiers — `a_jour`, `a_installer`, `a_mettre_a_jour`,
-  `conflit` ou `illisible`. Après `--apply`, un outil dont les fichiers ont
-  été écrits passe à `installe` ou `mis_a_jour`. Le détail par fichier n'est
-  affiché que pour ce qui demande une intervention : conflits, fichiers
-  illisibles, fichiers en `local seul`, échecs d'écriture.
-- **Écritures vérifiées.** Chaque fichier écrit par `--apply` est relu et
-  comparé au rendu. Une écriture impossible, ou un fichier relu qui diffère
-  du rendu, classe l'outil en `echec`, sans interrompre le traitement des
-  autres outils.
+- **Résumé court**, sans contenu de fichier : une ligne par agent hôte, qui
+  compte ses outils par état — `a_jour`, `a_installer`, `a_mettre_a_jour`,
+  `conflit`, `illisible`, puis `installe`, `mis_a_jour` ou `echec` après
+  `apply` —, puis une ligne par action à confirmer, sous un identifiant court.
+  Une mise à jour donne l'outil et le nombre de fichiers concernés ; un conflit
+  donne le fichier et un résumé de l'écart : nombre de blocs, lignes propres à
+  chaque version, plages de lignes. Suivent, pour information, les fichiers
+  illisibles, les fichiers en `local seul`, les échecs d'écriture et l'état de
+  la clé `statusLine`, puis la commande `apply` à lancer.
+- **Identifiants sans état stocké.** Un identifiant est tiré de l'état examiné :
+  il change dès que la cible ou la source change. `apply` refait l'audit et
+  refuse tout identifiant inconnu ou périmé, sans rien écrire.
+- **Écritures vérifiées.** Chaque fichier écrit par `apply` est relu et comparé
+  à la version du dépôt, placeholders substitués. Une écriture impossible, ou un
+  fichier relu qui diffère, classe l'outil en `echec`, sans interrompre le
+  traitement des autres outils. `apply` refait ensuite l'audit et affiche ce qui
+  reste.
+- **Contenu d'un conflit.** `view <id>` dépose la version du dépôt,
+  placeholders substitués, dans un dossier temporaire hors de `{AGENT_DIR}`, et
+  n'affiche que les deux chemins et la commande qui les compare dans l'éditeur.
+  `hunks <id>` affiche les blocs de l'écart sans contexte, dans la limite de
+  `--max-lines` lignes (40 par défaut), chacune tronquée à 160 caractères ;
+  c'est la seule sortie qui cite le contenu d'un fichier.
 
 Code de sortie : `0` si la validation n'est pas en échec — une validation
 impossible en raison d'une anomalie d'environnement ne compte pas comme un
@@ -141,33 +163,34 @@ impossible en raison d'une anomalie d'environnement ne compte pas comme un
 
 ### Ce qui reste à la session
 
-1. **Confirmer le périmètre et les agents hôtes** avant la première écriture,
-   puis lancer `--apply`. Une demande qui ne les précise pas (« mets à jour mes
-   outils ») prend les valeurs par défaut du script.
-2. **Arbitrer chaque conflit** : afficher l'écart par `--diff <chemin>` (avec
-   `--agent` pour ne viser qu'un seul agent hôte), puis demander à l'utilisateur
-   de choisir — adopter la version du dépôt, garder la version locale ou merger
-   écart par écart — et appliquer le choix. Le script n'écrit jamais un fichier
-   en conflit.
-3. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
+1. **Lancer l'audit et montrer son résumé tel quel.** Une demande qui ne précise
+   ni le périmètre ni les agents hôtes (« mets à jour mes outils ») prend les
+   valeurs par défaut du script.
+2. **Recueillir l'accord de l'utilisateur** : `--all` pour les cas sûrs, ou les
+   identifiants qu'il retient ; pour chaque conflit, son choix explicite entre
+   `depot` et `local`. Pour décider, l'utilisateur compare lui-même les deux
+   versions grâce à `view <id>`. `hunks <id>` ne se lance que si l'utilisateur
+   demande à la session d'examiner l'écart.
+3. **Lancer `apply`** avec ces choix, sans relancer l'audit : `apply` le refait
+   lui-même. Pour merger écart par écart, la session reporte dans le fichier
+   local, à la demande de l'utilisateur, les blocs retenus parmi ceux
+   qu'affiche `hunks <id>`, par des modifications ciblées et jamais par une
+   réécriture du fichier ; l'utilisateur choisit ensuite `local`. Un conflit
+   arbitré par le choix `local` est de nouveau signalé à chaque audit, et le
+   code de sortie vaut alors `1`.
+4. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
-4. **Ne relancer l'audit qu'après un arbitrage** : `--apply` vérifie lui-même
-   ses écritures. Chaque fichier arbitré en faveur du dépôt doit être classé
-   `identique`. Un fichier gardé en version locale ou mergé écart par écart
-   reste classé `conflit`, et le code de sortie vaut alors `1`.
-5. **Récapituler**, par agent hôte, en reprenant les lignes d'état par outil
-   que donne la sortie, complétées du résultat de chaque arbitrage.
+5. **Récapituler**, par agent hôte, en reprenant le résumé affiché par `apply`.
 
-Un audit dont le code de sortie vaut `0` et qui ne signale aucun outil
-`a_installer` ni `a_mettre_a_jour` clôt la procédure : il n'y a rien à
-confirmer ni à écrire.
+Un audit dont le code de sortie vaut `0` et qui n'affiche aucune action clôt la
+procédure : il n'y a rien à confirmer ni à écrire.
 
 ## 3. Skills
 
 `--scope skills` parcourt chaque dossier **fichier par fichier**, pas seulement
 `SKILL.md` : un fichier embarqué présent uniquement dans le dépôt est classé
-`absent` et ajouté par `--apply` ; un fichier présent uniquement dans le dossier
+`absent` et ajouté par `apply` ; un fichier présent uniquement dans le dossier
 local d'une skill du dépôt est classé `local seul` et jamais supprimé. Les
 skills étrangères au dépôt — celles de l'utilisateur, ou celles que l'agent hôte
 synchronise lui-même — ne sont pas examinées.
