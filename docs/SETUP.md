@@ -97,18 +97,21 @@ n'est admis qu'avec un seul agent hôte. Une cible dont le chemin contient une
 espace oblige à appeler les scripts embarqués par un chemin entre guillemets,
 forme que ne couvre plus la règle `allowed-tools` de leur skill
 ([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la même sortie au
-format JSON. Les options `--apply`, qui n'écrit que les outils sans conflit,
-et `--outil`, ancien nom de `--tool`, sont obsolètes et seront retirées dans
-une prochaine version `MAJEUR`.
+format JSON. Les options `--apply`, qui n'écrit que les outils sans conflit et
+ne supprime rien, et `--outil`, ancien nom de `--tool`, sont obsolètes et
+seront retirées dans une prochaine version `MAJEUR`.
 
 **Chaque agent hôte est traité séparément.** Le classement et les écritures
 sont propres à chacun.
 
 **Le dépôt l'emporte.** Un outil n'admet aucune personnalisation hors des
-placeholders. `apply` écrit un outil d'un bloc : ses fichiers `absent` et
-`obsolete`, ainsi que ses fichiers en `conflit`, dont la version locale est
-d'abord sauvegardée. Une skill ou un agent créé par l'utilisateur sous le nom
-d'un outil du dépôt est remplacé de la même façon. Pour épargner un outil,
+placeholders. `apply` traite un outil d'un bloc : il écrit ses fichiers
+`absent` et `obsolete`, ainsi que ses fichiers en `conflit`, et supprime ses
+fichiers en `local seul` ; la version locale d'un fichier remplacé ou supprimé
+est d'abord sauvegardée. Un outil `retire` est supprimé de la même façon. Une
+skill ou un agent créé par l'utilisateur sous le nom
+d'un outil du dépôt est traité comme un fichier en `conflit` : sauvegardé,
+puis remplacé. Pour épargner un outil,
 lancer `apply --confirm` avec les seuls identifiants des autres outils ; l'outil
 épargné reste signalé à chaque audit.
 
@@ -120,12 +123,21 @@ lancer `apply --confirm` avec les seuls identifiants des autres outils ; l'outil
 | `absent` | la cible n'existe pas | l'écrit, avec `--all` ou l'identifiant de l'outil |
 | `obsolete` | la cible est une révision antérieure du dépôt, ou une copie manuelle dont les placeholders n'ont pas été substitués : installation intacte devenue obsolète | la remplace, avec `--all` ou l'identifiant de l'outil |
 | `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | sauvegarde la version locale, puis la remplace, avec `--all` ou l'identifiant de l'outil |
-| `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
+| `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | sauvegarde le fichier, puis le supprime, avec `--all` ou l'identifiant de l'outil |
+| `retire` | outil supprimé ou renommé dans le dépôt, encore présent en local, dont chaque fichier est une révision antérieure du dépôt, placeholders substitués | sauvegarde ses fichiers, puis les supprime, avec `--all` ou l'identifiant de l'outil |
 
-La version locale d'un fichier en `conflit` est sauvegardée, sous le même chemin
-relatif, dans `{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, avant d'être
-remplacée ; ce dossier n'est jamais examiné. Une sauvegarde impossible laisse la
-cible intacte et figure parmi les échecs d'écriture.
+La version locale d'un fichier en `conflit`, en `local seul` ou d'un outil
+`retire` est sauvegardée, sous le même chemin relatif, dans
+`{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, avant d'être remplacée ou
+supprimée ; ce dossier n'est jamais examiné. Une sauvegarde impossible laisse la
+cible intacte et figure parmi les échecs d'écriture. Les dossiers devenus vides
+sont supprimés.
+
+Un outil retiré dont un fichier local ne correspond à aucune révision du dépôt
+— édition locale, ou outil désormais porté par un autre dépôt — est laissé en
+place et signalé pour information. La reconnaissance d'un outil retiré exige
+l'historique git du dépôt ([PREREQUIS.md](PREREQUIS.md#git)) ; `--tool`
+n'examine aucun outil retiré.
 
 ### Ce que le script rapporte
 
@@ -134,13 +146,15 @@ cible intacte et figure parmi les échecs d'écriture.
   d'environnement (`pyyaml` absent) est signalée sans bloquer l'installation.
 - **Résumé court**, sans contenu de fichier : une ligne par agent hôte, qui
   compte ses outils par état — `a_jour`, `a_installer`, `a_mettre_a_jour`,
-  `conflit`, `illisible`, puis `installe`, `mis_a_jour` ou `echec` après
-  `apply` —, puis une ligne par outil à écrire, sous un identifiant court, avec
-  le nombre de fichiers concernés. Chaque fichier en `conflit` y est nommé, sur
-  une ligne qui annonce sa sauvegarde et son remplacement. Suivent, pour
-  information, les fichiers
-  illisibles, les fichiers en `local seul`, les échecs d'écriture et l'état de
-  la clé `statusLine`, puis la commande `apply` à lancer.
+  `retire`, `conflit`, `illisible`, puis `installe`, `mis_a_jour`, `supprime`
+  ou `echec` après `apply` —, puis une ligne par outil à traiter, sous un
+  identifiant court, avec le nombre de fichiers concernés. Chaque fichier en
+  `conflit` y est nommé, sur une ligne qui annonce sa sauvegarde et son
+  remplacement ; chaque fichier à supprimer, ou le dossier d'un outil
+  `retire`, sur une ligne qui annonce sa sauvegarde et sa suppression. Suivent,
+  pour information, les fichiers illisibles, les outils retirés laissés en
+  place, les échecs d'écriture et l'état de la clé `statusLine`, puis la
+  commande `apply` à lancer.
 - **Identifiants sans état stocké.** Un identifiant est tiré de l'état examiné :
   il change dès que l'un des fichiers locaux de l'outil change. `apply` refait
   l'audit et refuse tout identifiant inconnu ou périmé, sans rien écrire.
@@ -163,13 +177,11 @@ impossible en raison d'une anomalie d'environnement ne compte pas comme un
 2. **Recueillir l'accord de l'utilisateur** sur `apply --all`, ou sur les seuls
    identifiants qu'il retient. Une demande qui prescrit déjà `apply --all` vaut
    accord. Le résumé nomme chaque fichier en conflit, dont la version locale
-   sera sauvegardée, puis remplacée.
+   sera sauvegardée, puis remplacée, et chaque fichier qui sera sauvegardé,
+   puis supprimé.
 3. **Lancer `apply`** — `--all`, ou `--confirm` avec les identifiants retenus —,
    sans relancer l'audit : `apply` le refait lui-même.
-4. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
-   l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
-   volontaire.
-5. **Récapituler**, par agent hôte, en reprenant le résumé affiché par `apply`.
+4. **Récapituler**, par agent hôte, en reprenant le résumé affiché par `apply`.
 
 Un audit dont le code de sortie vaut `0` et qui n'affiche aucune action clôt la
 procédure : il n'y a rien à confirmer ni à écrire.
@@ -179,7 +191,8 @@ procédure : il n'y a rien à confirmer ni à écrire.
 `--scope skills` parcourt chaque dossier **fichier par fichier**, pas seulement
 `SKILL.md` : un fichier embarqué présent uniquement dans le dépôt est classé
 `absent` et ajouté par `apply` ; un fichier présent uniquement dans le dossier
-local d'une skill du dépôt est classé `local seul` et jamais supprimé. Les
+local d'une skill du dépôt est classé `local seul`, sauvegardé, puis supprimé
+par `apply` (§2). Les
 skills étrangères au dépôt — celles de l'utilisateur, ou celles que l'agent hôte
 synchronise lui-même — ne sont pas examinées.
 

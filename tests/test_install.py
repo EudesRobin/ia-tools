@@ -4,8 +4,10 @@ agent hote : installation sur cible vide, idempotence, etat par outil, conflit
 sur edition locale sans ecriture de l'outil concerne, echec d'ecriture signale,
 validation prealable bloquant 'apply', settings.json jamais ecrit ; audit court a
 identifiants sans contenu de fichier, 'apply' par --all et --confirm, conflit
-remplace par la version du depot apres sauvegarde, identifiant perime refuse
-(AGENTS.md, DoD des scripts ; docs/SETUP.md).
+remplace par la version du depot apres sauvegarde, identifiant perime refuse ;
+fichier local seul et outil retire du depot supprimes apres sauvegarde, outil
+retire modifie localement laisse en place (AGENTS.md, DoD des scripts ;
+docs/SETUP.md).
 
 Usage : python tests/test_install.py
 Code de sortie : 0 si tout passe, 1 sinon.
@@ -13,6 +15,7 @@ Code de sortie : 0 si tout passe, 1 sinon.
 
 import contextlib
 import importlib.util
+import shutil
 import io
 import json
 import subprocess
@@ -318,6 +321,113 @@ def load_install():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+class TestLocalOnly(unittest.TestCase):
+    """Fichier present seulement en local dans le dossier d'un outil du depot :
+    supprime apres sauvegarde par apply, laisse en place par --apply."""
+
+    EXTRA = f"{TOOL}/notes-perso.md"
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.target = Path(self._tmp.name) / "claude"
+        run_install("claude", self.target, "apply", "--all")
+        (self.target / self.EXTRA).write_text("ajout local\n", encoding="utf-8")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_audit_lists_deletion_then_apply_deletes(self):
+        found = [a for a in actions_of(self.target) if a["suppressions"]]
+        self.assertEqual([(a["outil"], a["suppressions"]) for a in found],
+                         [("clean-android-tv", [self.EXTRA])])
+        r = run_text("claude", self.target)
+        self.assertIn(f"supprime apres sauvegarde : {self.EXTRA}", r.stdout)
+        code, r = run_install("claude", self.target, "apply", "--all")
+        self.assertEqual(code, 0, r)
+        self.assertEqual(r["supprimes"], [self.EXTRA])
+        self.assertFalse((self.target / self.EXTRA).exists())
+        saved = (Path(r["sauvegarde"]) / self.EXTRA).read_text(encoding="utf-8")
+        self.assertEqual(saved, "ajout local\n")
+        self.assertEqual(actions_of(self.target), [])
+
+    def test_deprecated_apply_keeps_local_only(self):
+        code, r = run_install("claude", self.target, "--apply")
+        self.assertEqual(code, 0, r)
+        self.assertEqual(r["supprimes"], [])
+        self.assertTrue((self.target / self.EXTRA).is_file())
+
+
+RETIRED = "setup-harness"
+
+
+def git(cwd: Path, *args: str) -> None:
+    subprocess.run(
+        ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid", *args],
+        cwd=cwd, check=True, capture_output=True,
+    )
+
+
+class TestRetired(unittest.TestCase):
+    """Outil supprime du depot mais present en local : supprime apres
+    sauvegarde s'il est intact, laisse en place s'il a ete modifie. Le depot
+    est un clone temporaire, ou l'outil est supprime par un commit."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        tmp = Path(self._tmp.name)
+        self.clone, self.target = tmp / "depot", tmp / "claude"
+        subprocess.run(["git", "clone", "-q", str(ROOT), str(self.clone)], check=True, capture_output=True)
+        # Script en cours d'essai et validateur neutre : la carte des outils du
+        # README cite encore l'outil supprime.
+        shutil.copy(ROOT / "scripts" / "install.py", self.clone / "scripts" / "install.py")
+        (self.clone / "scripts" / "validate.py").write_text("import sys\nsys.exit(0)\n", encoding="utf-8")
+        git(self.clone, "commit", "-q", "-am", "test: outillage")
+        self.install("apply", "--all")
+        self.local = self.target / "skills" / RETIRED
+        self.assertTrue(self.local.is_dir())
+        git(self.clone, "rm", "-q", "-r", f"skills/{RETIRED}")
+        git(self.clone, "commit", "-q", "-m", "test: retrait")
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def install(self, *options: str) -> tuple[int, dict]:
+        r = subprocess.run(
+            [sys.executable, str(self.clone / "scripts" / "install.py"),
+             "--agent", "claude", "--target", str(self.target), "--json", *options],
+            cwd=self.clone, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+        )
+        try:
+            out = json.loads(r.stdout)
+        except ValueError:
+            raise AssertionError(f"sortie --json illisible (code {r.returncode}) : {r.stderr}")
+        return r.returncode, out
+
+    def test_intact_retired_tool_deleted_after_backup(self):
+        code, out = self.install()
+        retired = [a for a in out["actions"] if a["outil"] == RETIRED]
+        self.assertEqual([a["etat"] for a in retired], ["retire"], out["actions"])
+        files = sorted(p.relative_to(self.target).as_posix() for p in self.local.rglob("*") if p.is_file())
+        self.assertEqual(sorted(retired[0]["suppressions"]), files)
+        code, out = self.install("apply", "--all")
+        r = out["agents"]["claude"]
+        self.assertEqual(code, 0, r)
+        self.assertEqual(sorted(r["supprimes"]), files)
+        self.assertFalse(self.local.exists(), "dossier de l'outil retire non supprime")
+        self.assertTrue((self.target / "skills").is_dir())
+        saved = Path(r["sauvegarde"]) / "skills" / RETIRED / "SKILL.md"
+        self.assertTrue(saved.is_file(), "outil retire non sauvegarde")
+
+    def test_modified_retired_tool_kept(self):
+        skill = self.local / "SKILL.md"
+        skill.write_text(skill.read_text(encoding="utf-8") + "edition locale\n", encoding="utf-8")
+        code, out = self.install("apply", "--all")
+        r = out["agents"]["claude"]
+        self.assertEqual(r["retires_modifies"], [RETIRED])
+        self.assertEqual(r["supprimes"], [])
+        self.assertTrue(skill.is_file(), "outil retire modifie supprime")
 
 
 class TestDependencies(unittest.TestCase):

@@ -14,6 +14,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   chaque outil à écrire sous un identifiant court. `apply --all` écrit tous les
   outils, `apply --confirm <id>,...` les seuls outils désignés ; `apply` refuse un
   identifiant périmé et n'écrit alors rien.
+- `install.py` : un outil supprimé ou renommé dans le dépôt est reconnu dans
+  `{AGENT_DIR}` (classe `retire`). Intact, il est sauvegardé, puis supprimé par
+  `apply` ; modifié localement, il est laissé en place et signalé.
 
 ### 🔄 Modifications
 
@@ -21,8 +24,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   conflit est sauvegardé sous `{AGENT_DIR}/.ia-tools-backup/`, puis remplacé
   par la version du dépôt, au lieu de bloquer l'écriture de son outil.
 - `install.py` : la sortie est un résumé court qui ne cite jamais le contenu
-  d'un fichier ; chaque fichier en conflit y est nommé. `--diff <chemin>` donne la classe du
-  fichier et l'identifiant de son outil au lieu du diff complet.
+  d'un fichier ; chaque fichier en conflit y est nommé. `--diff <chemin>` donne
+  la classe du fichier et l'identifiant de son outil au lieu du diff complet.
+- `install.py` : un fichier présent uniquement en local, dans le dossier d'un
+  outil du dépôt, est sauvegardé, puis supprimé par `apply`, au lieu d'être
+  seulement signalé ; `--apply` ne supprime rien.
 - `install.py` : une copie manuelle dont les placeholders n'ont pas été
   substitués est classée `obsolete` et remplacée par `apply --all`, au lieu
   d'être signalée en conflit.

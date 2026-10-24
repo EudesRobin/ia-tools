@@ -50,10 +50,12 @@ supposent `python` accessible sans chemin absolu.
 
 `scripts/install.py` lit l'historique git du dépôt pour reconnaître une
 installation locale rendue à partir d'une révision antérieure : l'installation
-est alors classée `obsolete` et remplacée sans arbitrage. Si `git` est absent du
-PATH, ou si le dépôt provient d'une archive dépourvue du dossier `.git`, cette
-reconnaissance est impossible : une telle installation est classée `conflit`. Obtenir le dépôt par `git clone`, non par
-téléchargement d'une archive ZIP.
+est alors classée `obsolete` et remplacée sans sauvegarde. Si `git` est absent
+du PATH, ou si le dépôt provient d'une archive dépourvue du dossier `.git`,
+cette reconnaissance est impossible : une telle installation est classée
+`conflit`, sauvegardée, puis remplacée. L'historique sert aussi à reconnaître
+un outil retiré du dépôt : sans lui, cet outil reste en place. Obtenir le dépôt
+par `git clone`, non par téléchargement d'une archive ZIP.
 
 ### Bibliothèques Python
 

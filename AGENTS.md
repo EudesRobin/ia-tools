@@ -28,10 +28,11 @@ est réalisé par `scripts/install.py`, que l'agent conduit en trois temps :
 
 1. lancer son audit, `python scripts/install.py`, et montrer son résumé tel
    quel ;
-2. recueillir l'accord de l'utilisateur, soit sur `apply --all`, qui remplace
-   aussi chaque édition locale par la version du dépôt après l'avoir
-   sauvegardée, soit sur les seuls identifiants qu'il retient ; une demande qui
-   prescrit déjà `apply --all` vaut accord ;
+2. recueillir l'accord de l'utilisateur, soit sur `apply --all`, qui, après
+   sauvegarde, remplace aussi chaque édition locale par la version du dépôt et
+   supprime les fichiers ajoutés localement et les outils retirés restés
+   intacts, soit sur les seuls identifiants que l'utilisateur retient ; une
+   demande qui prescrit déjà `apply --all` vaut accord ;
 3. lancer la commande `apply` qu'indique le résumé, ou `apply --confirm` avec
    les identifiants retenus.
 

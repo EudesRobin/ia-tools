@@ -15,7 +15,12 @@ cible locale, puis ecrit ce que l'utilisateur a confirme :
               ou source brute non substituee           -> ecrire le rendu
   conflit     ni l'un ni l'autre : edition locale       -> sauvegarder, ecrire le rendu
   local-seul  present seulement en local, dans le dossier
-              d'un outil du depot                     -> liste, jamais supprime
+              d'un outil du depot                     -> sauvegarder, supprimer
+  retire      outil supprime du depot, present en local
+              et egal a une revision anterieure        -> sauvegarder, supprimer
+
+Un outil retire modifie localement, peut-etre porte desormais par un autre
+depot, est laisse en place et signale.
 
 Deux commandes. 'audit' (defaut) n'ecrit rien et rend un resume court : une
 ligne par agent hote, une ligne par outil a ecrire, sous un identifiant court.
@@ -30,12 +35,13 @@ l'audit avant et apres ses ecritures. Aucune sortie ne cite le contenu d'un
 fichier.
 
 Un outil (une skill, un agent et ses documents) s'ecrit d'un bloc chez un agent
-hote. --apply, obsolete, n'ecrit que les outils sans conflit. Chaque agent hote
-est traite separement.
+hote. --apply, obsolete, n'ecrit que les outils sans conflit et ne supprime
+rien. Chaque agent hote est traite separement.
 
 Le rapport donne l'etat de chaque outil, celui du plus en retard de ses
-fichiers : a_jour, a_installer, a_mettre_a_jour, conflit ou illisible ; apres
-'apply', installe, mis_a_jour ou echec a la place des etats ecrits. Chaque
+fichiers : a_jour, a_installer, a_mettre_a_jour, retire, conflit ou illisible ;
+apres 'apply', installe, mis_a_jour, supprime ou echec a la place des etats
+ecrits. Chaque
 ecriture est relue et comparee au rendu : une ecriture impossible ou divergente
 est classee en echec, sans interrompre les autres outils.
 
@@ -151,8 +157,10 @@ STATE_LABELS = {
     "illisible": "illisible",
     "a_installer": "a installer",
     "a_mettre_a_jour": "a mettre a jour",
+    "retire": "retire du depot",
     "installe": "installe",
     "mis_a_jour": "mis a jour",
+    "supprime": "supprime",
     "a_jour": "a jour",
 }
 
@@ -344,7 +352,6 @@ def pairs(agent: str, scopes: list[str], target_root: Path) -> list[tuple[str, P
 
 def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
     """Fichiers presents seulement en local, dans le dossier d'un outil du depot.
-    Listes, jamais supprimes.
 
     Les outils etrangers au depot (outils de l'utilisateur, skills synchronisees
     par l'agent hote) ne sont pas examines : ils ne relevent pas de ce merge.
@@ -367,6 +374,56 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
                     continue
                 out.append(f"{dst_rel}/{rel.as_posix()}")
     return out
+
+
+def retired_tools(agent: str, scopes: list[str], target_root: Path,
+                  subs: dict[str, str]) -> tuple[list[str], list[str]]:
+    """(fichiers locaux des outils retires restes intacts, noms des outils
+    retires modifies localement).
+
+    Un outil retire a eu des fichiers dans l'historique du depot et n'en a plus
+    aucun. Il n'est intact que si chacun de ses fichiers locaux egale le rendu
+    d'une revision d'un fichier supprime du depot. Sans git, aucun outil n'est
+    reconnu comme retire.
+    """
+    intact, modified = [], []
+    for scope in scopes:
+        current = {tool_of(rel) for rel, _, _ in pairs(agent, [scope], target_root)}
+        for src_rel, dst_rel in scope_pairs(agent, scope):
+            log = git_bytes(
+                ["log", "--no-renames", "--diff-filter=D", "--name-only", "--format=", "--", src_rel]
+            )
+            deleted = {
+                line.strip() for line in (log or b"").decode("utf-8", errors="replace").splitlines()
+                if line.strip()
+            }
+            names = {tool_of(path) for path in deleted} - current
+            dst = target_root / dst_rel
+            if not names or not dst.is_dir():
+                continue
+            by_tool: dict[str, list[Path]] = {}
+            for path in sorted(dst.rglob("*")):
+                rel = path.relative_to(dst)
+                if not path.is_file() or excluded(rel):
+                    continue
+                name = tool_of(f"{dst_rel}/{rel.as_posix()}")
+                if name in names:
+                    by_tool.setdefault(name, []).append(rel)
+
+            def was_rendered(rel: Path) -> bool:
+                origin = source_rel(agent, src_rel, rel)
+                if origin is None or f"{src_rel}/{origin.as_posix()}" not in deleted:
+                    return False
+                local = read_bytes(dst / rel)
+                renders = previous_renders(f"{src_rel}/{origin.as_posix()}", subs)
+                return local is not None and normalize(local) in renders
+
+            for name, files in sorted(by_tool.items()):
+                if all(was_rendered(rel) for rel in files):
+                    intact += [f"{dst_rel}/{rel.as_posix()}" for rel in files]
+                else:
+                    modified.append(name)
+    return intact, modified
 
 
 def classify(source: str, src: Path, dst: Path, subs: dict[str, str]) -> tuple[str, bytes, bytes | None]:
@@ -395,6 +452,30 @@ def write_checked(dst: Path, rendered: bytes) -> bool:
         return False
     local = read_bytes(dst)
     return local is not None and normalize(local) == normalize(rendered)
+
+
+def remove_checked(dst: Path) -> bool:
+    """Supprime la cible : vrai seulement si elle n'existe plus."""
+    try:
+        dst.unlink()
+    except OSError:
+        return False
+    return not dst.exists()
+
+
+def prune_empty(target_root: Path, removed: list[Path]) -> None:
+    """Retire les dossiers devenus vides, sans remonter jusqu'au dossier d'un
+    perimetre (skills/, agents/, agents/docs/, statuslines/)."""
+    for path in removed:
+        folder = path.parent
+        while len(folder.relative_to(target_root).parts) > 1 and folder.relative_to(
+            target_root
+        ).as_posix() != "agents/docs":
+            try:
+                folder.rmdir()
+            except OSError:
+                break
+            folder = folder.parent
 
 
 def backup(target_root: Path, stamp: str, dst: Path, local: bytes) -> Path | None:
@@ -429,6 +510,8 @@ def tool_states(per_file: list[dict], failed: list[str], written_tools: set[str]
             state = "illisible"
         elif all(s == "identique" for s in statuses):
             state = "a_jour"
+        elif all(s == "retire" for s in statuses):
+            state = "supprime" if written else "retire"
         elif all(s == "absent" for s in statuses):
             state = "installe" if written else "a_installer"
         else:
@@ -622,14 +705,26 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
         per_file.append(
             {"source": source, "dst": dst, "status": status, "rendered": rendered, "local": local}
         )
+    # --tool ne vise que des outils du depot : aucun outil retire n'est examine.
+    retired, retired_modified = (
+        ([], []) if wanted is not None else retired_tools(agent, scopes, target_root, subs)
+    )
+    for rel, status in [(o, "local_seul") for o in orphans] + [(r, "retire") for r in retired]:
+        dst = target_root / rel
+        per_file.append(
+            {"source": rel, "dst": dst, "status": status, "rendered": b"", "local": read_bytes(dst)}
+        )
 
     return {
         "cible": str(target_root),
         "target_root": target_root,
         "classes": classes,
         "local_seul": orphans,
+        "retires": sorted({tool_of(rel) for rel in retired}),
+        "retires_modifies": retired_modified,
         "outils_bloques": sorted({tool_of(rel) for rel in classes["conflit"]}),
         "ecrits": [],
+        "supprimes": [],
         "echecs": [],
         "resolus": [],
         "sauvegarde": None,
@@ -640,6 +735,12 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
         "statusline": statusline_state(agent, scopes, target_root, wanted),
         "per_file": per_file,
     }
+
+
+# Classes d'un fichier qu'apply ecrit ou supprime ; parmi elles, celles qu'il
+# supprime.
+CHANGING = ("absent", "obsolete", "conflit", "local_seul", "retire")
+DELETED = ("local_seul", "retire")
 
 
 def digest(raw: bytes | None) -> str:
@@ -657,9 +758,9 @@ def build_actions(reports: dict[str, dict]) -> list[dict]:
             by_tool.setdefault(tool_of(f["source"]), []).append(f)
         for tool, files in sorted(by_tool.items()):
             state = r["outils"][tool]
-            if state not in ("a_installer", "a_mettre_a_jour", "conflit"):
+            if state not in ("a_installer", "a_mettre_a_jour", "retire", "conflit"):
                 continue
-            changing = [f for f in files if f["status"] in ("absent", "obsolete", "conflit")]
+            changing = [f for f in files if f["status"] in CHANGING]
             key = "|".join(
                 [agent, tool]
                 + [f"{f['source']}:{f['status']}:{digest(f['local'])}" for f in changing]
@@ -667,6 +768,7 @@ def build_actions(reports: dict[str, dict]) -> list[dict]:
             actions.append({
                 "agent": agent, "outil": tool, "etat": state, "fichiers": len(changing),
                 "editions": [f["source"] for f in changing if f["status"] == "conflit"],
+                "suppressions": [f["source"] for f in changing if f["status"] in DELETED],
                 "key": key,
             })
     for length in (4, 6, 8, 40):
@@ -692,31 +794,41 @@ def parse_confirm(values: list[str], actions: list[dict]) -> tuple[set[str], str
 
 def apply_agent(agent: str, r: dict, actions: list[dict], chosen: set[str],
                 write_all: bool, keep_conflicts: bool, stamp: str) -> None:
-    """Ecrit, chez un agent hote, les outils confirmes. La version locale d'un
-    conflit est d'abord sauvegardee ; une sauvegarde impossible laisse la cible
-    intacte et compte comme un echec. Avec keep_conflicts (--apply), --all
-    laisse de cote les outils en conflit."""
+    """Ecrit, chez un agent hote, les outils confirmes, et supprime leurs
+    fichiers en local seul et les fichiers des outils retires. La version
+    locale d'un conflit ou d'un fichier supprime est d'abord sauvegardee ; une
+    sauvegarde impossible laisse la cible intacte et compte comme un echec.
+    Avec keep_conflicts (--apply), --all laisse de cote les outils en conflit
+    et ne supprime rien."""
     tools = {
         a["outil"] for a in actions
         if a["agent"] == agent and (
             a["id"] in chosen or (write_all and not (keep_conflicts and a["editions"]))
         )
     }
-    written, failed, resolved = [], [], []
+    written, removed, failed, resolved = [], [], [], []
     for f in r["per_file"]:
         source, dst, status = f["source"], f["dst"], f["status"]
-        if tool_of(source) not in tools or status not in ("absent", "obsolete", "conflit"):
+        if tool_of(source) not in tools or status not in CHANGING:
             continue
-        if status == "conflit":
-            if backup(r["target_root"], stamp, dst, f["local"]) is None:
+        if status in DELETED and keep_conflicts:
+            continue
+        if status in DELETED + ("conflit",):
+            if backup(r["target_root"], stamp, dst, f["local"] or b"") is None:
                 failed.append(source)
                 continue
             r["sauvegarde"] = str(r["target_root"] / BACKUP_DIR / stamp)
+        if status in DELETED:
+            (removed if remove_checked(dst) else failed).append(source)
+            continue
+        if status == "conflit":
             resolved.append(source)
         (written if write_checked(dst, f["rendered"]) else failed).append(source)
+    prune_empty(r["target_root"], [r["target_root"] / s for s in removed])
 
-    r["ecrits"], r["echecs"], r["resolus"] = written, failed, resolved
-    r["outils"] = tool_states(r["per_file"], failed, {tool_of(s) for s in written}, set(resolved))
+    r["ecrits"], r["supprimes"], r["echecs"], r["resolus"] = written, removed, failed, resolved
+    touched = {tool_of(s) for s in written + removed}
+    r["outils"] = tool_states(r["per_file"], failed, touched, set(resolved))
     unresolved = [s for s in r["classes"]["conflit"] if s not in resolved]
     r["outils_bloques"] = sorted({tool_of(s) for s in unresolved})
 
@@ -733,6 +845,20 @@ def command_options(args: argparse.Namespace) -> str:
     if args.target is not None:
         opts.append(f'--target "{args.target}"')
     return "".join(f" {o}" for o in opts)
+
+
+def shown_deletions(action: dict) -> list[str]:
+    """Suppressions affichees : chaque fichier, ou le dossier d'un outil retire."""
+    if action["etat"] != "retire":
+        return action["suppressions"]
+    shown = []
+    for source in action["suppressions"]:
+        parts = source.split("/")
+        depth = 3 if parts[:2] == ["agents", "docs"] else 2
+        root = "/".join(parts[:depth]) + ("/" if len(parts) > depth else "")
+        if root not in shown:
+            shown.append(root)
+    return shown
 
 
 def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.Namespace) -> None:
@@ -754,12 +880,17 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
             print(f"  {a['id']}  {a['agent']:<8} {a['outil']}  {label} ({a['fichiers']} fichier(s))")
             for source in a["editions"]:
                 print(f"        edition locale, sauvegardee puis remplacee : {source}")
+            for source in shown_deletions(a):
+                print(f"        supprime apres sauvegarde : {source}")
 
     notes = []
     for agent, r in reports.items():
         notes += [f"{agent} : illisible : {s}" for s in r["classes"]["illisible"]]
         notes += [f"{agent} : ecriture impossible ou divergente : {s}" for s in r["echecs"]]
-        notes += [f"{agent} : local seul, laisse intact : {s}" for s in r["local_seul"]]
+        notes += [
+            f"{agent} : outil retire du depot, modifie localement, laisse en place : {name}"
+            for name in r["retires_modifies"]
+        ]
         if args.scope is not None:
             if r["notice"]:
                 notes.append(f"{agent} : {r['notice']}")
@@ -877,8 +1008,9 @@ def main() -> int:
 
     if args.json:
         keys = (
-            "cible", "outils", "classes", "local_seul", "outils_bloques",
-            "ecrits", "echecs", "resolus", "sauvegarde", "statusline",
+            "cible", "outils", "classes", "local_seul", "retires", "retires_modifies",
+            "outils_bloques", "ecrits", "supprimes", "echecs", "resolus", "sauvegarde",
+            "statusline",
         )
         print(
             json.dumps(
@@ -909,7 +1041,11 @@ def main() -> int:
         for agent, r in reports.items():
             line = f"{agent} : {len(r['ecrits'])} fichier(s) ecrit(s) et verifie(s)"
             if r["resolus"]:
-                line += f", dont {len(r['resolus'])} edition(s) locale(s) remplacee(s) ; sauvegarde : {r['sauvegarde']}"
+                line += f", dont {len(r['resolus'])} edition(s) locale(s) remplacee(s)"
+            if r["supprimes"]:
+                line += f" ; {len(r['supprimes'])} fichier(s) supprime(s)"
+            if r["sauvegarde"]:
+                line += f" ; sauvegarde : {r['sauvegarde']}"
             print(line)
         print("\napres apply :")
         print_summary(after, remaining, args)
