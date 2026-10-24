@@ -121,11 +121,13 @@ substitués.
 Une installation locale obsolète est remplacée par la version du dépôt. Le
 dépôt l'emporte aussi sur un fichier modifié à la main, signalé en conflit :
 `apply` le sauvegarde sous `{AGENT_DIR}/.ia-tools-backup/`, puis le remplace par
-la version du dépôt. Le script ne supprime aucun fichier local
-et ne modifie jamais le `settings.json` d'un agent hôte. Une status line est
-donc copiée mais reste inactive tant que sa clé `statusLine` n'est pas
-enregistrée dans ce fichier ([ci-dessous](#activer-une-status-line)). Procédure
-détaillée : [SETUP.md](./docs/SETUP.md).
+la version du dépôt. Un fichier ajouté à la main dans le dossier d'un outil du
+dépôt, ou un outil retiré du dépôt resté intact, est sauvegardé de la même
+façon, puis supprimé ; un outil retiré modifié localement est laissé en place.
+Le script ne modifie jamais le `settings.json` d'un agent hôte. Une status line
+est donc copiée mais reste inactive tant que sa clé `statusLine` n'est pas
+enregistrée dans ce fichier ([ci-dessous](#activer-une-status-line)).
+Procédure détaillée : [SETUP.md](./docs/SETUP.md).
 
 Sans le script, un outil s'installe par simple copie, avec les outils dont il
 dépend ([carte](#dépendances-entre-outils)) : le dossier
