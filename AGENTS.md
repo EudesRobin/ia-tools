@@ -28,12 +28,12 @@ est réalisé par `scripts/install.py`, que l'agent conduit en trois temps :
 
 1. lancer son audit, `python scripts/install.py`, et montrer son résumé tel
    quel ;
-2. recueillir l'accord de l'utilisateur sur `apply --all`, qui adopte la
-   version du dépôt pour chaque conflit après sauvegarde de la version locale,
-   ou sur les exceptions qu'il demande (`--confirm <id>=local`,
-   `<id>=fusion`), ou encore sur les seuls identifiants qu'il retient, sans
-   `--all` ; une demande qui prescrit déjà `apply --all` vaut accord ;
-3. lancer la commande `apply` qu'indique le résumé, avec ces choix.
+2. recueillir l'accord de l'utilisateur, soit sur `apply --all`, qui remplace
+   aussi chaque édition locale par la version du dépôt après l'avoir
+   sauvegardée, soit sur les seuls identifiants qu'il retient ; une demande qui
+   prescrit déjà `apply --all` vaut accord ;
+3. lancer la commande `apply` qu'indique le résumé, ou `apply --confirm` avec
+   les identifiants retenus.
 
 La procédure complète figure dans [SETUP.md](./docs/SETUP.md) §2, à consulter
 seulement si la sortie du script ne suffit pas. Ne rien copier à la main, ne

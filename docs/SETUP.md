@@ -2,8 +2,8 @@
 
 Procédure d'installation et de mise à jour des outils de ce dépôt pour chaque
 agent hôte : Claude Code et Copilot CLI. **Le dépôt est la source de vérité** :
-par défaut, sa version est adoptée. Un arbitrage n'est demandé que sur un
-**conflit non résoluble automatiquement** (§2).
+un outil n'admet aucune personnalisation hors des placeholders, et une édition
+locale est sauvegardée, puis remplacée par la version du dépôt (§2).
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
@@ -71,18 +71,15 @@ reproduire à la main, ne pas écrire de comparaison ad hoc et ne pas lire le
 contenu des fichiers comparés : le script substitue les placeholders, compare
 chaque fichier du dépôt à sa cible, classe les écarts, écrit ce que
 l'utilisateur a confirmé et vérifie ses écritures, pour chaque agent hôte. La
-session lance l'audit, transmet son résumé, recueille les choix de
+session lance l'audit, transmet son résumé, recueille l'accord de
 l'utilisateur et lance l'écriture
 ([ci-dessous](#ce-qui-reste-à-la-session)).
 
 ```powershell
 python scripts/install.py                          # audit : résumé court, n'écrit rien
-python scripts/install.py apply --all              # écrit tout ; conflits : version du dépôt
-python scripts/install.py apply --confirm <id>     # écrit la mise à jour d'un seul outil
-python scripts/install.py apply --all --confirm <id>=local,<id>=fusion   # exceptions
-python scripts/install.py view <id>                # fichiers à comparer et merge proposé
-python scripts/install.py hunks <id>               # extrait borné de l'écart
-python scripts/install.py --diff <chemin>          # résumé d'un fichier, identifiant du conflit
+python scripts/install.py apply --all              # écrit tous les outils, éditions locales comprises
+python scripts/install.py apply --confirm <id>,... # n'écrit que ces outils
+python scripts/install.py --diff <chemin>          # classe d'un fichier, identifiant de son outil
 python scripts/install.py --scope skills,agents --agent copilot
 python scripts/install.py apply --all --tool clean-android-tv
 ```
@@ -100,22 +97,20 @@ n'est admis qu'avec un seul agent hôte. Une cible dont le chemin contient une
 espace oblige à appeler les scripts embarqués par un chemin entre guillemets,
 forme que ne couvre plus la règle `allowed-tools` de leur skill
 ([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la même sortie au
-format JSON. Les options `--apply`, qui écrit les fichiers sans conflit et
-laisse les conflits intacts, et `--outil`, ancien nom de `--tool`, sont
-obsolètes et seront retirées dans une prochaine version `MAJEUR`.
+format JSON. Les options `--apply`, qui n'écrit que les outils sans conflit,
+et `--outil`, ancien nom de `--tool`, sont obsolètes et seront retirées dans
+une prochaine version `MAJEUR`.
 
-**Chaque agent hôte est traité séparément.** Le classement, les écritures et les
-conflits sont propres à chacun ; un conflit chez l'un n'empêche pas l'écriture
-chez l'autre.
+**Chaque agent hôte est traité séparément.** Le classement et les écritures
+sont propres à chacun.
 
-**Un outil s'installe d'un bloc.** Tant que l'un des conflits d'un outil n'est
-pas arbitré chez un agent hôte, `apply` n'écrit aucun de ses fichiers chez cet
-agent hôte, y compris ceux classés `absent`. `apply --all` arbitre en faveur de
-la version du dépôt chaque conflit dépourvu de choix explicite, après
-sauvegarde de la version locale : une skill ou un agent créé par l'utilisateur
-sous le nom d'un outil du dépôt est alors remplacé. Pour le préserver, ajouter
-`--confirm <id>=local` pour chacun de ses conflits, ou lancer `apply` sans
-`--all`.
+**Le dépôt l'emporte.** Un outil n'admet aucune personnalisation hors des
+placeholders. `apply` écrit un outil d'un bloc : ses fichiers `absent` et
+`obsolete`, ainsi que ses fichiers en `conflit`, dont la version locale est
+d'abord sauvegardée. Une skill ou un agent créé par l'utilisateur sous le nom
+d'un outil du dépôt est remplacé de la même façon. Pour épargner un outil,
+lancer `apply --confirm` avec les seuls identifiants des autres outils ; l'outil
+épargné reste signalé à chaque audit.
 
 ### Ce que le script classe
 
@@ -124,37 +119,13 @@ sous le nom d'un outil du dépôt est alors remplacé. Pour le préserver, ajout
 | `identique` | le fichier du dépôt, placeholders substitués, et la cible ne diffèrent pas | rien |
 | `absent` | la cible n'existe pas | l'écrit, avec `--all` ou l'identifiant de l'outil |
 | `obsolete` | la cible est une révision antérieure du dépôt, ou une copie manuelle dont les placeholders n'ont pas été substitués : installation intacte devenue obsolète | la remplace, avec `--all` ou l'identifiant de l'outil |
-| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | avec `--all`, adopte la version du dépôt ; un choix donné par `--confirm <id>=<choix>`, avec ou sans `--all`, l'emporte : `depot` sauvegarde la version locale puis la remplace, `local` la garde, `fusion` écrit le merge proposé, `fichier` le merge corrigé par l'utilisateur ; une fois chaque conflit de l'outil arbitré, ses autres fichiers sont écrits |
+| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | sauvegarde la version locale, puis la remplace, avec `--all` ou l'identifiant de l'outil |
 | `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
 
-La version locale remplacée par les choix `depot`, `fusion` ou `fichier` est
-sauvegardée, sous le même chemin relatif, dans
-`{AGENT_DIR}/.ia-tools-backup/<horodatage>/` ; ce dossier n'est jamais examiné.
-
-### Merge d'un conflit
-
-Pour chaque conflit, le script cherche dans l'historique du dépôt la révision la
-plus proche de la version locale et, en cas d'égalité, la plus ancienne. Cette
-révision sert de base à un merge à trois versions, mené par `git merge-file`
-sur les fichiers dont les placeholders sont substitués. Le résumé du conflit
-compte les éditions locales et les évolutions du dépôt depuis cette base, en
-donne les plages de lignes, puis rend son verdict :
-
-- `fusionnable` : éditions locales et évolutions du dépôt ne se chevauchent pas,
-  et le choix `fusion` écrit le merge. La mention « version locale déjà à jour
-  du dépôt » signale que le merge ne diffère pas de la version locale : le dépôt
-  n'a pas évolué depuis l'édition locale.
-- `<n> zone(s) en chevauchement` : le choix `fusion` est refusé. `view <id>`
-  dépose le merge avec ses marqueurs de conflit ; l'utilisateur le corrige, puis
-  le retient par le choix `fichier`, refusé tant qu'un marqueur subsiste.
-
-Sans historique git, aucune base n'est trouvée : le résumé compte les blocs de
-l'écart entre la version locale et celle du dépôt, et seuls les choix `depot`
-et `local` sont proposés.
-
-Un fichier gardé par `local`, ou écrit par `fusion` ou `fichier`, diffère
-encore de la version du dépôt : il est de nouveau signalé en conflit à chaque
-audit, et un `apply --all` ultérieur le remplace, sauf nouveau choix `local`.
+La version locale d'un fichier en `conflit` est sauvegardée, sous le même chemin
+relatif, dans `{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, avant d'être
+remplacée ; ce dossier n'est jamais examiné. Une sauvegarde impossible laisse la
+cible intacte et figure parmi les échecs d'écriture.
 
 ### Ce que le script rapporte
 
@@ -164,27 +135,20 @@ audit, et un `apply --all` ultérieur le remplace, sauf nouveau choix `local`.
 - **Résumé court**, sans contenu de fichier : une ligne par agent hôte, qui
   compte ses outils par état — `a_jour`, `a_installer`, `a_mettre_a_jour`,
   `conflit`, `illisible`, puis `installe`, `mis_a_jour` ou `echec` après
-  `apply` —, puis une ligne par action à confirmer, sous un identifiant court.
-  Une mise à jour donne l'outil et le nombre de fichiers concernés ; un conflit
-  donne le fichier, les choix admis et le résumé décrit
-  [ci-dessus](#merge-dun-conflit). Suivent, pour information, les fichiers
+  `apply` —, puis une ligne par outil à écrire, sous un identifiant court, avec
+  le nombre de fichiers concernés. Chaque fichier en `conflit` y est nommé, sur
+  une ligne qui annonce sa sauvegarde et son remplacement. Suivent, pour
+  information, les fichiers
   illisibles, les fichiers en `local seul`, les échecs d'écriture et l'état de
   la clé `statusLine`, puis la commande `apply` à lancer.
 - **Identifiants sans état stocké.** Un identifiant est tiré de l'état examiné :
-  il change dès que la cible ou la source change. `apply` refait l'audit et
-  refuse tout identifiant inconnu ou périmé, sans rien écrire.
+  il change dès que l'un des fichiers locaux de l'outil change. `apply` refait
+  l'audit et refuse tout identifiant inconnu ou périmé, sans rien écrire.
 - **Écritures vérifiées.** Chaque fichier écrit par `apply` est relu et comparé
   à la version du dépôt, placeholders substitués. Une écriture impossible, ou un
   fichier relu qui diffère, classe l'outil en `echec`, sans interrompre le
   traitement des autres outils. `apply` refait ensuite l'audit et affiche ce qui
   reste.
-- **Contenu d'un conflit.** `view <id>` dépose la version du dépôt,
-  placeholders substitués, et le merge proposé dans un dossier temporaire hors
-  de `{AGENT_DIR}`, et n'affiche que leurs chemins et la commande qui compare
-  les versions dans un éditeur. `hunks <id>` affiche les zones en chevauchement
-  du merge, à défaut les blocs de l'écart sans contexte, dans la limite de
-  `--max-lines` lignes (40 par défaut), chaque ligne étant tronquée à 160
-  caractères ; c'est la seule sortie qui cite le contenu d'un fichier.
 
 Code de sortie : `0` si la validation n'est pas en échec — une validation
 impossible en raison d'une anomalie d'environnement ne compte pas comme un
@@ -196,20 +160,12 @@ impossible en raison d'une anomalie d'environnement ne compte pas comme un
 1. **Lancer l'audit et montrer son résumé tel quel.** Une demande qui ne précise
    ni le périmètre ni les agents hôtes (« mets à jour mes outils ») prend les
    valeurs par défaut du script.
-2. **Recueillir l'accord de l'utilisateur** sur `apply --all`, qui adopte la
-   version du dépôt pour chaque conflit, ou sur les exceptions qu'il demande —
-   `--confirm <id>=local` pour garder une version locale, `<id>=fusion` pour un
-   conflit `fusionnable` —, ou encore sur les seuls identifiants qu'il retient,
-   sans `--all`. Une demande
-   qui prescrit déjà `apply --all` vaut accord. Pour décider, l'utilisateur
-   compare lui-même les versions grâce à `view <id>`. `hunks <id>` ne se lance
-   que si l'utilisateur demande à la session d'examiner l'écart.
-3. **Lancer `apply`** avec ces choix, sans relancer l'audit : `apply` le refait
-   lui-même. Pour merger écart par écart un conflit qui présente des zones en
-   chevauchement, l'utilisateur corrige le merge déposé par `view <id>`, puis
-   choisit `fichier`. À sa demande, la session y tranche les zones qu'affiche
-   `hunks <id>`, par des modifications ciblées et jamais par une réécriture du
-   fichier.
+2. **Recueillir l'accord de l'utilisateur** sur `apply --all`, ou sur les seuls
+   identifiants qu'il retient. Une demande qui prescrit déjà `apply --all` vaut
+   accord. Le résumé nomme chaque fichier en conflit, dont la version locale
+   sera sauvegardée, puis remplacée.
+3. **Lancer `apply`** — `--all`, ou `--confirm` avec les identifiants retenus —,
+   sans relancer l'audit : `apply` le refait lui-même.
 4. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
@@ -234,10 +190,9 @@ La conformité du front-matter — `name` identique au nom du dossier — relèv
 
 `--scope agents` couvre ensemble `agents/<nom>.md` et `agents/docs/<nom>/`.
 Pour Copilot CLI, le fichier d'agent est installé sous le nom `<nom>.agent.md` ;
-ses documents de référence gardent leur nom. En cas de conflit portant sur un
-fichier d'agent, examiner en priorité les champs `tools` et `model` : un écart
-sur `tools` change les droits de l'agent, un écart sur `model` change le modèle
-qui l'exécute, donc son coût et la qualité de ses réponses.
+ses documents de référence gardent leur nom. Une édition locale d'un fichier
+d'agent, de ses champs `tools` ou `model` par exemple, est remplacée comme toute
+autre par la version du dépôt (§2) ; elle reste lisible dans la sauvegarde.
 
 ## 5. Hooks
 

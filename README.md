@@ -108,22 +108,20 @@ python scripts/install.py                  # audit : résumé court, n'écrit ri
 python scripts/install.py apply --all      # installe ou met à jour, pour les deux agents hôtes
 python scripts/install.py apply --all --agent copilot            # un seul agent hôte
 python scripts/install.py apply --all --tool clean-android-tv    # un seul outil et ses dépendances
-python scripts/install.py apply --all --confirm <id>=local       # garde une version locale
+python scripts/install.py apply --confirm <id>,...              # les seuls outils retenus
 ```
 
 L'audit donne, pour chaque agent hôte, le nombre d'outils dans chaque état — à
-jour, à installer, à mettre à jour, en conflit —, puis une ligne par action à
-confirmer, sous un identifiant court, et la commande `apply` à lancer. Le script
+jour, à installer, à mettre à jour, en conflit —, puis une ligne par outil à
+écrire, sous un identifiant court, et la commande `apply` à lancer. Le script
 valide d'abord les sources du dépôt et n'écrit rien si la validation échoue ;
 chaque fichier écrit est relu et comparé à la version du dépôt, placeholders
 substitués.
 
-Une installation locale obsolète est remplacée par la version du dépôt. Un
-fichier modifié à la main est signalé comme conflit : `apply --all` le remplace
-par la version du dépôt, après l'avoir sauvegardé, sauf si l'utilisateur
-choisit, au moyen de l'identifiant du conflit, de garder la version locale ou
-d'écrire le merge que propose le script. `install.py view <id>` désigne les
-fichiers à comparer dans un éditeur. Le script ne supprime aucun fichier local
+Une installation locale obsolète est remplacée par la version du dépôt. Le
+dépôt l'emporte aussi sur un fichier modifié à la main, signalé en conflit :
+`apply` le sauvegarde sous `{AGENT_DIR}/.ia-tools-backup/`, puis le remplace par
+la version du dépôt. Le script ne supprime aucun fichier local
 et ne modifie jamais le `settings.json` d'un agent hôte. Une status line est
 donc copiée mais reste inactive tant que sa clé `statusLine` n'est pas
 enregistrée dans ce fichier ([ci-dessous](#activer-une-status-line)). Procédure
@@ -182,10 +180,9 @@ Installe ou mets à jour les outils de ce dépôt : lance
 dépôt remplace la version locale, qui est sauvegardée.
 ```
 
-Pour décider conflit par conflit, demander à l'agent d'attendre vos choix avant
-`apply`, puis répondre au résumé de l'audit en citant les identifiants :
-« garde `<id>` » se traduit par `--confirm <id>=local`, « applique le merge de
-`<id>` » par `--confirm <id>=fusion`.
+Pour épargner un outil, demander à l'agent d'attendre l'accord de l'utilisateur
+avant `apply`, puis citer les identifiants des outils à écrire : l'agent lance
+`apply --confirm <id>,...`.
 
 Ajouter `@docs/PREREQUIS.md` au prompt pour que l'agent vérifie d'abord les
 prérequis : il dresse la liste de ce qui manque et n'installe rien sans
