@@ -1,14 +1,14 @@
 # PREREQUIS — outils système (hors agents hôtes)
 
 Outils **système** supposés présents par certaines skills, par la status line
-`usage-session` et par l'outillage du dépôt. Indépendants de l'installation des
-outils (voir [SETUP.md](SETUP.md)) : ce sont des binaires ou des paquets
-système, pas des fichiers copiés vers `{AGENT_DIR}`.
+`usage-session` et par l'outillage du dépôt. Distincts des outils installés
+(voir [SETUP.md](SETUP.md)) : ce sont des binaires ou des paquets système, pas
+des fichiers copiés vers `{AGENT_DIR}`.
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
 La vérification des prérequis système est à proposer sur un environnement neuf
-ou incomplet. Python et Git sont nécessaires au merge intelligent de
+ou incomplet. Python et Git sont nécessaires à l'installation par
 `scripts/install.py` ; les autres prérequis ne concernent qu'une skill, une
 status line ou la contribution au dépôt. Ne rien installer sans accord :
 d'abord **vérifier** ce qui manque, en dresser la liste, puis demander l'accord

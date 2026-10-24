@@ -8,6 +8,23 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 💥 Action requise
+
+- `install.py` : les options `--apply`, `--outil` et `--diff` sont refusées.
+  Un prompt ou un script qui les emploie doit passer à `apply --all` au lieu de
+  `--apply`, à `--tool` au lieu de `--outil` ; l'audit, qui nomme chaque
+  fichier à traiter, remplace `--diff`.
+
+### 🔥 Suppressions
+
+- `install.py` : options `--apply` (obsolète depuis la version 1.7.0),
+  `--outil` (obsolète depuis la version 1.3.0) et `--diff`.
+
+### 📝 Documentation
+
+- La procédure d'installation n'est plus appelée « merge intelligent » :
+  aucune fusion n'a lieu, car la version du dépôt l'emporte toujours.
+
 ## [1.8.0] - 2026-10-24
 
 ### 🚀 Nouveautés

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge intelligent du depot vers chaque agent hote (docs/SETUP.md).
+"""Installation des outils du depot pour chaque agent hote (docs/SETUP.md).
 
 Agents hotes pris en charge, dont la racine est notee {AGENT_DIR} :
 
@@ -35,8 +35,7 @@ l'audit avant et apres ses ecritures. Aucune sortie ne cite le contenu d'un
 fichier.
 
 Un outil (une skill, un agent et ses documents) s'ecrit d'un bloc chez un agent
-hote. --apply, obsolete, n'ecrit que les outils sans conflit et ne supprime
-rien. Chaque agent hote est traite separement.
+hote. Chaque agent hote est traite separement.
 
 Le rapport donne l'etat de chaque outil, celui du plus en retard de ses
 fichiers : a_jour, a_installer, a_mettre_a_jour, retire, conflit ou illisible ;
@@ -86,8 +85,6 @@ Usage : python scripts/install.py [audit] [--agent ...] [--scope ...]
                                   [--tool ...] [--target <dossier>] [--json]
         python scripts/install.py apply [--all] [--confirm <id>,...]
                                   [options de l'audit]
---apply (obsolete) ecrit les outils sans conflit ; --diff <chemin> donne la
-classe d'un fichier chez chaque agent hote.
 Code de sortie : 0 si la validation n'est pas en echec (une validation
 impossible en raison d'une anomalie d'environnement ne compte pas comme un
 echec) et qu'aucun conflit ni echec d'ecriture ne reste chez aucun agent hote,
@@ -161,6 +158,13 @@ HOOK_REGISTRATION = {
 }
 
 COMMANDS = ("audit", "apply")
+
+# Options retirees en 2.0.0 et ce qui en tient lieu, rappele a qui les emploie.
+REMOVED_OPTIONS = {
+    "--apply": "employer 'apply --all'",
+    "--outil": "employer --tool",
+    "--diff": "l'audit nomme chaque fichier a traiter",
+}
 
 # Dossier de {AGENT_DIR} ou chaque version locale est sauvegardee avant d'etre
 # remplacee.
@@ -422,7 +426,7 @@ def local_only(agent: str, scopes: list[str], target_root: Path) -> list[str]:
     """Fichiers presents seulement en local, dans le dossier d'un outil du depot.
 
     Les outils etrangers au depot (outils de l'utilisateur, skills synchronisees
-    par l'agent hote) ne sont pas examines : ils ne relevent pas de ce merge.
+    par l'agent hote) ne sont pas examines : ils ne relevent pas de cette installation.
     """
     tools = {tool_of(rel) for rel, _, _ in pairs(agent, scopes, target_root)}
     out = []
@@ -675,7 +679,7 @@ def parse_list(value: str) -> list[str]:
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         prog="install.py",
-        description="Merge intelligent du depot vers chaque agent hote (docs/SETUP.md).",
+        description="Installation des outils du depot pour chaque agent hote (docs/SETUP.md).",
     )
     p.add_argument(
         "command",
@@ -698,12 +702,6 @@ def parse_args() -> argparse.Namespace:
         help="apply : n'ecrire que ces outils",
     )
     p.add_argument(
-        "--apply",
-        action="store_true",
-        help="obsolete, ecrit les seuls outils sans conflit : "
-             "retire dans une prochaine version MAJEUR",
-    )
-    p.add_argument(
         "--agent",
         default=",".join(DEFAULT_AGENTS),
         help=f"agents hotes separes par des virgules parmi {','.join(AGENTS)}",
@@ -715,15 +713,9 @@ def parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--tool",
-        "--outil",  # ancien nom, obsolete : retire dans une prochaine version MAJEUR
         dest="tool",
         metavar="NOMS",
         help="n'examiner que ces outils, separes par des virgules (defaut : tous)",
-    )
-    p.add_argument(
-        "--diff",
-        metavar="CHEMIN",
-        help="classe d'un fichier (chemin source du depot), par agent hote",
     )
     p.add_argument(
         "--target",
@@ -731,16 +723,11 @@ def parse_args() -> argparse.Namespace:
         help="racine cible a la place de {AGENT_DIR} ; un seul agent hote requis",
     )
     p.add_argument("--json", action="store_true", help="sortie machine")
-    args = p.parse_args()
-    argv = sys.argv[1:]
-    if any(a == "--outil" or a.startswith("--outil=") for a in argv):
-        print("install.py : --outil est obsolete, employer --tool", file=sys.stderr)
-    # --apply garde son comportement publie : les conflits restent intacts.
-    args.keep_conflicts = args.apply
-    if args.apply:
-        print("install.py : --apply est obsolete, employer 'apply --all'", file=sys.stderr)
-        args.command, args.all = "apply", True
-    return args
+    for arg in sys.argv[1:]:
+        option = arg.split("=", 1)[0]
+        if option in REMOVED_OPTIONS:
+            p.error(f"{option} est retire depuis la version 2.0.0 : {REMOVED_OPTIONS[option]}")
+    return p.parse_args()
 
 
 def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
@@ -901,28 +888,25 @@ def register_statusline(r: dict, action: dict, stamp: str) -> bool:
 
 
 def apply_agent(agent: str, r: dict, actions: list[dict], chosen: set[str],
-                write_all: bool, keep_conflicts: bool, stamp: str) -> None:
+                write_all: bool, stamp: str) -> None:
     """Ecrit, chez un agent hote, les outils confirmes, et supprime leurs
     fichiers en local seul et les fichiers des outils retires. La version
     locale d'un conflit ou d'un fichier supprime est d'abord sauvegardee ; une
     sauvegarde impossible laisse la cible intacte et compte comme un echec.
-    Avec keep_conflicts (--apply), --all laisse de cote les outils en conflit
-    et ne supprime rien. Une status line dont la cle est confirmee est installee,
+    Une status line dont la cle est confirmee est installee,
     puis enregistree."""
     mine = [a for a in actions if a["agent"] == agent]
     keys = [a for a in mine if a["type"] == "statusline" and a["id"] in chosen]
     tools = {
         a["outil"] for a in mine
         if a["type"] == "outil" and (
-            a["id"] in chosen or (write_all and not (keep_conflicts and a["editions"]))
+            a["id"] in chosen or write_all
         )
     } | {a["outil"] for a in keys}
     written, removed, failed, resolved = [], [], [], []
     for f in r["per_file"]:
         source, dst, status = f["source"], f["dst"], f["status"]
         if tool_of(source) not in tools or status not in CHANGING:
-            continue
-        if status in DELETED and keep_conflicts:
             continue
         if status in DELETED + ("conflit",):
             if backup(r["target_root"], stamp, dst, f["local"] or b"") is None:
@@ -1113,10 +1097,6 @@ def main() -> int:
     else:
         added = []
 
-    if args.diff:
-        reports = {agent: examine(agent, args, scopes) for agent in agents}
-        return show_diff_summary(args.diff, reports, build_actions(reports), scopes)
-
     validation, validation_output = run_validation()
     if validation != "ok":
         print(validation_output, file=sys.stderr)
@@ -1137,7 +1117,7 @@ def main() -> int:
             return 1
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         for agent, r in reports.items():
-            apply_agent(agent, r, actions, chosen, args.all, args.keep_conflicts, stamp)
+            apply_agent(agent, r, actions, chosen, args.all, stamp)
         after = {agent: examine(agent, args, scopes) for agent in agents}
         remaining = build_actions(after)
         for agent, r in after.items():
@@ -1198,29 +1178,6 @@ def main() -> int:
         print()
         print_summary(reports, remaining, args, missing, history)
     return 1 if red else 0
-
-
-def show_diff_summary(path: str, reports: dict[str, dict], actions: list[dict], scopes: list[str]) -> int:
-    """--diff <chemin> : classe du fichier chez chaque agent hote et
-    identifiant de son outil ; jamais le contenu."""
-    wanted = path.replace("\\", "/")
-    found = False
-    for agent, r in reports.items():
-        for f in r["per_file"]:
-            if f["source"] != wanted:
-                continue
-            found = True
-            action = next(
-                (a for a in actions if a["type"] == "outil" and a["agent"] == agent
-                 and a["outil"] == tool_of(wanted)),
-                None,
-            )
-            ident = f", outil {action['id']}" if action else ""
-            print(f"[{agent}] {wanted} : {f['status']}{ident}")
-    if not found:
-        print(f"install.py : '{path}' hors du perimetre {','.join(scopes)}", file=sys.stderr)
-        return 1
-    return 0
 
 
 if __name__ == "__main__":
