@@ -58,8 +58,8 @@ est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 5 : obtenir l'accord, puis poser le tag et le pousser s'il existe un dépôt distant
 - [ ] Phase 6 : vérifier la Release, ou le tag sans dépôt distant
 
-Les phases 4 et 6 sont des vérifications : chacune ne passe à `[x]` qu'avec sa
-preuve nommée — `[x] Phase 4 : … — intégration continue au vert, <sha>`
+Les phases 4 et 6 sont des vérifications : chacune n'est marquée `[x]` qu'avec
+sa preuve nommée — `[x] Phase 4 : … — l'intégration continue passe, <sha>`
 d'après `--check`,
 `[x] Phase 6 : vérifier la Release — publiée, <URL>` d'après `--release`.
 Sans dépôt distant, ces preuves deviennent

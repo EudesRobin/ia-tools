@@ -14,8 +14,8 @@ Usage :
 
 Option commune : --adb <executable> (par defaut : adb, cherche dans le PATH).
 
-Codes de sortie : 0 vert ; 1 ecart constate ou commande en echec ;
-2 anomalie d'environnement (adb absent, appareil non connecte, fichier
+Codes de sortie : 0 aucun ecart constate ; 1 ecart constate ou commande en
+echec ; 2 anomalie d'environnement (adb absent, appareil non connecte, fichier
 illisible).
 
 Python >= 3.10, bibliotheque standard seule.

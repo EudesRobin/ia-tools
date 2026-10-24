@@ -43,7 +43,7 @@ Une modification n'est terminée que lorsque toutes les conditions propres à so
 type de fichier, énumérées ci-dessous, sont remplies. Chaque contrôle —
 validateur, test, `zizmor`, intégration continue — se mène en boucle : le
 lancer, lire le résultat obtenu, corriger les défauts relevés, puis le relancer
-jusqu'à ce qu'il soit au vert.
+jusqu'à ce qu'il passe.
 
 Tant qu'une condition n'est pas remplie, ne pas passer à une autre tâche, ne
 pas proposer de commit, ne pas annoncer la modification comme faite. Ne jamais
@@ -55,20 +55,20 @@ contourner l'échec d'un contrôle en supprimant ou en affaiblissant ce contrôl
   document a été relu par l'agent `relecture-fr` et les écarts signalés ont été
   corrigés. Pour un nouveau fichier sous `docs/`, la checklist
   [CONVENTIONS.md](./docs/CONVENTIONS.md) §6 est en outre déroulée.
-- **Skill, agent, hook, status line** — `python scripts/validate.py` est au
-  vert et la checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §5 est
+- **Skill, agent, hook, status line** — `python scripts/validate.py` passe et
+  la checklist [CONVENTIONS.md](./docs/CONVENTIONS.md) §5 est
   entièrement cochée ; pour une status line, `python tests/test_statusline.py`
-  est également au vert.
+  passe également.
 - **Script** (`scripts/*.py`, `tests/*.py`, `skills/**/*.py`,
   `hooks/**/*.ps1`, `statuslines/**/*.ps1`) — le script a été lancé en
   situation réelle d'utilisation et sa sortie a été lue ; tout contrôle ajouté
   ou modifié a d'abord été observé en échec sur un cas construit pour échouer.
-  Le test `tests/test_<script>.py`, s'il existe, est au vert ; pour
+  Le test `tests/test_<script>.py`, s'il existe, passe ; pour
   `validate.py`, `check_commit_msg.py` et `changelog.py`, ce cas est inscrit
   dans le test.
 - **Workflow** (`.github/workflows/*.yml`) — `zizmor --offline
-  .github/workflows` est au vert, et l'intégration continue a été observée au
-  vert sur la *pull request*.
+  .github/workflows` passe, et il a été constaté sur la *pull request* que
+  l'intégration continue passe.
 
 [CONTRIBUTING.md](./docs/CONTRIBUTING.md) §3 précise ce que contrôlent le
 validateur, les hooks git et l'intégration continue, et ce qu'aucun mécanisme

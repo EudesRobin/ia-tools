@@ -98,11 +98,12 @@ qu'après relecture du fichier écrit, le résultat étant nommé
    - **Vérifier** : <comment observer qu'un changement fait ce qu'il doit —
      parcourir le scénario réel, pas seulement lancer les tests>
 
-   Une modification n'est pas terminée tant que **Tester** n'est pas au vert et
-   que le comportement attendu à l'étape **Vérifier** n'a pas été observé sur
-   le scénario réel. Lancer, lire l'échec, corriger, relancer — ne pas conclure
-   « c'est fait » sur la seule absence d'erreur, ni sur des commandes terminées
-   dont le résultat n'a pas été observé.
+   Une modification n'est pas terminée tant que la commande de l'étape
+   **Tester** ne passe pas et que le comportement attendu à l'étape
+   **Vérifier** n'a pas été observé sur le scénario réel. Lancer, lire l'échec,
+   corriger, relancer — ne pas conclure « c'est fait » sur la seule absence
+   d'erreur, ni sur des commandes terminées dont le résultat n'a pas été
+   observé.
    ```
 
    Pour **Vérifier**, ne pas se contenter de « les tests passent » : décrire

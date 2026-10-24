@@ -481,7 +481,7 @@ Un outil n'est pas terminé tant que tout ceci n'est pas fait :
       étapes ou plus — en-tête `**Tâches**` et marqueurs `[ ]` `[~]` `[x]`
       `[-]`, contrôlés par `scripts/validate.py` — ou son omission délibérément
       assumée ([qualite-outils.md](qualite-outils.md) §5).
-- [ ] **`python scripts/validate.py` est au vert.**
+- [ ] **`python scripts/validate.py` passe.**
 
 ## 6. Checklist — ajouter un document de fond
 
@@ -558,11 +558,11 @@ s'appliquent aux tests comme aux scripts.
 - **Sortie compacte.** Un récapitulatif par classe, le détail seulement pour ce
   qui appelle une suite. Un contrôle verbeux encombre le contexte et cesse
   d'être relancé.
-- **Codes de sortie `0` / `1` / `2`** : `0` vert, `1` contrôle en échec ou
-  erreur d'usage, `2` anomalie d'environnement — dépendance logicielle absente
-  —, distincte d'un défaut du travail produit. Le code de sortie porte le
-  verdict : l'agent n'a pas à relire la sortie pour savoir s'il reste quelque
-  chose à faire.
+- **Codes de sortie `0` / `1` / `2`** : `0` le contrôle passe, `1` contrôle en
+  échec ou erreur d'usage, `2` anomalie d'environnement — dépendance logicielle
+  absente —, distincte d'un défaut du travail produit. Le code de sortie porte
+  le verdict : l'agent n'a pas à relire la sortie pour savoir s'il reste
+  quelque chose à faire.
 - **Aucune dépendance logicielle nouvelle** sans l'inscrire dans
   [PREREQUIS.md](PREREQUIS.md).
 - **DoD** : le script doit avoir été **lancé en situation réelle

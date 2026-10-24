@@ -317,7 +317,7 @@ Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
    commits → la signaler et s'arrêter.
 2. Appliquer la règle de merge déterminée à la
    [phase 2](#2-déterminer-les-conventions). Une précondition de merge fixée par
-   le projet — validation par l'utilisateur, vérifications au vert — est
+   le projet — validation par l'utilisateur, vérifications qui passent — est
    remplie avant l'étape 3 ; sans précondition, aucun accord n'est demandé.
    Rédiger le message du commit de merge selon la convention de commit, en
    résumant la branche de travail, et l'écrire dans

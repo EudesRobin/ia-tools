@@ -85,8 +85,8 @@ Rien ne contrôle :
   ([CONVENTIONS.md](CONVENTIONS.md) §1.3) ;
 - la cohérence sémantique entre documents ;
 - le respect du DoD des scripts et des workflows : qu'un script modifié a été
-  lancé, qu'un contrôle ajouté a été observé en échec, que l'exécution de
-  l'intégration continue a été observée au vert.
+  lancé, qu'un contrôle ajouté a été observé en échec, qu'il a été
+  constaté que l'intégration continue passe.
 
 Ces exigences s'appliquent délibérément.
 
@@ -151,8 +151,8 @@ les rubriques suivantes, dans cet ordre :
    attendues.
 2. **Poser le tag après le merge, sur `main`**, jamais sur une branche de
    travail : le tag désigne l'état de `main` que les utilisateurs installent.
-   Vérifier au préalable que l'exécution de l'intégration continue sur le commit
-   à taguer est au vert, dans l'onglet *Actions* du dépôt GitHub.
+   Vérifier au préalable que l'intégration continue passe sur le commit à
+   taguer, dans l'onglet *Actions* du dépôt GitHub.
 
    ```powershell
    git switch main
@@ -162,10 +162,10 @@ les rubriques suivantes, dans cet ordre :
    ```
 
 3. **Vérifier la Release.** Le workflow `release` s'assure que le commit du tag
-   est sur `main` et que l'exécution de l'intégration continue sur ce commit est
-   au vert, puis crée la Release avec la section du journal consacrée à cette
-   version. S'il échoue, en corriger la cause, puis le relancer depuis l'onglet
-   *Actions*, sans toucher au tag.
+   est sur `main` et que l'intégration continue passe sur ce commit, puis crée
+   la Release avec la section du journal consacrée à cette version. S'il
+   échoue, en corriger la cause, puis le relancer depuis l'onglet *Actions*,
+   sans toucher au tag.
 
 - **Tag annoté** (`-a`) : il enregistre l'auteur et la date de publication, ce
   que ne fait pas un tag léger.
