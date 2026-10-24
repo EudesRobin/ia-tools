@@ -108,7 +108,7 @@ python scripts/install.py                  # audit : résumé court, n'écrit ri
 python scripts/install.py apply --all      # installe ou met à jour, pour les deux agents hôtes
 python scripts/install.py apply --all --agent copilot            # un seul agent hôte
 python scripts/install.py apply --all --tool clean-android-tv    # un seul outil et ses dépendances
-python scripts/install.py apply --confirm <id>=depot             # arbitre un conflit
+python scripts/install.py apply --all --confirm <id>=local       # garde une version locale
 ```
 
 L'audit donne, pour chaque agent hôte, le nombre d'outils dans chaque état — à
@@ -119,9 +119,10 @@ chaque fichier écrit est relu et comparé à la version du dépôt, placeholder
 substitués.
 
 Une installation locale obsolète est remplacée par la version du dépôt. Un
-fichier modifié à la main est signalé comme conflit et laissé intact tant que
-l'utilisateur n'a pas choisi, au moyen de l'identifiant du conflit, entre la
-version du dépôt et la version locale ; `install.py view <id>` désigne les deux
+fichier modifié à la main est signalé comme conflit : `apply --all` le remplace
+par la version du dépôt, après l'avoir sauvegardé, sauf si l'utilisateur
+choisit, au moyen de l'identifiant du conflit, de garder la version locale ou
+d'écrire le merge que propose le script. `install.py view <id>` désigne les
 fichiers à comparer dans un éditeur. Le script ne supprime aucun fichier local
 et ne modifie jamais le `settings.json` d'un agent hôte. Une status line est
 donc copiée mais reste inactive tant que sa clé `statusLine` n'est pas
@@ -176,10 +177,15 @@ l'installation.
 
 ```text
 Installe ou mets à jour les outils de ce dépôt : lance
-`python scripts/install.py`, montre-moi son résumé tel quel, puis lance la
-commande apply qu'il indique avec les identifiants et les choix que je
-confirme.
+`python scripts/install.py`, montre-moi son résumé tel quel, puis lance
+`python scripts/install.py apply --all`. En cas de conflit, la version du
+dépôt remplace la version locale, qui est sauvegardée.
 ```
+
+Pour décider conflit par conflit, demander à l'agent d'attendre vos choix avant
+`apply`, puis répondre au résumé de l'audit en citant les identifiants :
+« garde `<id>` » se traduit par `--confirm <id>=local`, « applique le merge de
+`<id>` » par `--confirm <id>=fusion`.
 
 Ajouter `@docs/PREREQUIS.md` au prompt pour que l'agent vérifie d'abord les
 prérequis : il dresse la liste de ce qui manque et n'installe rien sans

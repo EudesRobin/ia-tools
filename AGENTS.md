@@ -28,8 +28,11 @@ est réalisé par `scripts/install.py`, que l'agent conduit en trois temps :
 
 1. lancer son audit, `python scripts/install.py`, et montrer son résumé tel
    quel ;
-2. recueillir les choix de l'utilisateur : `--all` pour les cas sûrs, ou les
-   identifiants qu'il retient, et un choix `depot` ou `local` par conflit ;
+2. recueillir l'accord de l'utilisateur sur `apply --all`, qui adopte la
+   version du dépôt pour chaque conflit après sauvegarde de la version locale,
+   ou sur les exceptions qu'il demande (`--confirm <id>=local`,
+   `<id>=fusion`), ou encore sur les seuls identifiants qu'il retient, sans
+   `--all` ; une demande qui prescrit déjà `apply --all` vaut accord ;
 3. lancer la commande `apply` qu'indique le résumé, avec ces choix.
 
 La procédure complète figure dans [SETUP.md](./docs/SETUP.md) §2, à consulter

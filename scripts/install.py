@@ -20,24 +20,33 @@ cible locale, puis ecrit ce que l'utilisateur a confirme :
 Deux commandes. 'audit' (defaut) n'ecrit rien et rend un resume court : une
 ligne par agent hote, une ligne par action a confirmer, sous un identifiant
 court. 'apply' ecrit les actions confirmees : --all pour tous les cas surs
-(a installer, a mettre a jour), --confirm <id> pour une mise a jour,
---confirm <id>=depot|local pour un conflit. Un conflit resolu en faveur du depot
-est d'abord sauvegarde sous {AGENT_DIR}/.ia-tools-backup/<horodatage>/.
+(a installer, a mettre a jour) et, sauf choix contraire, la version du depot
+pour chaque conflit ; --confirm <id> pour une mise a jour ;
+--confirm <id>=depot|local|fusion|fichier pour un conflit. La version locale
+d'un conflit est d'abord sauvegardee sous {AGENT_DIR}/.ia-tools-backup/<horodatage>/.
 L'identifiant derive de l'etat examine : il change des que la cible ou la source
 change, et 'apply' refuse tout identifiant perime, sans qu'aucun etat soit
 stocke. 'apply' refait l'audit avant et apres ses ecritures.
 
+Merge d'un conflit : la base est la revision historique la plus proche de la
+version locale, la plus ancienne a egalite ; 'git merge-file' fusionne version
+locale et version du depot. Sans chevauchement, le conflit est fusionnable et
+le choix 'fusion' ecrit le merge ; sinon, 'fichier' ecrit le merge que
+l'utilisateur a corrige dans le fichier depose par 'view'.
+
 Aucune sortie ne cite le contenu d'un fichier, sauf 'hunks <id>', demande
-explicite, plafonnee a --max-lines lignes. Un conflit est resume par ses blocs,
-ses lignes et ses plages ; 'view <id>' depose la version du depot,
-placeholders substitues, dans un dossier temporaire hors de {AGENT_DIR}, et
-n'affiche que les deux chemins, que l'utilisateur compare dans son editeur.
+explicite, plafonnee a --max-lines lignes et limitee aux zones en chevauchement
+quand il y en a. Un conflit est resume par ses editions locales, les evolutions
+du depot et leurs plages ; 'view <id>' depose la version du depot,
+placeholders substitues, et le merge propose dans un dossier temporaire hors de
+{AGENT_DIR}, et n'en affiche que les chemins, que l'utilisateur ouvre dans son
+editeur.
 
 Un outil (une skill, un agent et ses documents) s'installe d'un bloc chez un
-agent hote : tant que l'un de ses conflits n'est pas arbitre par --confirm,
-aucun de ses fichiers n'y est ecrit. Un outil homonyme cree par l'utilisateur
-n'est donc jamais complete ni modifie sans son accord. Chaque agent hote est
-traite separement.
+agent hote : tant que l'un de ses conflits n'est pas arbitre, aucun de ses
+fichiers n'y est ecrit. Sans --all, un outil homonyme cree par l'utilisateur
+n'est donc jamais complete ni modifie. --apply, obsolete, n'ecrit que les cas
+surs. Chaque agent hote est traite separement.
 
 Le rapport donne l'etat de chaque outil, celui du plus en retard de ses
 fichiers : a_jour, a_installer, a_mettre_a_jour, conflit ou illisible ; apres
@@ -141,7 +150,7 @@ HOOK_REGISTRATION = {
 
 # Commandes ; choix admis pour un conflit, passes par --confirm <id>=<choix>.
 COMMANDS = ("audit", "apply", "view", "hunks")
-CONFLICT_CHOICES = ("depot", "local")
+CONFLICT_CHOICES = ("depot", "local", "fusion", "fichier")
 
 # Dossier de {AGENT_DIR} ou chaque version locale est sauvegardee avant d'etre
 # remplacee ; dossier du repertoire temporaire ou 'view' depose la version du
@@ -302,13 +311,25 @@ def git_bytes(args: list[str]) -> bytes | None:
     return out.stdout
 
 
+_RENDERS_CACHE: dict[tuple, list[bytes]] = {}
+
+
 def previous_renders(source: str, subs: dict[str, str]) -> list[bytes]:
-    """Formes normalisees prises par le rendu de ce fichier dans l'historique.
+    """Formes normalisees prises par le rendu de ce fichier dans l'historique,
+    de la plus recente a la plus ancienne.
 
     L'historique suit les renommages (--follow) : chaque revision est lue sous
     le chemin qu'avait le fichier a cette revision. Une installation faite avant
-    le deplacement d'un outil reste ainsi reconnue comme obsolete.
+    le deplacement d'un outil reste ainsi reconnue comme obsolete. Le resultat
+    est garde en memoire : la base d'un merge le relit.
     """
+    key = (source, tuple(sorted(subs.items())))
+    if key not in _RENDERS_CACHE:
+        _RENDERS_CACHE[key] = _history_renders(source, subs)
+    return _RENDERS_CACHE[key]
+
+
+def _history_renders(source: str, subs: dict[str, str]) -> list[bytes]:
     log = git_bytes(
         ["log", "--follow", f"-{HISTORY_MAX_REVS}", "--format=@%H", "--name-only", "--", source]
     )
@@ -508,6 +529,103 @@ def bounded_hunks(local: bytes | None, rendered: bytes, max_lines: int) -> list[
     return out
 
 
+def changed_ranges(a: list[str], b: list[str]) -> list[str]:
+    """Plages, numerotees dans b a partir de 1, des blocs ou b differe de a."""
+    out = []
+    for tag, _, _, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if tag == "equal":
+            continue
+        # Un retrait se situe apres la ligne j1 de b.
+        out.append(str(max(j1, 1)) if j2 == j1 else str(j2) if j2 - j1 == 1 else f"{j1 + 1}-{j2}")
+    return out
+
+
+def shown_ranges(ranges: list[str]) -> str:
+    more = ", ..." if len(ranges) > SUMMARY_MAX_RANGES else ""
+    return ", ".join(ranges[:SUMMARY_MAX_RANGES]) + more
+
+
+def merge_base(local: bytes | None, source: str, subs: dict[str, str]) -> bytes | None:
+    """Base du merge : la revision historique la plus proche de la cible.
+    None sans historique.
+
+    A egalite, la plus ancienne l'emporte : une edition locale de la ligne
+    qu'une revision recente a modifiee ressort alors en chevauchement, au lieu
+    d'effacer sans bruit l'evolution du depot."""
+    candidates = previous_renders(source, subs)
+    if local is None or not candidates:
+        return None
+    lines = text_lines(local)
+    return max(
+        reversed(candidates),
+        key=lambda c: difflib.SequenceMatcher(None, lines, text_lines(c), autojunk=False).ratio(),
+    )
+
+
+def three_way(local: bytes, base: bytes, rendered: bytes) -> tuple[bytes | None, int]:
+    """(merge, nombre de zones en chevauchement) par 'git merge-file' ;
+    (None, -1) si git est indisponible. Les fins de ligne du depot sont reprises."""
+    with tempfile.TemporaryDirectory() as folder:
+        paths = []
+        for name, raw in (("local", local), ("base", base), ("depot", rendered)):
+            path = Path(folder) / name
+            path.write_bytes(normalize(raw))
+            paths.append(str(path))
+        try:
+            r = subprocess.run(
+                ["git", "merge-file", "-p", "-L", "local", "-L", "base", "-L", "depot", *paths],
+                capture_output=True,
+            )
+        except OSError:
+            return None, -1
+    # Code de sortie : nombre de zones en chevauchement, plafonne a 127 ; au-dela,
+    # une erreur.
+    if r.returncode > 127:
+        return None, -1
+    merged = r.stdout
+    if b"\r\n" in rendered:
+        merged = merged.replace(b"\n", b"\r\n")
+    return merged, r.returncode
+
+
+def conflict_details(f: dict, subs: dict[str, str]) -> dict:
+    """Base, merge propose et resume d'un conflit, sans son contenu."""
+    base = merge_base(f["local"], f["source"], subs)
+    if base is None:
+        return {"base": None, "merged": None, "zones": -1,
+                "resume": change_summary(f["local"], f["rendered"])}
+    merged, zones = three_way(f["local"], base, f["rendered"])
+    b, local, depot = text_lines(base), text_lines(f["local"]), text_lines(f["rendered"])
+    edits, changes = changed_ranges(b, local), changed_ranges(b, depot)
+    if merged is None:
+        verdict = "fusion impossible (git indisponible)"
+    elif zones:
+        verdict = f"{zones} zone(s) en chevauchement"
+    elif normalize(merged) == normalize(f["local"]):
+        verdict = "fusionnable (version locale deja a jour du depot)"
+    else:
+        verdict = "fusionnable"
+    parts = [
+        f"{label} : {len(ranges)} bloc(s)" + (f" l.{shown_ranges(ranges)}" if ranges else "")
+        for label, ranges in (("local", edits), ("depot", changes))
+    ]
+    resume = f"{parts[0]} ; {parts[1]} ; {verdict}"
+    return {"base": base, "merged": merged, "zones": zones, "resume": resume}
+
+
+def view_paths(action: dict, dst: Path) -> tuple[Path, Path]:
+    """Fichiers deposes par 'view' : version du depot et merge propose."""
+    folder = Path(tempfile.gettempdir()) / VIEW_DIR / action["id"]
+    return folder / f"depot-{dst.name}", folder / f"fusion-{dst.name}"
+
+
+def has_markers(raw: bytes) -> bool:
+    return any(
+        line.startswith((b"<<<<<<< ", b">>>>>>> ")) or line == b"======="
+        for line in normalize(raw).split(b"\n")
+    )
+
+
 def scopes_of(agent: str, scopes: list[str]) -> list[str]:
     """Perimetres demandes que cet agent hote prend en charge."""
     return [s for s in scopes if agent in SCOPE_AGENTS.get(s, AGENTS)]
@@ -593,7 +711,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--all",
         action="store_true",
-        help="apply : ecrire tous les cas surs (a installer, a mettre a jour)",
+        help="apply : ecrire tous les cas surs et, sauf choix contraire, adopter la "
+             "version du depot pour chaque conflit, apres sauvegarde de la version locale",
     )
     p.add_argument(
         "--confirm",
@@ -611,7 +730,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--apply",
         action="store_true",
-        help="obsolete, equivaut a 'apply --all' : retire dans une prochaine version MAJEUR",
+        help="obsolete, ecrit les seuls cas surs, sans toucher aux conflits : "
+             "retire dans une prochaine version MAJEUR",
     )
     p.add_argument(
         "--agent",
@@ -645,6 +765,8 @@ def parse_args() -> argparse.Namespace:
     argv = sys.argv[1:]
     if any(a == "--outil" or a.startswith("--outil=") for a in argv):
         print("install.py : --outil est obsolete, employer --tool", file=sys.stderr)
+    # --apply garde son comportement publie : les conflits restent intacts.
+    args.conflicts_default = None if args.apply else "depot"
     if args.apply:
         print("install.py : --apply est obsolete, employer 'apply --all'", file=sys.stderr)
         args.command, args.all = "apply", True
@@ -678,9 +800,10 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
     for source, src, dst in file_pairs:
         status, rendered, local = classify(source, src, dst, subs)
         classes[status].append(source)
-        per_file.append(
-            {"source": source, "dst": dst, "status": status, "rendered": rendered, "local": local}
-        )
+        f = {"source": source, "dst": dst, "status": status, "rendered": rendered, "local": local}
+        if status == "conflit":
+            f.update(conflict_details(f, subs))
+        per_file.append(f)
 
     return {
         "cible": str(target_root),
@@ -731,11 +854,16 @@ def build_actions(reports: dict[str, dict]) -> list[dict]:
             if f["status"] != "conflit":
                 continue
             key = f"{agent}|conflit|{f['source']}|{digest(f['local'])}|{digest(f['rendered'])}"
+            mergeable = f["merged"] is not None and f["zones"] == 0
+            # 'fusion' exige un merge sans chevauchement ; 'fichier', un merge
+            # que 'view' puisse deposer.
+            offered = {"fusion": mergeable, "fichier": f["merged"] is not None}
             actions.append({
                 "type": "conflit", "agent": agent, "outil": tool_of(f["source"]),
-                "chemin": f["source"], "cible": str(f["dst"]),
-                "resume": change_summary(f["local"], f["rendered"]),
-                "choix": list(CONFLICT_CHOICES), "key": key,
+                "chemin": f["source"], "cible": str(f["dst"]), "resume": f["resume"],
+                "fusionnable": mergeable,
+                "choix": [c for c in CONFLICT_CHOICES if offered.get(c, True)],
+                "key": key,
             })
     for length in (4, 6, 8, 40):
         ids = [hashlib.sha1(a["key"].encode("utf-8")).hexdigest()[:length] for a in actions]
@@ -756,11 +884,18 @@ def parse_confirm(values: list[str], actions: list[dict]) -> tuple[dict[str, str
         action = by_id.get(ident)
         if action is None:
             return {}, f"identifiant inconnu ou perime : {ident} ; relancer l'audit"
-        if action["type"] == "conflit" and choice not in CONFLICT_CHOICES:
+        if action["type"] == "conflit" and choice not in action["choix"]:
             return {}, (
                 f"{ident} : conflit sur {action['chemin']}, choix requis parmi "
-                f"{'|'.join(CONFLICT_CHOICES)} ({ident}=<choix>)"
+                f"{'|'.join(action['choix'])} ({ident}=<choix>)"
             )
+        if choice == "fichier":
+            merge_file = view_paths(action, Path(action["cible"]))[1]
+            raw = read_bytes(merge_file)
+            if raw is None:
+                return {}, f"{ident} : lancer d'abord install.py view {ident}, puis corriger {merge_file}"
+            if has_markers(raw):
+                return {}, f"{ident} : {merge_file} porte encore des marqueurs de conflit"
         if action["type"] == "maj" and choice:
             return {}, f"{ident} : mise a jour sans choix, ecrire {ident} seul"
         chosen[ident] = choice
@@ -768,17 +903,22 @@ def parse_confirm(values: list[str], actions: list[dict]) -> tuple[dict[str, str
 
 
 def apply_agent(agent: str, r: dict, actions: list[dict], chosen: dict[str, str],
-                write_all: bool, stamp: str) -> None:
+                write_all: bool, conflicts_default: str | None, stamp: str) -> None:
     """Ecrit, chez un agent hote, les mises a jour confirmees et les conflits
-    resolus en faveur du depot. Les fichiers surs d'un outil en conflit ne sont
-    ecrits qu'une fois chacun de ses conflits arbitre."""
+    resolus : version du depot, merge propose ou fichier corrige par
+    l'utilisateur. Avec --all, un conflit sans choix explicite prend
+    conflicts_default. Les fichiers surs d'un outil en conflit ne sont ecrits
+    qu'une fois chacun de ses conflits arbitre."""
     mine = [a for a in actions if a["agent"] == agent]
     tools = {
         a["outil"] for a in mine if a["type"] == "maj" and (write_all or a["id"] in chosen)
     }
     resolutions = {
-        a["chemin"]: chosen[a["id"]] for a in mine if a["type"] == "conflit" and a["id"] in chosen
+        a["chemin"]: chosen.get(a["id"], conflicts_default)
+        for a in mine
+        if a["type"] == "conflit" and (a["id"] in chosen or conflicts_default)
     }
+    by_path = {a["chemin"]: a for a in mine if a["type"] == "conflit"}
     for tool in {a["outil"] for a in mine if a["type"] == "conflit"}:
         sources = [a["chemin"] for a in mine if a["type"] == "conflit" and a["outil"] == tool]
         if all(s in resolutions for s in sources):
@@ -789,17 +929,23 @@ def apply_agent(agent: str, r: dict, actions: list[dict], chosen: dict[str, str]
         source, dst, status = f["source"], f["dst"], f["status"]
         if tool_of(source) not in tools:
             continue
+        content = f["rendered"]
         if status == "conflit":
-            if resolutions.get(source) != "depot":
+            choice = resolutions.get(source)
+            if choice in (None, "local"):
                 continue
-            if backup(r["target_root"], stamp, dst, f["local"]) is None:
+            if choice == "fusion":
+                content = f["merged"]
+            elif choice == "fichier":
+                content = read_bytes(view_paths(by_path[source], dst)[1])
+            if content is None or backup(r["target_root"], stamp, dst, f["local"]) is None:
                 failed.append(source)
                 continue
             r["sauvegarde"] = str(r["target_root"] / BACKUP_DIR / stamp)
             resolved.append(source)
         elif status not in ("absent", "obsolete"):
             continue
-        (written if write_checked(dst, f["rendered"]) else failed).append(source)
+        (written if write_checked(dst, content) else failed).append(source)
 
     r["ecrits"], r["echecs"], r["resolus"] = written, failed, resolved
     r["outils"] = tool_states(r["per_file"], failed, {tool_of(s) for s in written}, set(resolved))
@@ -841,9 +987,12 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
             label = STATE_LABELS[a["etat"]]
             print(f"  {a['id']}  {a['agent']:<8} {a['outil']}  {label} ({a['fichiers']} fichier(s))")
     if conflicts:
-        print("\na arbitrer, edition locale ou outil homonyme (--confirm <id>=depot|local) :")
+        print("\nconflits, edition locale ou outil homonyme ; sans choix, --all adopte la")
+        print("version du depot et sauvegarde la version locale (--confirm <id>=<choix>) :")
         for a in conflicts:
-            print(f"  {a['id']}  {a['agent']:<8} {a['chemin']}")
+            # 'fichier' n'a de sens qu'apres 'view' : il est propose par sa sortie.
+            shown = "|".join(c for c in a["choix"] if c != "fichier")
+            print(f"  {a['id']}  {a['agent']:<8} {a['chemin']}  choix : {shown}")
             print(f"        {a['resume']} ; voir : install.py view {a['id']}")
 
     notes = []
@@ -875,10 +1024,8 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
             print(f"  {note}")
 
     if maj or conflicts:
-        parts = ["--all"] if maj else []
-        if conflicts:
-            parts.append("--confirm <id>=<choix>,...")
-        print(f"\ncommande : python scripts/install.py apply{command_options(args)} {' '.join(parts)}")
+        extra = " [--confirm <id>=<choix>,...]" if conflicts else ""
+        print(f"\ncommande : python scripts/install.py apply{command_options(args)} --all{extra}")
     else:
         print("\nrien a installer ni a arbitrer.")
 
@@ -892,30 +1039,56 @@ def find_conflict(actions: list[dict], ident: str | None) -> dict | None:
 
 
 def show_view(action: dict, report: dict) -> None:
-    """Depose la version du depot, placeholders substitues, dans un dossier
-    temporaire hors de {AGENT_DIR}, et n'affiche que les chemins : l'utilisateur lit le contenu dans son editeur,
-    la session ne le lit jamais."""
+    """Depose la version du depot, placeholders substitues, et le merge propose
+    dans un dossier temporaire hors de {AGENT_DIR}, et n'affiche que les
+    chemins : l'utilisateur lit le contenu dans son editeur, la session ne le
+    lit jamais."""
     f = next(f for f in report["per_file"] if f["source"] == action["chemin"])
-    folder = Path(tempfile.gettempdir()) / VIEW_DIR / action["id"]
-    folder.mkdir(parents=True, exist_ok=True)
-    rendered = folder / f"depot-{f['dst'].name}"
+    rendered, merge_file = view_paths(action, f["dst"])
+    rendered.parent.mkdir(parents=True, exist_ok=True)
     rendered.write_bytes(f["rendered"])
     print(f"[{action['agent']}] {action['chemin']} : {action['resume']}")
     print(f"  local : {f['dst']}")
     print(f"  depot : {rendered}")
+    if f["merged"] is not None:
+        merge_file.write_bytes(f["merged"])
+        print(f"  merge : {merge_file}")
     print("  a ouvrir par l'utilisateur, dans son editeur ou son terminal :")
     print(f'    code --diff "{f["dst"]}" "{rendered}"')
     print(f'    git diff --no-index -- "{f["dst"]}" "{rendered}"')
+    if f["merged"] is not None:
+        print(f"  pour retenir le merge corrige a la main : --confirm {action['id']}=fichier")
+
+
+def marker_zones(merged: bytes) -> list[str]:
+    """Lignes des seules zones en chevauchement d'un merge, marqueurs compris."""
+    out, inside = [], False
+    for line in normalize(merged).decode("utf-8", errors="replace").splitlines():
+        if line.startswith("<<<<<<< "):
+            inside = True
+        if inside:
+            out.append(line)
+        if line.startswith(">>>>>>> "):
+            inside = False
+    return out
 
 
 def show_hunks(action: dict, report: dict, max_lines: int) -> None:
     """Extrait borne de l'ecart, demande explicitement : seule sortie de ce
-    script qui cite le contenu d'un fichier."""
+    script qui cite le contenu d'un fichier. Quand le merge laisse des zones en
+    chevauchement, seules ces zones sont citees."""
     # Le contenu cite peut porter des accents : l'encodage par defaut de la
     # console (cp1252) ferait echouer l'ecriture.
     sys.stdout.reconfigure(encoding="utf-8")
     f = next(f for f in report["per_file"] if f["source"] == action["chemin"])
     print(f"[{action['agent']}] {action['chemin']} : {action['resume']} (au plus {max_lines} lignes)")
+    if f["merged"] is not None and f["zones"] > 0:
+        lines = marker_zones(f["merged"])
+        for line in lines[:max_lines]:
+            print(line if len(line) <= HUNK_LINE_WIDTH else line[:HUNK_LINE_WIDTH] + " [...]")
+        if len(lines) > max_lines:
+            print(f"[{len(lines) - max_lines} ligne(s) de diff non affichee(s)]")
+        return
     for line in bounded_hunks(f["local"], f["rendered"], max_lines):
         print(line)
 
@@ -1007,7 +1180,8 @@ def main() -> int:
             return 1
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         for agent, r in reports.items():
-            apply_agent(agent, r, actions, chosen, args.all, stamp)
+            default = args.conflicts_default if args.all else None
+            apply_agent(agent, r, actions, chosen, args.all, default, stamp)
         after = {agent: examine(agent, args, scopes) for agent in agents}
         remaining = build_actions(after)
         for agent, r in after.items():
