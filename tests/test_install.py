@@ -193,12 +193,22 @@ class TestInstall(unittest.TestCase):
         self.assertTrue(any(s.startswith(TOOL + "/") for s in written), written)
 
 
-def run_text(agent: str, target: Path, *options: str) -> subprocess.CompletedProcess:
+def run_text(agent: str, target: Path, *options: str, env: dict | None = None) -> subprocess.CompletedProcess:
     return subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "install.py"),
          "--agent", agent, "--target", str(target), *options],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8", stdin=subprocess.DEVNULL,
+        env=env,
     )
+
+
+def provide(bin_dir: Path, command: str) -> None:
+    """Commande factice, trouvee par shutil.which sous Windows comme ailleurs."""
+    bin_dir.mkdir(exist_ok=True)
+    for name in (command, f"{command}.bat"):
+        path = bin_dir / name
+        path.write_text("exit 0\n", encoding="utf-8")
+        path.chmod(0o755)
 
 
 def actions_of(target: Path, agent: str = "claude", kind: str = "outil") -> list[dict]:
@@ -258,7 +268,12 @@ class TestAuditApply(unittest.TestCase):
         self.assertEqual(actions_of(self.target), [])
 
     def test_audit_is_short_and_without_content(self):
-        r = run_text("claude", self.target)
+        # Prerequis fournis : la longueur ne depend pas de la machine.
+        bin_dir = self.tmp / "bin"
+        for command in ("adb", "gh", "pwsh"):
+            provide(bin_dir, command)
+        env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ.get("PATH", ""))
+        r = run_text("claude", self.target, env=env)
         self.assertEqual(r.returncode, 1, r.stdout)
         self.assertLessEqual(len(r.stdout.splitlines()), 15, r.stdout)
         self.assertNotIn("marqueur-local", r.stdout)
@@ -558,13 +573,6 @@ class TestPrerequisites(unittest.TestCase):
     def tearDown(self):
         self._tmp.cleanup()
 
-    def provide(self, command: str) -> None:
-        """Commande factice, trouvee par shutil.which sous Windows comme ailleurs."""
-        for name in (command, f"{command}.bat"):
-            path = self.bin / name
-            path.write_text("exit 0\n", encoding="utf-8")
-            path.chmod(0o755)
-
     def missing(self, agent: str, *options: str) -> dict:
         r = run_with_path(self.bin, "--agent", agent, "--target", str(self.target), "--json", *options)
         try:
@@ -594,8 +602,8 @@ class TestPrerequisites(unittest.TestCase):
         self.assertEqual(report["prerequis_absents"], {"adb": ["clean-android-tv"]})
 
     def test_present_or_substitute_command_not_reported(self):
-        self.provide("adb")
-        self.provide("powershell")
+        provide(self.bin, "adb")
+        provide(self.bin, "powershell")
         absent = self.missing("claude")["prerequis_absents"]
         self.assertNotIn("adb", absent)
         self.assertNotIn("pwsh", absent)
@@ -603,7 +611,8 @@ class TestPrerequisites(unittest.TestCase):
     def test_summary_names_missing_prerequisites(self):
         r = run_with_path(self.bin, "--agent", "claude", "--target", str(self.target),
                           "--tool", "clean-android-tv")
-        self.assertIn("prerequis absent du PATH : adb, pour clean-android-tv", r.stdout)
+        self.assertIn("prerequis absents du PATH, rien n'est installe (docs/PREREQUIS.md) : "
+                      "adb pour clean-android-tv\n", r.stdout)
         self.assertIn("historique git indisponible", r.stdout)
 
 

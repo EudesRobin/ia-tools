@@ -1037,13 +1037,12 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
             "historique git indisponible (git absent ou depot hors clone git) : une "
             "installation obsolete est traitee en conflit, un outil retire n'est pas reconnu"
         )
-    notes += [
-        f"prerequis absent du PATH : {' ou '.join(PREREQUISITE_COMMANDS[command])}, "
-        f"pour {', '.join(tools)}"
-        for command, tools in missing.items()
-    ]
     if missing:
-        notes.append("prerequis : rien n'est installe ; commandes d'installation dans docs/PREREQUIS.md")
+        detail = " ; ".join(
+            f"{' ou '.join(PREREQUISITE_COMMANDS[command])} pour {', '.join(tools)}"
+            for command, tools in missing.items()
+        )
+        notes.append(f"prerequis absents du PATH, rien n'est installe (docs/PREREQUIS.md) : {detail}")
     if notes:
         print("\npour information :")
         for note in notes:
