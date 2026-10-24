@@ -2,8 +2,10 @@
 """Tests de scripts/install.py sur une cible temporaire (--target), pour chaque
 agent hote : installation sur cible vide, idempotence, etat par outil, conflit
 sur edition locale sans ecriture de l'outil concerne, echec d'ecriture signale,
-validation prealable bloquant --apply, settings.json jamais ecrit (AGENTS.md,
-DoD des scripts ; docs/SETUP.md).
+validation prealable bloquant 'apply', settings.json jamais ecrit ; audit court a
+identifiants sans contenu de fichier, 'apply' par --all et --confirm,
+identifiant perime refuse, 'view' et 'hunks' bornes (AGENTS.md, DoD des
+scripts ; docs/SETUP.md).
 
 Usage : python tests/test_install.py
 Code de sortie : 0 si tout passe, 1 sinon.
@@ -58,7 +60,7 @@ class TestInstall(unittest.TestCase):
         for agent in AGENTS:
             with self.subTest(agent):
                 target = self.tmp / agent
-                code, r = run_install(agent, target, "--apply")
+                code, r = run_install(agent, target, "apply", "--all")
                 self.assertEqual(code, 0, r)
                 self.assertTrue(r["ecrits"], f"{agent} : rien n'a ete ecrit")
                 self.assertEqual(sorted(r["ecrits"]), sorted(r["classes"]["absent"]))
@@ -79,13 +81,13 @@ class TestInstall(unittest.TestCase):
         for agent in AGENTS:
             with self.subTest(agent):
                 target = self.tmp / agent
-                run_install(agent, target, "--apply")
+                run_install(agent, target, "apply", "--all")
                 edited, deleted = target / EDITED, target / DELETED
                 self.assertTrue(edited.is_file() and deleted.is_file(), f"{agent} : {TOOL} non installe")
                 edited.write_text("edition locale\n", encoding="utf-8")
                 deleted.unlink()
 
-                code, r = run_install(agent, target, "--apply")
+                code, r = run_install(agent, target, "apply", "--all")
                 self.assertEqual(code, 1, f"{agent} : un conflit doit sortir en 1")
                 self.assertIn(EDITED, r["classes"]["conflit"])
                 self.assertIn("clean-android-tv", " ".join(r["outils_bloques"]))
@@ -101,7 +103,7 @@ class TestInstall(unittest.TestCase):
             with self.subTest(agent):
                 target = self.tmp / agent
                 (target / EDITED).mkdir(parents=True)  # un dossier a la place du fichier
-                code, r = run_install(agent, target, "--apply")
+                code, r = run_install(agent, target, "apply", "--all")
                 self.assertEqual(code, 1, f"{agent} : un echec d'ecriture doit sortir en 1")
                 self.assertIn(EDITED, r["echecs"])
                 self.assertNotIn(EDITED, r["ecrits"])
@@ -117,7 +119,7 @@ class TestInstall(unittest.TestCase):
                 settings = target / "settings.json"
                 content = b'{\n  "model": "local"\n}\n'
                 settings.write_bytes(content)
-                code, r = run_install(agent, target, "--apply")
+                code, r = run_install(agent, target, "apply", "--all")
                 self.assertEqual(code, 0, r)
                 self.assertEqual(settings.read_bytes(), content, f"{agent} : settings.json modifie")
 
@@ -129,7 +131,7 @@ class TestInstall(unittest.TestCase):
                 target = self.tmp / option.strip("-")
                 r = subprocess.run(
                     [sys.executable, str(ROOT / "scripts" / "install.py"), "--agent", "claude",
-                     "--target", str(target), option, "clean-android-tv", "--apply", "--json"],
+                     "--target", str(target), option, "clean-android-tv", "apply", "--all", "--json"],
                     cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
                 )
                 self.assertEqual(r.returncode, 0, r.stderr)
@@ -139,7 +141,7 @@ class TestInstall(unittest.TestCase):
                 self.assertEqual("obsolete" in r.stderr, warns, r.stderr)
 
     def test_validation_gates_apply(self):
-        """Validateur en echec : --apply n'ecrit rien ; anomalie d'environnement : avertit."""
+        """Validateur en echec : 'apply' n'ecrit rien ; anomalie d'environnement : avertit."""
         spec = importlib.util.spec_from_file_location("install", ROOT / "scripts" / "install.py")
         install = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(install)
@@ -149,7 +151,7 @@ class TestInstall(unittest.TestCase):
                 validator.write_text(f"import sys\nsys.exit({exit_code})\n", encoding="utf-8")
                 target = self.tmp / f"target_{exit_code}"
                 install.VALIDATOR = validator
-                argv = ["install.py", "--agent", "claude", "--target", str(target), "--apply"]
+                argv = ["install.py", "--agent", "claude", "--target", str(target), "apply", "--all"]
                 out = io.StringIO()
                 with unittest.mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out):
                     code = install.main()
@@ -171,7 +173,7 @@ class TestInstall(unittest.TestCase):
         install.DEPENDENCIES_FILE = readme
         target = self.tmp / "cible"
         argv = ["install.py", "--agent", "claude", "--target", str(target),
-                "--tool", "clean-android-tv", "--apply", "--json"]
+                "--tool", "clean-android-tv", "apply", "--all", "--json"]
         out = io.StringIO()
         with unittest.mock.patch.object(sys, "argv", argv), contextlib.redirect_stdout(out):
             code = install.main()
@@ -181,6 +183,141 @@ class TestInstall(unittest.TestCase):
         written = report["agents"]["claude"]["ecrits"]
         self.assertTrue(any(s.startswith("skills/setup-harness/") for s in written), written)
         self.assertTrue(any(s.startswith(TOOL + "/") for s in written), written)
+
+
+def run_text(agent: str, target: Path, *options: str) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "install.py"),
+         "--agent", agent, "--target", str(target), *options],
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", stdin=subprocess.DEVNULL,
+    )
+
+
+def actions_of(target: Path, agent: str = "claude") -> list[dict]:
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "install.py"),
+         "--agent", agent, "--target", str(target), "--json"],
+        cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+    )
+    return json.loads(r.stdout)["actions"]
+
+
+# Fichier de plus de 500 lignes portant un placeholder {AGENT_DIR}.
+BIG = f"{TOOL}/reference-adb.md"
+
+
+class TestAuditApply(unittest.TestCase):
+    """audit court a identifiants, apply par --all et --confirm, view et hunks
+    sans contenu dans la sortie standard."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+        self.target = self.tmp / "claude"
+        run_install("claude", self.target, "apply", "--all")
+        self.big = self.target / BIG
+        lines = self.big.read_text(encoding="utf-8").splitlines(True)
+        self.assertGreater(len(lines), 500)
+        lines[10] = "ligne editee a la main, marqueur-local\n"
+        self.local = "".join(lines)
+        self.big.write_text(self.local, encoding="utf-8")
+        (self.target / DELETED).unlink()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def conflict(self) -> dict:
+        found = [a for a in actions_of(self.target) if a["type"] == "conflit"]
+        self.assertEqual([a["chemin"] for a in found], [BIG])
+        return found[0]
+
+    def test_audit_is_short_and_without_content(self):
+        r = run_text("claude", self.target)
+        self.assertEqual(r.returncode, 1, r.stdout)
+        self.assertLessEqual(len(r.stdout.splitlines()), 15, r.stdout)
+        self.assertNotIn("marqueur-local", r.stdout)
+        self.assertIn(self.conflict()["id"], r.stdout)
+        self.assertIn("1 bloc(s), local -1 / depot +1 ligne(s), l.11", r.stdout)
+
+    def test_hunks_bounded_and_view_without_content(self):
+        ident = self.conflict()["id"]
+        r = run_text("claude", self.target, "hunks", ident, "--max-lines", "2")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        body = r.stdout.splitlines()
+        # En-tete, deux lignes de diff (@@ et la ligne locale), mention de la coupure.
+        self.assertEqual(len(body), 4, r.stdout)
+        self.assertIn("marqueur-local", body[2])
+        self.assertIn("non affichee", body[3])
+        r = run_text("claude", self.target, "view", ident)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertNotIn("marqueur-local", r.stdout)
+        rendered = Path(r.stdout.split("depot : ")[1].splitlines()[0].strip())
+        self.assertNotIn("marqueur-local", rendered.read_text(encoding="utf-8"))
+        self.assertNotIn("{AGENT_DIR}", rendered.read_text(encoding="utf-8"))
+
+    def test_conflict_requires_choice_and_fresh_id(self):
+        ident = self.conflict()["id"]
+        for confirm in (ident, f"{ident}=autre", "0000=depot"):
+            with self.subTest(confirm):
+                r = run_text("claude", self.target, "apply", "--confirm", confirm)
+                self.assertEqual(r.returncode, 1)
+                self.assertIn("rien n'est ecrit", r.stderr)
+                self.assertEqual(self.big.read_text(encoding="utf-8"), self.local)
+                self.assertFalse((self.target / DELETED).exists())
+        # Cible modifiee apres l'audit : l'identifiant est perime.
+        self.big.write_text(self.local + "autre edition\n", encoding="utf-8")
+        r = run_text("claude", self.target, "apply", "--confirm", f"{ident}=depot")
+        self.assertIn("perime", r.stderr)
+        self.assertTrue(self.big.read_text(encoding="utf-8").endswith("autre edition\n"))
+
+    def test_confirm_depot_backs_up_and_unblocks_tool(self):
+        ident = self.conflict()["id"]
+        code, r = run_install("claude", self.target, "apply", "--confirm", f"{ident}=depot")
+        self.assertEqual(code, 0, r)
+        self.assertEqual(r["resolus"], [BIG])
+        self.assertNotIn("marqueur-local", self.big.read_text(encoding="utf-8"))
+        self.assertTrue((self.target / DELETED).is_file(), "outil debloque non complete")
+        saved = Path(r["sauvegarde"]) / BIG
+        self.assertEqual(saved.read_text(encoding="utf-8"), self.local)
+        self.assertEqual(actions_of(self.target), [])
+
+    def test_confirm_local_keeps_file_and_unblocks_tool(self):
+        ident = self.conflict()["id"]
+        code, r = run_install("claude", self.target, "apply", "--confirm", f"{ident}=local")
+        self.assertEqual(code, 1, "un conflit garde en local reste un conflit")
+        self.assertEqual(self.big.read_text(encoding="utf-8"), self.local)
+        self.assertTrue((self.target / DELETED).is_file(), "outil arbitre non complete")
+        self.assertIsNone(r["sauvegarde"])
+
+    def test_confirm_one_update_only(self):
+        other = self.tmp / "autre"
+        run_install("claude", other, "apply", "--all")
+        for rel in (DELETED, "skills/release/SKILL.md"):
+            (other / rel).unlink()
+        maj = {a["outil"]: a["id"] for a in actions_of(other) if a["type"] == "maj"}
+        self.assertEqual(set(maj), {"clean-android-tv", "release"}, maj)
+        code, r = run_install("claude", other, "apply", "--confirm", maj["release"])
+        self.assertEqual(code, 0, r)
+        self.assertEqual(r["ecrits"], ["skills/release/SKILL.md"])
+        self.assertFalse((other / DELETED).exists())
+
+    def test_raw_copy_is_obsolete(self):
+        """Une copie manuelle, placeholders non substitues, n'est pas un conflit."""
+        other = self.tmp / "copie"
+        run_install("claude", other, "apply", "--all")
+        (other / BIG).write_bytes((ROOT / BIG).read_bytes())
+        code, r = run_install("claude", other)
+        self.assertEqual(code, 0, r)
+        self.assertIn(BIG, r["classes"]["obsolete"])
+
+    def test_apply_needs_selection_and_alias_warns(self):
+        r = run_text("claude", self.tmp / "vide", "apply")
+        self.assertEqual(r.returncode, 1)
+        self.assertFalse((self.tmp / "vide").exists())
+        r = run_text("claude", self.tmp / "alias", "--apply")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("obsolete", r.stderr)
+        self.assertTrue((self.tmp / "alias" / DELETED).is_file())
 
 
 class TestDependencies(unittest.TestCase):

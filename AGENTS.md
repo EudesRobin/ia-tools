@@ -16,17 +16,26 @@ planifier, créer ou modifier un fichier, relire un document ou du code,
 répondre à une question, committer, lancer une commande, installer des outils.
 Quand une tâche est déléguée à un sous-agent, lui transmettre cette consigne.
 La table rattache chaque tâche au document qui la régit et indique la conduite
-à tenir quand aucun ne s'applique ; elle fait partie de ces instructions.
+à tenir quand aucun ne s'applique ; elle fait partie de ces instructions. Seule
+exception à cette lecture préalable : l'installation ou la mise à jour des
+outils locaux, entièrement régie par la section suivante.
 
 ## ARRÊT — installation ou mise à jour des outils locaux
 
 **S'arrêter avant toute action** quand l'utilisateur demande d'installer, de
-mettre à jour, de déployer ou de synchroniser des outils, et suivre
-[SETUP.md](./docs/SETUP.md) section par section. Le merge intelligent est
-réalisé par `scripts/install.py` : lancer d'abord son audit, faire confirmer le
-périmètre et les agents hôtes avant de relancer le script avec `--apply`, puis
-arbitrer chaque conflit avec l'utilisateur. Ne rien copier à la main et ne
-jamais écrire de script temporaire de comparaison.
+mettre à jour, de déployer ou de synchroniser des outils. Le merge intelligent
+est réalisé par `scripts/install.py`, que l'agent conduit en trois temps :
+
+1. lancer son audit, `python scripts/install.py`, et montrer son résumé tel
+   quel ;
+2. recueillir les choix de l'utilisateur : `--all` pour les cas sûrs, ou les
+   identifiants qu'il retient, et un choix `depot` ou `local` par conflit ;
+3. lancer la commande `apply` qu'indique le résumé, avec ces choix.
+
+La procédure complète figure dans [SETUP.md](./docs/SETUP.md) §2, à consulter
+seulement si la sortie du script ne suffit pas. Ne rien copier à la main, ne
+jamais écrire de script temporaire de comparaison et ne pas lire le contenu des
+fichiers comparés.
 
 ## Definition of Done — boucle de vérification
 

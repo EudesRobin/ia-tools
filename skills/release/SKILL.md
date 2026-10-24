@@ -81,9 +81,9 @@ restée `[~]` ; le suivi de la liste ci-dessus reprend à la fin de la livraison
 - **Skill `pull-request`**, employée à la phase 3 :
   `{AGENT_DIR}/skills/pull-request/SKILL.md` doit exister et, sans dépôt
   distant, porter la section « 8. Merger localement ». Absente → s'arrêter et
-  indiquer comment l'installer ou la mettre à jour : `python scripts/install.py
-  --tool pull-request --apply` depuis un clone d'ia-tools, à défaut une copie de
-  son dossier sous `{AGENT_DIR}/skills/`.
+  indiquer comment l'installer ou la mettre à jour :
+  `python scripts/install.py apply --all --tool pull-request` depuis un clone
+  d'ia-tools, à défaut, une copie de son dossier sous `{AGENT_DIR}/skills/`.
 
 ## Utilisation
 

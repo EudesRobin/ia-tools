@@ -119,13 +119,14 @@ s'installe **isolément** : l'utilisateur peut copier
   nom (« la skill `<autre>` », « l'agent `<autre>` »). L'outil dépendant
   vérifie, dans ses prérequis, la présence de l'outil employé sous `{AGENT_DIR}`
   ; si l'outil employé est absent, l'outil dépendant s'arrête et indique comment
-  installer l'outil employé : `python scripts/install.py --tool <autre> --apply`
-  depuis un clone du dépôt, à défaut une copie de son dossier. Toute dépendance
+  installer l'outil employé :
+  `python scripts/install.py apply --all --tool <autre>` depuis un clone du
+  dépôt, à défaut, une copie de son dossier. Toute dépendance
   est déclarée dans la carte de
   [README.md](../README.md#dépendances-entre-outils) : `scripts/validate.py`
   compare cette carte aux références réelles entre outils, dans les deux sens,
-  et `scripts/install.py --tool` installe aussi les dépendances de l'outil
-  demandé.
+  et l'option `--tool` de `scripts/install.py` inclut aussi les dépendances de
+  l'outil demandé.
 
 ### 1.8 Règles dupliquées à tenir synchrones
 
