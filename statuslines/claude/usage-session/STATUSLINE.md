@@ -54,10 +54,12 @@ Une status line s'installe en deux temps : la copie du script sous
 `~/.claude/statuslines/usage-session/`, puis l'enregistrement de la clé
 `statusLine` dans `~/.claude/settings.json`. La procédure est décrite dans
 `docs/SETUP.md` du dépôt ia-tools. `scripts/install.py` copie `statusline.ps1`
-et affiche l'état de la clé, sans jamais écrire `settings.json`.
-**Ne jamais écraser `~/.claude/settings.json` en bloc** : n'y merger que la
-clé `statusLine`, après accord de l'utilisateur quand la clé existante désigne
-un autre script.
+et affiche l'état de la clé ; il ne l'enregistre que lorsque l'utilisateur
+confirme l'identifiant proposé, après sauvegarde de `settings.json`. Pour un
+enregistrement à la main, **ne jamais écraser `~/.claude/settings.json` en
+bloc** : n'y merger que la clé
+`statusLine`, après accord de l'utilisateur quand la clé existante désigne un
+autre script.
 
 ```json
 {
