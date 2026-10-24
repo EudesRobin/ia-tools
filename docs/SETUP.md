@@ -10,8 +10,8 @@ Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 > **Prérequis système** (Python ≥ 3.10, Git, `adb`, PowerShell, bibliothèque
 > `pyyaml`) — dépendances logicielles que supposent installées certaines skills,
 > la status line `usage-session` et l'outillage du dépôt : voir
-> [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires au merge
-> intelligent décrit ci-dessous ; les autres ne concernent qu'une skill, une
+> [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires à
+> l'installation décrite ci-dessous ; les autres ne concernent qu'une skill, une
 > status line ou la contribution au dépôt.
 
 ## 1. Agents hôtes, cibles et placeholders
@@ -64,9 +64,9 @@ Tout placeholder ajouté se déclare dans la fonction `variables()` de
 `scripts/install.py`, sans quoi il n'est pas substitué. La forme `<...>`
 désigne une valeur renseignée à l'exécution et n'est jamais substituée.
 
-## 2. Procédure — merge intelligent
+## 2. Procédure d'installation
 
-Le merge intelligent est porté par **`scripts/install.py`**. Ne pas le
+L'installation est menée par **`scripts/install.py`**. Ne pas la
 reproduire à la main, ne pas écrire de comparaison ad hoc et ne pas lire le
 contenu des fichiers comparés : le script substitue les placeholders, compare
 chaque fichier du dépôt à sa cible, classe les écarts, écrit ce que
@@ -79,7 +79,6 @@ l'utilisateur et lance l'écriture
 python scripts/install.py                          # audit : résumé court, n'écrit rien
 python scripts/install.py apply --all              # écrit tous les outils, éditions locales comprises
 python scripts/install.py apply --confirm <id>,... # n'écrit que ces outils
-python scripts/install.py --diff <chemin>          # classe d'un fichier, identifiant de son outil
 python scripts/install.py --scope skills,agents --agent copilot
 python scripts/install.py apply --all --tool clean-android-tv
 ```
@@ -97,9 +96,8 @@ n'est admis qu'avec un seul agent hôte. Une cible dont le chemin contient une
 espace oblige à appeler les scripts embarqués par un chemin entre guillemets,
 forme que ne couvre plus la règle `allowed-tools` de leur skill
 ([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la même sortie au
-format JSON. Les options `--apply`, qui n'écrit que les outils sans conflit et
-ne supprime rien, et `--outil`, ancien nom de `--tool`, sont obsolètes et
-seront retirées dans une prochaine version `MAJEUR`.
+format JSON. Les options `--apply`, `--outil` et `--diff` sont retirées depuis
+la version 2.0.0 : le script les refuse et indique ce qui en tient lieu.
 
 **Chaque agent hôte est traité séparément.** Le classement et les écritures
 sont propres à chacun.
@@ -215,8 +213,7 @@ autre par la version du dépôt (§2) ; elle reste lisible dans la sauvegarde.
 Un hook s'installe en deux temps : la copie du script, puis l'enregistrement du
 hook.
 
-- Scripts → `{AGENT_DIR}/hooks/<nom>/`, par le merge intelligent comme
-  ci-dessus.
+- Scripts → `{AGENT_DIR}/hooks/<nom>/`, par `scripts/install.py` (§2).
 - Enregistrement, propre à chaque agent hôte :
   - Claude Code : clé `hooks` du fichier de paramètres
     `~/.claude/settings.json`. **Ne jamais écraser `~/.claude/settings.json` en
@@ -242,9 +239,9 @@ Chaque status line est propre à un agent hôte, nommé dans son chemin source :
 aujourd'hui. Elle s'installe en deux temps : la copie du script, puis
 l'enregistrement de la clé `statusLine`.
 
-- Script → `~/.claude/statuslines/<nom>/`, par le merge intelligent comme
-  ci-dessus. Le dossier `claude/` de la source n'est pas repris dans la cible :
-  celle-ci, sous `~/.claude/`, est déjà propre à Claude Code.
+- Script → `~/.claude/statuslines/<nom>/`, par `scripts/install.py` (§2).
+  Le dossier `claude/` de la source n'est pas repris dans la cible : celle-ci,
+  sous `~/.claude/`, est déjà propre à Claude Code.
 - Enregistrement → clé `statusLine` de `~/.claude/settings.json`.
   `scripts/install.py` lit la clé et lui attribue l'un des états `enregistree`
   (elle désigne une status line du dépôt), `absente`, `autre` (elle désigne un

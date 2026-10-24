@@ -23,8 +23,9 @@ outils locaux, entièrement régie par la section suivante.
 ## ARRÊT — installation ou mise à jour des outils locaux
 
 **S'arrêter avant toute action** quand l'utilisateur demande d'installer, de
-mettre à jour, de déployer ou de synchroniser des outils. Le merge intelligent
-est réalisé par `scripts/install.py`, que l'agent conduit en trois temps :
+mettre à jour, de déployer ou de synchroniser des outils. L'installation, qui
+couvre aussi la mise à jour, est menée par `scripts/install.py`, que l'agent
+conduit en trois temps :
 
 1. lancer son audit, `python scripts/install.py`, et montrer son résumé tel
    quel ;

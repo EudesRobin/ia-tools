@@ -74,7 +74,7 @@ ia-tools/
 ├── statuslines/claude/  une status line par sous-dossier, propre à Claude Code
 ├── scripts/             outillage du dépôt (réservé au développement, non installé)
 │   ├── validate.py      validateur des sources
-│   ├── install.py       merge intelligent vers chaque agent hôte
+│   ├── install.py       installation des outils pour chaque agent hôte
 │   ├── check_commit_msg.py  contrôle des messages de commit
 │   └── changelog.py     contrôle du journal des modifications, notes d'une version
 ├── tests/               tests des scripts, des scripts embarqués et des status lines

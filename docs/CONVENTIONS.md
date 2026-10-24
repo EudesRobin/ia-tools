@@ -524,8 +524,8 @@ sont des règles en prose, à appliquer délibérément.
 Un script de `scripts/` n'est **pas un outil** : il n'est jamais distribué vers
 `{AGENT_DIR}` et aucune règle des §§1.1 à 4 ne s'y applique, hormis les règles
 d'or 1.2, 1.3, 1.5 et le registre de rédaction. Il sert à l'entretien du dépôt
-lui-même. `validate.py` contrôle les sources ; `install.py` porte le merge
-intelligent de [SETUP.md](SETUP.md) ; `check_commit_msg.py` contrôle les
+lui-même. `validate.py` contrôle les sources ; `install.py` mène
+l'installation ([SETUP.md](SETUP.md)) ; `check_commit_msg.py` contrôle les
 messages de commit pour le hook git `commit-msg` et pour l'intégration continue,
 qui lui soumet en outre le titre et la description d'une PR
 ([CONTRIBUTING.md](CONTRIBUTING.md) §3) ; `changelog.py` contrôle le journal des
@@ -536,8 +536,8 @@ Les tests `test_*.py` se trouvent sous `tests/`, jamais sous `scripts/`, qui ne
 contient que les scripts d'outillage décrits ci-dessus ; `scripts/validate.py`
 signale un test placé sous `scripts/`. Écrits avec la seule bibliothèque
 standard, les tests couvrent les contrôles de `validate.py`, de
-`check_commit_msg.py` et de `changelog.py`, le merge intelligent
-d'`install.py`, l'affichage des status lines et les scripts embarqués des
+`check_commit_msg.py` et de `changelog.py`, l'installation
+par `install.py`, l'affichage des status lines et les scripts embarqués des
 skills ; tout contrôle ajouté à `validate.py`, à `check_commit_msg.py` ou à
 `changelog.py` y reçoit son cas construit pour échouer. Les règles ci-dessous
 s'appliquent aux tests comme aux scripts.

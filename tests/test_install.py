@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests de scripts/install.py sur une cible temporaire (--target), pour chaque
-agent hote : installation sur cible vide, idempotence, etat par outil, conflit
-sur edition locale sans ecriture de l'outil concerne, echec d'ecriture signale,
+agent hote : installation sur cible vide, idempotence, etat par outil, echec
+d'ecriture signale, options retirees en 2.0.0 refusees,
 validation prealable bloquant 'apply', settings.json jamais ecrit ; audit court a
 identifiants sans contenu de fichier, 'apply' par --all et --confirm, conflit
 remplace par la version du depot apres sauvegarde, identifiant perime refuse ;
@@ -83,28 +83,6 @@ class TestInstall(unittest.TestCase):
                 self.assertEqual(sum(v for k, v in n.items() if k != "identique"), 0, n)
                 self.assertEqual(set(r["outils"].values()), {"a_jour"}, r["outils"])
 
-    def test_conflict_blocks_tool(self):
-        """--apply, obsolete, garde son comportement publie : un outil en conflit
-        n'est pas ecrit."""
-        for agent in AGENTS:
-            with self.subTest(agent):
-                target = self.tmp / agent
-                run_install(agent, target, "apply", "--all")
-                edited, deleted = target / EDITED, target / DELETED
-                self.assertTrue(edited.is_file() and deleted.is_file(), f"{agent} : {TOOL} non installe")
-                edited.write_text("edition locale\n", encoding="utf-8")
-                deleted.unlink()
-
-                code, r = run_install(agent, target, "--apply")
-                self.assertEqual(code, 1, f"{agent} : un conflit doit sortir en 1")
-                self.assertIn(EDITED, r["classes"]["conflit"])
-                self.assertIn("clean-android-tv", " ".join(r["outils_bloques"]))
-                self.assertEqual(edited.read_text(encoding="utf-8"), "edition locale\n",
-                                 f"{agent} : edition locale ecrasee")
-                self.assertFalse(deleted.exists(), f"{agent} : fichier d'un outil bloque reecrit")
-                self.assertNotIn(DELETED, r["ecrits"])
-                self.assertEqual(r["outils"]["clean-android-tv"], "conflit")
-
     def test_write_failure_reported(self):
         """Une ecriture impossible est signalee et sort en 1, sans arreter les autres outils."""
         for agent in AGENTS:
@@ -132,21 +110,23 @@ class TestInstall(unittest.TestCase):
                 self.assertEqual(settings.read_bytes(), content, f"{agent} : settings.json modifie")
 
 
-    def test_tool_option_and_deprecated_alias(self):
-        """--tool restreint l'installation ; --outil reste accepte et avertit."""
-        for option, warns in (("--tool", False), ("--outil", True)):
-            with self.subTest(option):
-                target = self.tmp / option.strip("-")
-                r = subprocess.run(
-                    [sys.executable, str(ROOT / "scripts" / "install.py"), "--agent", "claude",
-                     "--target", str(target), option, "clean-android-tv", "apply", "--all", "--json"],
-                    cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
-                )
-                self.assertEqual(r.returncode, 0, r.stderr)
-                written = json.loads(r.stdout)["agents"]["claude"]["ecrits"]
-                self.assertTrue(written)
-                self.assertTrue(all(s.startswith(TOOL + "/") for s in written), written)
-                self.assertEqual("obsolete" in r.stderr, warns, r.stderr)
+    def test_tool_option(self):
+        """--tool restreint l'installation aux outils nommes."""
+        code, r = run_install("claude", self.tmp / "tool", "--tool", "clean-android-tv", "apply", "--all")
+        self.assertEqual(code, 0, r)
+        self.assertTrue(r["ecrits"])
+        self.assertTrue(all(s.startswith(TOOL + "/") for s in r["ecrits"]), r["ecrits"])
+
+    def test_removed_options_refused(self):
+        """--apply, --outil et --diff, retires en 2.0.0, sont refuses sans rien ecrire."""
+        for options in (["--apply"], ["--outil", "clean-android-tv", "apply", "--all"],
+                        ["--diff", EDITED]):
+            with self.subTest(options[0]):
+                target = self.tmp / options[0].strip("-")
+                r = run_text("claude", target, *options)
+                self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+                self.assertIn(options[0], r.stderr)
+                self.assertFalse(target.exists(), f"{options[0]} : ecriture faite")
 
     def test_validation_gates_apply(self):
         """Validateur en echec : 'apply' n'ecrit rien ; anomalie d'environnement : avertit."""
@@ -326,14 +306,10 @@ class TestAuditApply(unittest.TestCase):
         self.assertEqual(code, 0, r)
         self.assertIn(BIG, r["classes"]["obsolete"])
 
-    def test_apply_needs_selection_and_alias_warns(self):
+    def test_apply_needs_selection(self):
         r = run_text("claude", self.tmp / "vide", "apply")
         self.assertEqual(r.returncode, 1)
         self.assertFalse((self.tmp / "vide").exists())
-        r = run_text("claude", self.tmp / "alias", "--apply")
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertIn("obsolete", r.stderr)
-        self.assertTrue((self.tmp / "alias" / DELETED).is_file())
 
 
 def load_install():
@@ -345,7 +321,7 @@ def load_install():
 
 class TestLocalOnly(unittest.TestCase):
     """Fichier present seulement en local dans le dossier d'un outil du depot :
-    supprime apres sauvegarde par apply, laisse en place par --apply."""
+    supprime apres sauvegarde par apply."""
 
     EXTRA = f"{TOOL}/notes-perso.md"
 
@@ -371,12 +347,6 @@ class TestLocalOnly(unittest.TestCase):
         saved = (Path(r["sauvegarde"]) / self.EXTRA).read_text(encoding="utf-8")
         self.assertEqual(saved, "ajout local\n")
         self.assertEqual(actions_of(self.target), [])
-
-    def test_deprecated_apply_keeps_local_only(self):
-        code, r = run_install("claude", self.target, "--apply")
-        self.assertEqual(code, 0, r)
-        self.assertEqual(r["supprimes"], [])
-        self.assertTrue((self.target / self.EXTRA).is_file())
 
 
 RETIRED = "setup-harness"
