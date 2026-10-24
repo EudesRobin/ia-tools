@@ -67,6 +67,12 @@ la carte des dependances est le tableau de la section « Dependances entre
 outils » de README.md. --tool installe aussi les dependances declarees des
 outils nommes, de proche en proche.
 
+L'audit signale, pour information, les commandes systeme absentes du PATH dont
+dependent les outils examines (git, gh, adb, pwsh ou powershell), d'apres le
+tableau de la section « Prerequis » de README.md, ainsi qu'un historique git
+indisponible. Il n'installe rien, et ces signalements n'influent pas sur le
+code de sortie.
+
 Une status line est propre a un agent hote, que nomme son dossier source :
 statuslines/<agent hote>/<nom>/ s'installe sous {AGENT_DIR}/statuslines/<nom>/.
 Seul Claude Code en a aujourd'hui (SCOPE_AGENTS) : le perimetre statusline
@@ -121,9 +127,24 @@ DEFAULT_SCOPES = ["skills", "agents", "hooks", "statusline"]
 
 # Carte des dependances entre outils (CONVENTIONS.md 1.7) : tableau place
 # sous ce titre dans README.md, colonnes Outil | Depend de | Pour.
-DEPENDENCIES_FILE = ROOT / "README.md"
+README_FILE = ROOT / "README.md"
 DEPENDENCIES_HEADING = "## Dépendances entre outils"
 TOOL_NAME_RE = re.compile(r"`([a-z0-9][a-z0-9-]*)`")
+
+# Carte des prerequis systeme (docs/PREREQUIS.md) : tableau place sous ce titre
+# dans README.md, colonnes Prerequis | Necessaire pour. Une commande reconnue,
+# entre backticks dans la premiere colonne, est requise par les outils nommes
+# entre backticks dans la seconde.
+PREREQUISITES_HEADING = "## Prérequis"
+# Commandes reconnues, et celles dont une suffit : PowerShell 5.1 (powershell)
+# tient lieu de pwsh pour la status line usage-session. Le hook validate-tool,
+# qui exige pwsh, n'est pas distribue, donc jamais examine.
+PREREQUISITE_COMMANDS = {
+    "git": ("git",),
+    "gh": ("gh",),
+    "adb": ("adb",),
+    "pwsh": ("pwsh", "powershell"),
+}
 
 # Perimetres reserves a certains agents hotes ; les autres les ignorent.
 # scripts/validate.py n'admet sous statuslines/ que les dossiers declares ici.
@@ -205,20 +226,27 @@ def source_rel(agent: str, src_rel: str, rel: Path) -> Path | None:
     return rel
 
 
+def table_rows(text: str, heading: str) -> list[list[str]]:
+    """Cellules des lignes du tableau place sous ce titre, dans le texte de
+    README.md ; les lignes de moins de deux cellules sont ignorees."""
+    rows = []
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == heading
+            continue
+        if inside and line.startswith("|"):
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) >= 2:
+                rows.append(cells)
+    return rows
+
+
 def declared_dependencies(text: str) -> dict[str, list[str]]:
     """Carte des dependances lue dans le texte de README.md : outil -> outils
     dont il depend. Sans section ni ligne de tableau, la carte est vide."""
     deps: dict[str, list[str]] = {}
-    inside = False
-    for line in text.splitlines():
-        if line.startswith("## "):
-            inside = line.strip() == DEPENDENCIES_HEADING
-            continue
-        if not inside or not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) < 2:
-            continue
+    for cells in table_rows(text, DEPENDENCIES_HEADING):
         tools = TOOL_NAME_RE.findall(cells[0])
         needed = TOOL_NAME_RE.findall(cells[1])
         # Ligne d'en-tete et separateur : aucun nom entre backticks.
@@ -226,6 +254,43 @@ def declared_dependencies(text: str) -> dict[str, list[str]]:
             deps.setdefault(tools[0], [])
             deps[tools[0]] += [n for n in needed if n not in deps[tools[0]]]
     return deps
+
+
+def declared_prerequisites(text: str) -> dict[str, list[str]]:
+    """Carte des prerequis lue dans le texte de README.md : commande reconnue
+    -> outils qui l'exigent. Sans section ni ligne de tableau, la carte est
+    vide."""
+    found: dict[str, set[str]] = {}
+    for cells in table_rows(text, PREREQUISITES_HEADING):
+        tools = TOOL_NAME_RE.findall(cells[1])
+        for command in TOOL_NAME_RE.findall(cells[0]):
+            if command in PREREQUISITE_COMMANDS and tools:
+                found.setdefault(command, set()).update(tools)
+    return {command: sorted(tools) for command, tools in found.items()}
+
+
+def missing_prerequisites(reports: dict[str, dict]) -> dict[str, list[str]]:
+    """Commandes reconnues absentes du PATH, chacune avec les outils examines
+    qui l'exigent ; un outil retire du depot n'est pas compte."""
+    examined = {
+        tool for r in reports.values() for tool, state in r["outils"].items() if state != "retire"
+    }
+    text = README_FILE.read_text(encoding="utf-8") if README_FILE.is_file() else ""
+    missing = {}
+    for command, tools in declared_prerequisites(text).items():
+        needing = [t for t in tools if t in examined]
+        if needing and not any(shutil.which(c) for c in PREREQUISITE_COMMANDS[command]):
+            missing[command] = needing
+    return missing
+
+
+def git_history() -> bool:
+    """Vrai si le depot est un clone git lisible. Sans lui, une installation
+    obsolete est traitee en conflit et un outil retire n'est pas reconnu. Le
+    dossier de premier niveau doit etre ROOT : une archive extraite dans un
+    autre depot git n'a pas d'historique propre."""
+    top = git_bytes(["rev-parse", "--show-toplevel"])
+    return top is not None and Path(top.decode("utf-8", errors="replace").strip()).resolve() == ROOT
 
 
 def with_dependencies(wanted: set[str], deps: dict[str, list[str]]) -> set[str]:
@@ -915,7 +980,8 @@ def shown_deletions(action: dict) -> list[str]:
     return shown
 
 
-def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.Namespace) -> None:
+def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.Namespace,
+                  missing: dict[str, list[str]], history: bool) -> None:
     """Resume court : une ligne par agent hote, une ligne par outil a ecrire,
     jamais le contenu d'un fichier."""
     for agent, r in reports.items():
@@ -966,6 +1032,18 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
                 f"{agent} : statusLine illisible, {sl['fichier']} n'est pas du JSON valide ; "
                 "rien n'y sera ecrit"
             )
+    if not history:
+        notes.append(
+            "historique git indisponible (git absent ou depot hors clone git) : une "
+            "installation obsolete est traitee en conflit, un outil retire n'est pas reconnu"
+        )
+    notes += [
+        f"prerequis absent du PATH : {' ou '.join(PREREQUISITE_COMMANDS[command])}, "
+        f"pour {', '.join(tools)}"
+        for command, tools in missing.items()
+    ]
+    if missing:
+        notes.append("prerequis : rien n'est installe ; commandes d'installation dans docs/PREREQUIS.md")
     if notes:
         print("\npour information :")
         for note in notes:
@@ -1028,7 +1106,7 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 1
-        text = DEPENDENCIES_FILE.read_text(encoding="utf-8") if DEPENDENCIES_FILE.is_file() else ""
+        text = README_FILE.read_text(encoding="utf-8") if README_FILE.is_file() else ""
         expanded = with_dependencies(wanted, declared_dependencies(text))
         added = sorted(expanded - wanted)
         if added:
@@ -1051,6 +1129,7 @@ def main() -> int:
     reports = {agent: examine(agent, args, scopes) for agent in agents}
     actions = build_actions(reports)
     remaining = actions
+    missing, history = missing_prerequisites(reports), git_history()
 
     if args.command == "apply":
         chosen, error = parse_confirm(args.confirm, actions)
@@ -1081,6 +1160,8 @@ def main() -> int:
                     "validation": validation,
                     "perimetres": scopes,
                     "dependances_ajoutees": added,
+                    "historique_git": history,
+                    "prerequis_absents": missing,
                     "agents": {
                         agent: {k: r[k] for k in keys} for agent, r in reports.items()
                     },
@@ -1113,10 +1194,10 @@ def main() -> int:
                 line += f" ; sauvegarde : {r['sauvegarde']}"
             print(line)
         print("\napres apply :")
-        print_summary(after, remaining, args)
+        print_summary(after, remaining, args, missing, history)
     else:
         print()
-        print_summary(reports, remaining, args)
+        print_summary(reports, remaining, args, missing, history)
     return 1 if red else 0
 
 

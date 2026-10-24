@@ -31,6 +31,11 @@ gestionnaire de paquets sur un autre système.
 ## Procédure
 
 1. Vérifier chaque outil (colonne « Vérifier »). Lister ce qui manque.
+   L'audit de `scripts/install.py` signale déjà, parmi les commandes `git`,
+   `gh`, `adb`, et `pwsh` ou `powershell`, celles qui sont absentes du PATH et
+   dont dépendent les outils du dépôt qu'il examine. Il ne contrôle ni la
+   version de Python, ni l'authentification de `gh`, ni les bibliothèques
+   Python.
 2. Demander l'accord avant d'installer. Ne jamais réinstaller un outil présent.
 3. Après l'installation d'un binaire (Python, Git, adb, gh, pwsh) : rouvrir le terminal
    pour rafraîchir le PATH, puis revérifier.

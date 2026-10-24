@@ -7,7 +7,8 @@ identifiants sans contenu de fichier, 'apply' par --all et --confirm, conflit
 remplace par la version du depot apres sauvegarde, identifiant perime refuse ;
 fichier local seul et outil retire du depot supprimes apres sauvegarde, outil
 retire modifie localement laisse en place ; cle statusLine ecrite sur
-identifiant confirme seulement, jamais par --all (AGENTS.md, DoD des scripts ;
+identifiant confirme seulement, jamais par --all ; prerequis absents du PATH
+signales pour les seuls outils examines (AGENTS.md, DoD des scripts ;
 docs/SETUP.md).
 
 Usage : python tests/test_install.py
@@ -19,6 +20,7 @@ import importlib.util
 import shutil
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -176,7 +178,7 @@ class TestInstall(unittest.TestCase):
         readme = self.tmp / "README.md"
         readme.write_text(DEPS_README.format(tool="clean-android-tv", dep="setup-harness"), encoding="utf-8")
         install.VALIDATOR = validator
-        install.DEPENDENCIES_FILE = readme
+        install.README_FILE = readme
         target = self.tmp / "cible"
         argv = ["install.py", "--agent", "claude", "--target", str(target),
                 "--tool", "clean-android-tv", "apply", "--all", "--json"]
@@ -525,6 +527,84 @@ class TestDependencies(unittest.TestCase):
         deps = {"a": ["b"], "b": ["c", "a"], "c": []}
         self.assertEqual(self.install.with_dependencies({"a"}, deps), {"a", "b", "c"})
         self.assertEqual(self.install.with_dependencies({"c"}, deps), {"c"})
+
+
+PREREQ_README = (
+    "# Depot\n\n## Prérequis\n\n| Prérequis | Nécessaire pour |\n|---|---|\n"
+    "| Python ≥ 3.10 | la skill `a` |\n"
+    "| Git (`git`) | les skills `a` et `b` |\n"
+    "| PowerShell 5.1 ou 7 (`pwsh`) | la status line `c` |\n"
+    "\n## Suite\n\n| `adb` | la skill `z` |\n"
+)
+
+
+def run_with_path(path: Path, *options: str) -> subprocess.CompletedProcess:
+    """install.py lance avec ce seul dossier dans le PATH."""
+    env = dict(os.environ, PATH=str(path))
+    return subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "install.py"), *options],
+        cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL, env=env,
+    )
+
+
+class TestPrerequisites(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.tmp = Path(self._tmp.name)
+        self.target = self.tmp / "cible"
+        self.bin = self.tmp / "bin"
+        self.bin.mkdir()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def provide(self, command: str) -> None:
+        """Commande factice, trouvee par shutil.which sous Windows comme ailleurs."""
+        for name in (command, f"{command}.bat"):
+            path = self.bin / name
+            path.write_text("exit 0\n", encoding="utf-8")
+            path.chmod(0o755)
+
+    def missing(self, agent: str, *options: str) -> dict:
+        r = run_with_path(self.bin, "--agent", agent, "--target", str(self.target), "--json", *options)
+        try:
+            return json.loads(r.stdout)
+        except ValueError:
+            raise AssertionError(f"sortie --json illisible (code {r.returncode}) : {r.stdout}{r.stderr}")
+
+    def test_declared_prerequisites(self):
+        install = load_install()
+        self.assertEqual(
+            install.declared_prerequisites(PREREQ_README),
+            {"git": ["a", "b"], "pwsh": ["c"]},
+        )
+        self.assertEqual(install.declared_prerequisites("# Sans tableau\n"), {})
+
+    def test_missing_prerequisites_of_examined_tools_only(self):
+        report = self.missing("claude")
+        self.assertFalse(report["historique_git"])
+        absent = report["prerequis_absents"]
+        self.assertEqual(absent["adb"], ["clean-android-tv"])
+        self.assertEqual(absent["gh"], ["pull-request", "release"])
+        self.assertEqual(absent["git"], ["pull-request", "release"])
+        self.assertEqual(absent["pwsh"], ["usage-session"])
+        # Pas de status line pour Copilot CLI : PowerShell n'y est pas requis.
+        self.assertNotIn("pwsh", self.missing("copilot")["prerequis_absents"])
+        report = self.missing("claude", "--tool", "clean-android-tv")
+        self.assertEqual(report["prerequis_absents"], {"adb": ["clean-android-tv"]})
+
+    def test_present_or_substitute_command_not_reported(self):
+        self.provide("adb")
+        self.provide("powershell")
+        absent = self.missing("claude")["prerequis_absents"]
+        self.assertNotIn("adb", absent)
+        self.assertNotIn("pwsh", absent)
+
+    def test_summary_names_missing_prerequisites(self):
+        r = run_with_path(self.bin, "--agent", "claude", "--target", str(self.target),
+                          "--tool", "clean-android-tv")
+        self.assertIn("prerequis absent du PATH : adb, pour clean-android-tv", r.stdout)
+        self.assertIn("historique git indisponible", r.stdout)
 
 
 DEPS_README = (
