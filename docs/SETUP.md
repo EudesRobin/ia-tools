@@ -2,8 +2,8 @@
 
 Procédure d'installation et de mise à jour des outils de ce dépôt pour chaque
 agent hôte : Claude Code et Copilot CLI. **Le dépôt est la source de vérité** :
-par défaut, sa version est adoptée. Un arbitrage n'est demandé que sur un
-**conflit non résoluble automatiquement** (§2).
+un outil n'admet aucune personnalisation hors des placeholders, et une édition
+locale est sauvegardée, puis remplacée par la version du dépôt (§2).
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
@@ -71,18 +71,15 @@ reproduire à la main, ne pas écrire de comparaison ad hoc et ne pas lire le
 contenu des fichiers comparés : le script substitue les placeholders, compare
 chaque fichier du dépôt à sa cible, classe les écarts, écrit ce que
 l'utilisateur a confirmé et vérifie ses écritures, pour chaque agent hôte. La
-session lance l'audit, transmet son résumé, recueille les choix de
+session lance l'audit, transmet son résumé, recueille l'accord de
 l'utilisateur et lance l'écriture
 ([ci-dessous](#ce-qui-reste-à-la-session)).
 
 ```powershell
 python scripts/install.py                          # audit : résumé court, n'écrit rien
-python scripts/install.py apply --all              # écrit tous les cas sûrs
-python scripts/install.py apply --confirm <id>     # écrit la mise à jour d'un seul outil
-python scripts/install.py apply --confirm <id>=depot,<id>=local   # arbitre des conflits
-python scripts/install.py view <id>                # fichiers à comparer, pour l'utilisateur
-python scripts/install.py hunks <id>               # extrait borné de l'écart
-python scripts/install.py --diff <chemin>          # résumé et identifiant d'un fichier
+python scripts/install.py apply --all              # écrit tous les outils, éditions locales comprises
+python scripts/install.py apply --confirm <id>,... # n'écrit que ces outils
+python scripts/install.py --diff <chemin>          # classe d'un fichier, identifiant de son outil
 python scripts/install.py --scope skills,agents --agent copilot
 python scripts/install.py apply --all --tool clean-android-tv
 ```
@@ -100,18 +97,20 @@ n'est admis qu'avec un seul agent hôte. Une cible dont le chemin contient une
 espace oblige à appeler les scripts embarqués par un chemin entre guillemets,
 forme que ne couvre plus la règle `allowed-tools` de leur skill
 ([CONVENTIONS.md](CONVENTIONS.md) §2.4). `--json` produit la même sortie au
-format JSON. Les options `--apply`, équivalente à `apply --all`, et `--outil`,
-ancien nom de `--tool`, sont obsolètes et seront retirées dans une prochaine
-version `MAJEUR`.
+format JSON. Les options `--apply`, qui n'écrit que les outils sans conflit,
+et `--outil`, ancien nom de `--tool`, sont obsolètes et seront retirées dans
+une prochaine version `MAJEUR`.
 
-**Chaque agent hôte est traité séparément.** Le classement, les écritures et les
-conflits sont propres à chacun ; un conflit chez l'un n'empêche pas l'écriture
-chez l'autre.
+**Chaque agent hôte est traité séparément.** Le classement et les écritures
+sont propres à chacun.
 
-**Un outil s'installe d'un bloc.** Tant que l'un des conflits d'un outil n'est
-pas arbitré chez un agent hôte, `apply` n'écrit aucun de ses fichiers chez cet
-agent hôte, y compris ceux classés `absent`. Une skill ou un agent homonyme créé
-par l'utilisateur n'est ainsi jamais complété ni modifié sans son accord.
+**Le dépôt l'emporte.** Un outil n'admet aucune personnalisation hors des
+placeholders. `apply` écrit un outil d'un bloc : ses fichiers `absent` et
+`obsolete`, ainsi que ses fichiers en `conflit`, dont la version locale est
+d'abord sauvegardée. Une skill ou un agent créé par l'utilisateur sous le nom
+d'un outil du dépôt est remplacé de la même façon. Pour épargner un outil,
+lancer `apply --confirm` avec les seuls identifiants des autres outils ; l'outil
+épargné reste signalé à chaque audit.
 
 ### Ce que le script classe
 
@@ -120,12 +119,13 @@ par l'utilisateur n'est ainsi jamais complété ni modifié sans son accord.
 | `identique` | le fichier du dépôt, placeholders substitués, et la cible ne diffèrent pas | rien |
 | `absent` | la cible n'existe pas | l'écrit, avec `--all` ou l'identifiant de l'outil |
 | `obsolete` | la cible est une révision antérieure du dépôt, ou une copie manuelle dont les placeholders n'ont pas été substitués : installation intacte devenue obsolète | la remplace, avec `--all` ou l'identifiant de l'outil |
-| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | rien sans `--confirm <id>=<choix>` ; `depot` sauvegarde la version locale puis la remplace, `local` la garde ; une fois chaque conflit de l'outil arbitré, ses autres fichiers sont écrits |
+| `conflit` | l'écart ne s'explique ni par les placeholders ni par une révision : **édition locale manuelle**, ou outil de l'utilisateur portant le nom d'un outil du dépôt | sauvegarde la version locale, puis la remplace, avec `--all` ou l'identifiant de l'outil |
 | `local seul` | fichier présent seulement en local, dans le dossier d'un outil du dépôt ; les outils étrangers au dépôt ne sont pas examinés | **rien**, jamais de suppression |
 
-La version locale remplacée par le choix `depot` est sauvegardée sous
-`{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, en conservant son chemin relatif ;
-ce dossier n'est jamais examiné.
+La version locale d'un fichier en `conflit` est sauvegardée, sous le même chemin
+relatif, dans `{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, avant d'être
+remplacée ; ce dossier n'est jamais examiné. Une sauvegarde impossible laisse la
+cible intacte et figure parmi les échecs d'écriture.
 
 ### Ce que le script rapporte
 
@@ -135,26 +135,20 @@ ce dossier n'est jamais examiné.
 - **Résumé court**, sans contenu de fichier : une ligne par agent hôte, qui
   compte ses outils par état — `a_jour`, `a_installer`, `a_mettre_a_jour`,
   `conflit`, `illisible`, puis `installe`, `mis_a_jour` ou `echec` après
-  `apply` —, puis une ligne par action à confirmer, sous un identifiant court.
-  Une mise à jour donne l'outil et le nombre de fichiers concernés ; un conflit
-  donne le fichier et un résumé de l'écart : nombre de blocs, lignes propres à
-  chaque version, plages de lignes. Suivent, pour information, les fichiers
+  `apply` —, puis une ligne par outil à écrire, sous un identifiant court, avec
+  le nombre de fichiers concernés. Chaque fichier en `conflit` y est nommé, sur
+  une ligne qui annonce sa sauvegarde et son remplacement. Suivent, pour
+  information, les fichiers
   illisibles, les fichiers en `local seul`, les échecs d'écriture et l'état de
   la clé `statusLine`, puis la commande `apply` à lancer.
 - **Identifiants sans état stocké.** Un identifiant est tiré de l'état examiné :
-  il change dès que la cible ou la source change. `apply` refait l'audit et
-  refuse tout identifiant inconnu ou périmé, sans rien écrire.
+  il change dès que l'un des fichiers locaux de l'outil change. `apply` refait
+  l'audit et refuse tout identifiant inconnu ou périmé, sans rien écrire.
 - **Écritures vérifiées.** Chaque fichier écrit par `apply` est relu et comparé
   à la version du dépôt, placeholders substitués. Une écriture impossible, ou un
   fichier relu qui diffère, classe l'outil en `echec`, sans interrompre le
   traitement des autres outils. `apply` refait ensuite l'audit et affiche ce qui
   reste.
-- **Contenu d'un conflit.** `view <id>` dépose la version du dépôt,
-  placeholders substitués, dans un dossier temporaire hors de `{AGENT_DIR}`, et
-  n'affiche que les deux chemins et la commande qui les compare dans l'éditeur.
-  `hunks <id>` affiche les blocs de l'écart sans contexte, dans la limite de
-  `--max-lines` lignes (40 par défaut), chacune tronquée à 160 caractères ;
-  c'est la seule sortie qui cite le contenu d'un fichier.
 
 Code de sortie : `0` si la validation n'est pas en échec — une validation
 impossible en raison d'une anomalie d'environnement ne compte pas comme un
@@ -166,18 +160,12 @@ impossible en raison d'une anomalie d'environnement ne compte pas comme un
 1. **Lancer l'audit et montrer son résumé tel quel.** Une demande qui ne précise
    ni le périmètre ni les agents hôtes (« mets à jour mes outils ») prend les
    valeurs par défaut du script.
-2. **Recueillir l'accord de l'utilisateur** : `--all` pour les cas sûrs, ou les
-   identifiants qu'il retient ; pour chaque conflit, son choix explicite entre
-   `depot` et `local`. Pour décider, l'utilisateur compare lui-même les deux
-   versions grâce à `view <id>`. `hunks <id>` ne se lance que si l'utilisateur
-   demande à la session d'examiner l'écart.
-3. **Lancer `apply`** avec ces choix, sans relancer l'audit : `apply` le refait
-   lui-même. Pour merger écart par écart, la session reporte dans le fichier
-   local, à la demande de l'utilisateur, les blocs retenus parmi ceux
-   qu'affiche `hunks <id>`, par des modifications ciblées et jamais par une
-   réécriture du fichier ; l'utilisateur choisit ensuite `local`. Un conflit
-   arbitré par le choix `local` est de nouveau signalé à chaque audit, et le
-   code de sortie vaut alors `1`.
+2. **Recueillir l'accord de l'utilisateur** sur `apply --all`, ou sur les seuls
+   identifiants qu'il retient. Une demande qui prescrit déjà `apply --all` vaut
+   accord. Le résumé nomme chaque fichier en conflit, dont la version locale
+   sera sauvegardée, puis remplacée.
+3. **Lancer `apply`** — `--all`, ou `--confirm` avec les identifiants retenus —,
+   sans relancer l'audit : `apply` le refait lui-même.
 4. **Traiter les fichiers en `local seul`** : les lister et demander l'accord de
    l'utilisateur avant toute suppression. Il peut s'agir d'une édition locale
    volontaire.
@@ -202,10 +190,9 @@ La conformité du front-matter — `name` identique au nom du dossier — relèv
 
 `--scope agents` couvre ensemble `agents/<nom>.md` et `agents/docs/<nom>/`.
 Pour Copilot CLI, le fichier d'agent est installé sous le nom `<nom>.agent.md` ;
-ses documents de référence gardent leur nom. En cas de conflit portant sur un
-fichier d'agent, examiner en priorité les champs `tools` et `model` : un écart
-sur `tools` change les droits de l'agent, un écart sur `model` change le modèle
-qui l'exécute, donc son coût et la qualité de ses réponses.
+ses documents de référence gardent leur nom. Une édition locale d'un fichier
+d'agent, de ses champs `tools` ou `model` par exemple, est remplacée comme toute
+autre par la version du dépôt (§2) ; elle reste lisible dans la sauvegarde.
 
 ## 5. Hooks
 

@@ -3,9 +3,9 @@
 agent hote : installation sur cible vide, idempotence, etat par outil, conflit
 sur edition locale sans ecriture de l'outil concerne, echec d'ecriture signale,
 validation prealable bloquant 'apply', settings.json jamais ecrit ; audit court a
-identifiants sans contenu de fichier, 'apply' par --all et --confirm,
-identifiant perime refuse, 'view' et 'hunks' bornes (AGENTS.md, DoD des
-scripts ; docs/SETUP.md).
+identifiants sans contenu de fichier, 'apply' par --all et --confirm, conflit
+remplace par la version du depot apres sauvegarde, identifiant perime refuse
+(AGENTS.md, DoD des scripts ; docs/SETUP.md).
 
 Usage : python tests/test_install.py
 Code de sortie : 0 si tout passe, 1 sinon.
@@ -78,6 +78,8 @@ class TestInstall(unittest.TestCase):
                 self.assertEqual(set(r["outils"].values()), {"a_jour"}, r["outils"])
 
     def test_conflict_blocks_tool(self):
+        """--apply, obsolete, garde son comportement publie : un outil en conflit
+        n'est pas ecrit."""
         for agent in AGENTS:
             with self.subTest(agent):
                 target = self.tmp / agent
@@ -87,7 +89,7 @@ class TestInstall(unittest.TestCase):
                 edited.write_text("edition locale\n", encoding="utf-8")
                 deleted.unlink()
 
-                code, r = run_install(agent, target, "apply", "--all")
+                code, r = run_install(agent, target, "--apply")
                 self.assertEqual(code, 1, f"{agent} : un conflit doit sortir en 1")
                 self.assertIn(EDITED, r["classes"]["conflit"])
                 self.assertIn("clean-android-tv", " ".join(r["outils_bloques"]))
@@ -202,13 +204,17 @@ def actions_of(target: Path, agent: str = "claude") -> list[dict]:
     return json.loads(r.stdout)["actions"]
 
 
+# Les assertions sur le contenu d'un fichier portent un message court : un
+# echec ne doit pas recopier le fichier dans la sortie.
+
 # Fichier de plus de 500 lignes portant un placeholder {AGENT_DIR}.
 BIG = f"{TOOL}/reference-adb.md"
 
 
 class TestAuditApply(unittest.TestCase):
-    """audit court a identifiants, apply par --all et --confirm, view et hunks
-    sans contenu dans la sortie standard."""
+    """audit court a identifiants, sans contenu de fichier ; apply par --all et
+    --confirm, la version du depot remplacant toute edition locale apres
+    sauvegarde."""
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -227,9 +233,21 @@ class TestAuditApply(unittest.TestCase):
         self._tmp.cleanup()
 
     def conflict(self) -> dict:
-        found = [a for a in actions_of(self.target) if a["type"] == "conflit"]
-        self.assertEqual([a["chemin"] for a in found], [BIG])
+        found = [a for a in actions_of(self.target) if a["etat"] == "conflit"]
+        self.assertEqual([a["editions"] for a in found], [[BIG]])
         return found[0]
+
+    def assert_overwritten(self, r: dict) -> None:
+        self.assertEqual(r["resolus"], [BIG])
+        install = load_install()
+        subs = install.variables("claude", self.target.resolve(), True)
+        expected = install.normalize(install.render((ROOT / BIG).read_bytes(), subs))
+        got = install.normalize(self.big.read_bytes()) == expected
+        self.assertTrue(got, "version du depot non adoptee")
+        saved = (Path(r["sauvegarde"]) / BIG).read_text(encoding="utf-8")
+        self.assertTrue(saved == self.local, "sauvegarde differente de la version locale")
+        self.assertTrue((self.target / DELETED).is_file(), "outil non complete")
+        self.assertEqual(actions_of(self.target), [])
 
     def test_audit_is_short_and_without_content(self):
         r = run_text("claude", self.target)
@@ -237,27 +255,11 @@ class TestAuditApply(unittest.TestCase):
         self.assertLessEqual(len(r.stdout.splitlines()), 15, r.stdout)
         self.assertNotIn("marqueur-local", r.stdout)
         self.assertIn(self.conflict()["id"], r.stdout)
-        self.assertIn("1 bloc(s), local -1 / depot +1 ligne(s), l.11", r.stdout)
+        self.assertIn(f"edition locale, sauvegardee puis remplacee : {BIG}", r.stdout)
 
-    def test_hunks_bounded_and_view_without_content(self):
+    def test_unknown_choice_and_stale_id_refused(self):
         ident = self.conflict()["id"]
-        r = run_text("claude", self.target, "hunks", ident, "--max-lines", "2")
-        self.assertEqual(r.returncode, 0, r.stderr)
-        body = r.stdout.splitlines()
-        # En-tete, deux lignes de diff (@@ et la ligne locale), mention de la coupure.
-        self.assertEqual(len(body), 4, r.stdout)
-        self.assertIn("marqueur-local", body[2])
-        self.assertIn("non affichee", body[3])
-        r = run_text("claude", self.target, "view", ident)
-        self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertNotIn("marqueur-local", r.stdout)
-        rendered = Path(r.stdout.split("depot : ")[1].splitlines()[0].strip())
-        self.assertNotIn("marqueur-local", rendered.read_text(encoding="utf-8"))
-        self.assertNotIn("{AGENT_DIR}", rendered.read_text(encoding="utf-8"))
-
-    def test_conflict_requires_choice_and_fresh_id(self):
-        ident = self.conflict()["id"]
-        for confirm in (ident, f"{ident}=autre", "0000=depot"):
+        for confirm in (f"{ident}=local", f"{ident}=depot", "0000"):
             with self.subTest(confirm):
                 r = run_text("claude", self.target, "apply", "--confirm", confirm)
                 self.assertEqual(r.returncode, 1)
@@ -266,35 +268,26 @@ class TestAuditApply(unittest.TestCase):
                 self.assertFalse((self.target / DELETED).exists())
         # Cible modifiee apres l'audit : l'identifiant est perime.
         self.big.write_text(self.local + "autre edition\n", encoding="utf-8")
-        r = run_text("claude", self.target, "apply", "--confirm", f"{ident}=depot")
+        r = run_text("claude", self.target, "apply", "--confirm", ident)
         self.assertIn("perime", r.stderr)
         self.assertTrue(self.big.read_text(encoding="utf-8").endswith("autre edition\n"))
 
-    def test_confirm_depot_backs_up_and_unblocks_tool(self):
-        ident = self.conflict()["id"]
-        code, r = run_install("claude", self.target, "apply", "--confirm", f"{ident}=depot")
+    def test_all_overwrites_conflict_after_backup(self):
+        code, r = run_install("claude", self.target, "apply", "--all")
         self.assertEqual(code, 0, r)
-        self.assertEqual(r["resolus"], [BIG])
-        self.assertNotIn("marqueur-local", self.big.read_text(encoding="utf-8"))
-        self.assertTrue((self.target / DELETED).is_file(), "outil debloque non complete")
-        saved = Path(r["sauvegarde"]) / BIG
-        self.assertEqual(saved.read_text(encoding="utf-8"), self.local)
-        self.assertEqual(actions_of(self.target), [])
+        self.assert_overwritten(r)
 
-    def test_confirm_local_keeps_file_and_unblocks_tool(self):
-        ident = self.conflict()["id"]
-        code, r = run_install("claude", self.target, "apply", "--confirm", f"{ident}=local")
-        self.assertEqual(code, 1, "un conflit garde en local reste un conflit")
-        self.assertEqual(self.big.read_text(encoding="utf-8"), self.local)
-        self.assertTrue((self.target / DELETED).is_file(), "outil arbitre non complete")
-        self.assertIsNone(r["sauvegarde"])
+    def test_confirm_overwrites_conflict_after_backup(self):
+        code, r = run_install("claude", self.target, "apply", "--confirm", self.conflict()["id"])
+        self.assertEqual(code, 0, r)
+        self.assert_overwritten(r)
 
     def test_confirm_one_update_only(self):
         other = self.tmp / "autre"
         run_install("claude", other, "apply", "--all")
         for rel in (DELETED, "skills/release/SKILL.md"):
             (other / rel).unlink()
-        maj = {a["outil"]: a["id"] for a in actions_of(other) if a["type"] == "maj"}
+        maj = {a["outil"]: a["id"] for a in actions_of(other)}
         self.assertEqual(set(maj), {"clean-android-tv", "release"}, maj)
         code, r = run_install("claude", other, "apply", "--confirm", maj["release"])
         self.assertEqual(code, 0, r)
@@ -318,6 +311,13 @@ class TestAuditApply(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn("obsolete", r.stderr)
         self.assertTrue((self.tmp / "alias" / DELETED).is_file())
+
+
+def load_install():
+    spec = importlib.util.spec_from_file_location("install", ROOT / "scripts" / "install.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class TestDependencies(unittest.TestCase):

@@ -11,20 +11,18 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 ### 🚀 Nouveautés
 
 - `install.py` : commandes `audit` (par défaut) et `apply`. L'audit présente
-  chaque action à confirmer sous un identifiant court ; `apply --all` écrit les
-  cas sûrs, `apply --confirm <id>` la mise à jour d'un seul outil, et
-  `--confirm <id>=depot|local` arbitre un conflit. Le choix `depot` sauvegarde
-  d'abord la version locale sous `{AGENT_DIR}/.ia-tools-backup/`. `apply`
-  refuse un identifiant périmé et n'écrit alors rien.
-- `install.py` : `view <id>` désigne les deux fichiers d'un conflit à comparer
-  dans un éditeur ; `hunks <id>` affiche un extrait borné de l'écart.
+  chaque outil à écrire sous un identifiant court. `apply --all` écrit tous les
+  outils, `apply --confirm <id>,...` les seuls outils désignés ; `apply` refuse un
+  identifiant périmé et n'écrit alors rien.
 
 ### 🔄 Modifications
 
+- `install.py` : le dépôt l'emporte sur toute édition locale. Un fichier en
+  conflit est sauvegardé sous `{AGENT_DIR}/.ia-tools-backup/`, puis remplacé
+  par la version du dépôt, au lieu de bloquer l'écriture de son outil.
 - `install.py` : la sortie est un résumé court qui ne cite jamais le contenu
-  d'un fichier, sauf l'extrait borné que demande `hunks <id>` ; un conflit y est
-  résumé par ses blocs, ses lignes et ses plages. `--diff <chemin>` donne ce
-  résumé et l'identifiant du conflit au lieu du diff complet.
+  d'un fichier ; chaque fichier en conflit y est nommé. `--diff <chemin>` donne la classe du
+  fichier et l'identifiant de son outil au lieu du diff complet.
 - `install.py` : une copie manuelle dont les placeholders n'ont pas été
   substitués est classée `obsolete` et remplacée par `apply --all`, au lieu
   d'être signalée en conflit.
@@ -33,8 +31,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### ⏳ Obsolescences
 
-- `install.py --apply` : remplacé par `install.py apply --all` ; retiré dans une
-  prochaine version `MAJEUR`.
+- `install.py --apply` : supplanté par `install.py apply --all`, qui remplace en
+  outre les éditions locales, là où `--apply` laisse intacts les outils en
+  conflit ; il sera retiré dans une prochaine version `MAJEUR`.
 
 ### 📝 Documentation
 
