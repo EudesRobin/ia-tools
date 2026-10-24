@@ -8,6 +8,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+## [2.0.0] - 2026-10-24
+
 ### 💥 Action requise
 
 - `install.py` : les options `--apply`, `--outil` et `--diff` sont refusées.
@@ -364,7 +366,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `scripts/validate.py`, ses tests, l'intégration continue et les hooks git
   `pre-commit` et `commit-msg`, pour contribuer au dépôt.
 
-[Non publié]: https://github.com/EudesRobin/ia-tools/compare/1.8.0...HEAD
+[Non publié]: https://github.com/EudesRobin/ia-tools/compare/2.0.0...HEAD
+[2.0.0]: https://github.com/EudesRobin/ia-tools/compare/1.8.0...2.0.0
 [1.8.0]: https://github.com/EudesRobin/ia-tools/compare/1.7.0...1.8.0
 [1.7.0]: https://github.com/EudesRobin/ia-tools/compare/1.6.0...1.7.0
 [1.6.0]: https://github.com/EudesRobin/ia-tools/compare/1.5.0...1.6.0
