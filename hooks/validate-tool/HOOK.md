@@ -14,11 +14,12 @@ oublier à celui de contrôle qui s'impose.
 - Lance `python scripts/validate.py` depuis la racine du projet, lue dans le
   champ `cwd` du payload, à défaut dans `CLAUDE_PROJECT_DIR`, à défaut
   le répertoire courant.
-- **Au vert** → code de sortie 0, sans affichage. Le tour se termine normalement.
-- **En échec** → il écrit sur la sortie standard l'objet JSON
-  `{"decision": "block", "reason": "…"}`, qui porte les écarts, et se termine
-  avec le code 0. Les deux agents hôtes reconnaissent cette forme : l'agent
-  reçoit les écarts et reprend la main pour les corriger.
+- **Le validateur passe** → code de sortie 0, sans affichage. Le tour se
+  termine normalement.
+- **Le validateur est en échec** → le hook écrit sur la sortie standard l'objet
+  JSON `{"decision": "block", "reason": "…"}`, qui porte les écarts, et se
+  termine avec le code 0. Les deux agents hôtes reconnaissent cette forme :
+  l'agent reçoit les écarts et reprend la main pour les corriger.
 
 ### Ce qu'il ne fait délibérément pas
 

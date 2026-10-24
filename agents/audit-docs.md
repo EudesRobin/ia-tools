@@ -118,9 +118,9 @@ tous les cas.
 ## 4. Solidité du harnais
 
 Vérifier qu'un **DoD (*Definition of Done*) explicite** existe, formulé comme une boucle — lancer,
-observer, corriger, relancer, jusqu'à ce que le contrôle soit au vert — et non
+observer, corriger, relancer, jusqu'à ce que le contrôle passe — et non
 comme une instruction ponctuelle : une consigne à exécuter une fois, sans
-contrôle à faire passer au vert ni relance après correction.
+contrôle qui doit passer ni relance après correction.
 
 Nommer le mécanisme par lequel ce DoD est réellement appliqué : une instruction
 écrite, un script qui porte le contrôle, un hook qui le lance, ou

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Tests de scripts/validate.py : chaque controle est observe en echec sur un
-cas construit pour echouer, et le depot reel reste au vert (AGENTS.md, DoD des
-scripts). Chaque cas opere sur une copie du depot dans un dossier temporaire.
+cas construit pour echouer, et le depot reel passe le validateur (AGENTS.md,
+DoD des scripts). Chaque cas opere sur une copie du depot dans un dossier
+temporaire.
 
 Usage : python tests/test_validate.py
 Code de sortie : 0 si tout passe, 1 sinon.
@@ -128,7 +129,7 @@ class TestValidate(unittest.TestCase):
         for name, alteration, expected in CASES:
             with self.subTest(name):
                 r = self.run_validate(alteration)
-                self.assertEqual(r.returncode, 1, f"{name} : reste vert")
+                self.assertEqual(r.returncode, 1, f"{name} : passe encore")
                 self.assertIn(expected, r.stdout, f"{name} : message attendu absent")
 
     def test_declared_dependency_passes(self):

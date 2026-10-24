@@ -36,6 +36,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `install.py --apply` : remplacé par `install.py apply --all` ; retiré dans une
   prochaine version `MAJEUR`.
 
+### 📝 Documentation
+
+- Vocabulaire : un contrôle « passe » ou est « en échec » ; « au vert » et
+  « au rouge » ne s'emploient plus. `clean-android-tv`, `pull-request`,
+  `release`, `setup-harness` et `audit-docs` sont alignés sur ce vocabulaire.
+
 ## [1.6.0] - 2026-10-13
 
 ### 🔄 Modifications

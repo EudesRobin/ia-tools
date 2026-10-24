@@ -133,10 +133,10 @@ ce qui suit.
    ```
 
 3. **Faire de la vérification une étape comme les autres, et nommer la preuve
-   à laquelle elle s'adosse.** Une étape ne passe à `[x]` que sur une preuve
-   réelle — un contrôle au vert, une ligne réellement lue, un accord explicite
-   de l'utilisateur —, jamais sur une simple déclaration :
-   `[x] Valider les outils — validateur au vert` est adossé au validateur ;
+   à laquelle elle s'adosse.** Une étape n'est marquée `[x]` que sur une
+   preuve réelle — un contrôle qui passe, une ligne réellement lue, un accord
+   explicite de l'utilisateur —, jamais sur une simple déclaration :
+   `[x] Valider les outils — le validateur passe` est adossé au validateur ;
    `[x] Valider les outils` seul ne l'est pas.
 
 4. **Clore sur la liste terminée.** La dernière réponse de la tâche se termine
@@ -190,8 +190,8 @@ par un lien.
 résultat, corriger les défauts relevés, puis le relancer ; c'est le levier de
 qualité le plus fort. Le contrôle n'a pas à être un script : un guide de style
 que l'agent relit et auquel il compare son travail tient le même rôle. Énoncer
-la boucle, sa condition de sortie (« ne poursuivre qu'une fois le contrôle au
-vert ») et le point de retour en cas d'échec (« reprendre à l'étape 2 »).
+la boucle, sa condition de sortie (« ne poursuivre qu'une fois que le contrôle
+passe ») et le point de retour en cas d'échec (« reprendre à l'étape 2 »).
 
 ## 6. Règles de contenu
 

@@ -560,7 +560,7 @@ def close(repo: Repo, version: str, date: str) -> list[tuple[str, str]]:
 
 
 def ci_summary(gh: Runner, sha: str) -> tuple[str, bool]:
-    """Resume de l'integration continue d'un commit ; vrai si tout est au vert."""
+    """Resume de l'integration continue d'un commit ; vrai si tout passe."""
     code, out, err = gh.run("run", "list", "--commit", sha, "--json", "name,status,conclusion")
     if code != 0:
         return f"indeterminee ({(err.strip().splitlines() or [''])[0][:120]})", False
@@ -607,7 +607,7 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
     ci, green = ("sans objet (depot local)", True) if repo.local else ci_summary(repo.gh, sha)
     lines.append(("ci", ci))
     if not green:
-        blockers.append("integration continue pas au vert")
+        blockers.append("integration continue qui ne passe pas")
     lines.append(("verdict", "pret" if not blockers else "bloque (" + " ; ".join(blockers) + ")"))
     return lines, not blockers
 

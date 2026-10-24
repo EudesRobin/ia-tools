@@ -124,9 +124,9 @@ Windows PowerShell 5.1 ne le fait pas, et le chemin s'y écrit développé. Un
 chemin qui contient une espace s'écrit entre guillemets ; l'appel passe alors
 par une demande de confirmation.
 
-Codes de sortie : `0` au vert ; `1` écart constaté, détaillé dans la sortie ;
-`2` anomalie d'environnement — adb absent, appareil non connecté ou non
-autorisé, fichier illisible —, à corriger avant de relancer le script.
+Codes de sortie : `0` aucun écart constaté ; `1` écart constaté, détaillé dans
+la sortie ; `2` anomalie d'environnement — adb absent, appareil non connecté ou
+non autorisé, fichier illisible —, à corriger avant de relancer le script.
 
 ## Instructions
 
@@ -184,13 +184,13 @@ autorisé, fichier illisible —, à corriger avant de relancer le script.
    `adb_tv.py check-plan <journal>`. Un écart — paquet critique, méthode de
    saisie active, lanceur encore déclaré comme accueil, paquet absent ou déjà désactivé — →
    corriger le lot et relancer ; ne soumettre le lot à l'utilisateur qu'une
-   fois le contrôle au vert. Interroger
+   fois que le contrôle passe. Interroger
    l'utilisateur sur ses usages — diffusion Chromecast, assistant vocal, lecture
    de fichiers locaux, services de vidéo à la demande — plutôt que de les
    déduire. Ne jamais désactiver un paquet dont le rôle n'a pas été identifié :
    le signaler comme inconnu et le laisser activé ([paquets.md, § 4](paquets.md#4-classer-un-paquet-inconnu)).
-6. **Appliquer.** Après accord explicite sur un lot dont `check-plan` est au
-   vert, par groupes de risque homogène.
+6. **Appliquer.** Après accord explicite sur un lot pour lequel
+   `check-plan` passe, appliquer ce lot par groupes de risque homogène.
    Employer `pm disable-user --user 0`, jamais `pm uninstall` sauf demande
    expresse. Contrôler l'interface après chaque groupe par
    `adb shell "dumpsys window | grep mCurrentFocus"`. Un focus inattendu, ou une
