@@ -32,7 +32,9 @@ est réalisé par `scripts/install.py`, que l'agent conduit en trois temps :
    sauvegarde, remplace aussi chaque édition locale par la version du dépôt et
    supprime les fichiers ajoutés localement et les outils retirés restés
    intacts, soit sur les seuls identifiants que l'utilisateur retient ; une
-   demande qui prescrit déjà `apply --all` vaut accord ;
+   demande qui prescrit déjà `apply --all` vaut accord ; la clé `statusLine`,
+   que `--all` n'écrit jamais, exige en outre l'accord explicite de
+   l'utilisateur sur son identifiant ;
 3. lancer la commande `apply` qu'indique le résumé, ou `apply --confirm` avec
    les identifiants retenus.
 

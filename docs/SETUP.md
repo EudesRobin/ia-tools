@@ -151,10 +151,11 @@ n'examine aucun outil retiré.
   identifiant court, avec le nombre de fichiers concernés. Chaque fichier en
   `conflit` y est nommé, sur une ligne qui annonce sa sauvegarde et son
   remplacement ; chaque fichier à supprimer, ou le dossier d'un outil
-  `retire`, sur une ligne qui annonce sa sauvegarde et sa suppression. Suivent,
-  pour information, les fichiers illisibles, les outils retirés laissés en
-  place, les échecs d'écriture et l'état de la clé `statusLine`, puis la
-  commande `apply` à lancer.
+  `retire`, sur une ligne qui annonce sa sauvegarde et sa suppression. Une
+  section distincte propose l'enregistrement de la clé `statusLine`, sous un
+  identifiant par status line (§6). Suivent, pour information, les fichiers
+  illisibles, les outils retirés laissés en place et les échecs d'écriture,
+  puis la commande `apply` à lancer.
 - **Identifiants sans état stocké.** Un identifiant est tiré de l'état examiné :
   il change dès que l'un des fichiers locaux de l'outil change. `apply` refait
   l'audit et refuse tout identifiant inconnu ou périmé, sans rien écrire.
@@ -225,9 +226,9 @@ hook.
     présent n'est pas écrasé non plus : n'y merger que les entrées de hook
     concernées.
 
-  `scripts/install.py` **n'écrit jamais** ni le fichier de paramètres ni le
-  fichier d'enregistrement : il affiche ce qui reste à faire ; l'enregistrement
-  se fait à la main.
+  `scripts/install.py` **n'écrit jamais** ni la clé `hooks` du fichier de
+  paramètres ni le fichier d'enregistrement : il affiche ce qui reste à faire ;
+  l'enregistrement se fait à la main.
 
 Aucun hook de ce dépôt n'est distribué aujourd'hui : `validate-tool` est local
 (§1). `--scope hooks` constate cette absence et ne touche à rien.
@@ -243,13 +244,20 @@ l'enregistrement de la clé `statusLine`.
   ci-dessus. Le dossier `claude/` de la source n'est pas repris dans la cible :
   celle-ci, sous `~/.claude/`, est déjà propre à Claude Code.
 - Enregistrement → clé `statusLine` de `~/.claude/settings.json`.
-  `scripts/install.py` **n'écrit jamais** ce fichier : il lit la clé et lui
-  attribue l'un des états `enregistree` (elle désigne une status line du
-  dépôt), `absente`, `autre` (elle désigne un autre script) ou `illisible`
-  (JSON invalide), puis affiche le fragment à merger. **Ne jamais écraser
-  `~/.claude/settings.json` en bloc** : n'y merger que la clé `statusLine`,
-  après accord de l'utilisateur quand la clé existante désigne un autre
-  script. L'état de cette clé n'influe pas sur le code de sortie.
+  `scripts/install.py` lit la clé et lui attribue l'un des états `enregistree`
+  (elle désigne une status line du dépôt), `absente`, `autre` (elle désigne un
+  autre script) ou `illisible` (JSON invalide). Pour les états `absente` et
+  `autre`, l'audit propose une action par status line du dépôt, chacune sous
+  son propre identifiant. **`--all` n'inclut jamais ces actions** : seul
+  `apply --confirm <id>`, sur accord explicite de l'utilisateur, en exécute
+  une, et une demande qui prescrit `apply --all` ne vaut pas cet accord. Une
+  fois l'identifiant confirmé, `apply` installe la status line, sauvegarde
+  `settings.json` dans `{AGENT_DIR}/.ia-tools-backup/<horodatage>/`, puis
+  n'écrit dans `settings.json` que la clé `statusLine`, en conservant les
+  autres clés et leur ordre, et relit le fichier ; le reformatage du fichier,
+  indenté de deux espaces, est la seule autre modification. Un fichier
+  `illisible` n'est jamais écrit. L'état de cette clé n'influe pas sur le code
+  de sortie.
 
 La commande du fragment a la forme suivante :
 

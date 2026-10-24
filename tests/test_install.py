@@ -6,7 +6,8 @@ validation prealable bloquant 'apply', settings.json jamais ecrit ; audit court 
 identifiants sans contenu de fichier, 'apply' par --all et --confirm, conflit
 remplace par la version du depot apres sauvegarde, identifiant perime refuse ;
 fichier local seul et outil retire du depot supprimes apres sauvegarde, outil
-retire modifie localement laisse en place (AGENTS.md, DoD des scripts ;
+retire modifie localement laisse en place ; cle statusLine ecrite sur
+identifiant confirme seulement, jamais par --all (AGENTS.md, DoD des scripts ;
 docs/SETUP.md).
 
 Usage : python tests/test_install.py
@@ -198,13 +199,15 @@ def run_text(agent: str, target: Path, *options: str) -> subprocess.CompletedPro
     )
 
 
-def actions_of(target: Path, agent: str = "claude") -> list[dict]:
+def actions_of(target: Path, agent: str = "claude", kind: str = "outil") -> list[dict]:
+    """Actions de l'audit d'un type donne : 'outil' par defaut, 'statusline'
+    pour la cle de settings.json."""
     r = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "install.py"),
          "--agent", agent, "--target", str(target), "--json"],
         cwd=ROOT, capture_output=True, text=True, stdin=subprocess.DEVNULL,
     )
-    return json.loads(r.stdout)["actions"]
+    return [a for a in json.loads(r.stdout)["actions"] if a["type"] == kind]
 
 
 # Les assertions sur le contenu d'un fichier portent un message court : un
@@ -428,6 +431,81 @@ class TestRetired(unittest.TestCase):
         self.assertEqual(r["retires_modifies"], [RETIRED])
         self.assertEqual(r["supprimes"], [])
         self.assertTrue(skill.is_file(), "outil retire modifie supprime")
+
+
+SCRIPT = "statuslines/usage-session/statusline.ps1"
+
+
+class TestStatusLine(unittest.TestCase):
+    """Cle statusLine de settings.json : action distincte, jamais incluse dans
+    --all, ecrite sur identifiant confirme apres sauvegarde du fichier, les
+    autres cles conservees dans leur ordre."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.target = Path(self._tmp.name) / "claude"
+        self.target.mkdir()
+        self.settings = self.target / "settings.json"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def key_actions(self) -> list[dict]:
+        return actions_of(self.target, kind="statusline")
+
+    def key_action(self) -> dict:
+        found = self.key_actions()
+        self.assertEqual(len(found), 1, found)
+        return found[0]
+
+    def test_all_never_writes_key_then_confirm_registers(self):
+        content = '{\n  "model": "local",\n  "theme": "dark"\n}\n'
+        self.settings.write_text(content, encoding="utf-8")
+        run_install("claude", self.target, "apply", "--all")
+        self.assertEqual(self.settings.read_text(encoding="utf-8"), content)
+        action = self.key_action()
+        self.assertEqual(action["etat"], "absente")
+        r = run_text("claude", self.target)
+        self.assertIn(f"--confirm {action['id']}", r.stdout)
+        code, r = run_install("claude", self.target, "apply", "--confirm", action["id"])
+        self.assertEqual(code, 0, r)
+        data = json.loads(self.settings.read_text(encoding="utf-8"))
+        self.assertEqual(list(data), ["model", "theme", "statusLine"])
+        self.assertIn(SCRIPT, data["statusLine"]["command"])
+        saved = (Path(r["sauvegarde"]) / "settings.json").read_text(encoding="utf-8")
+        self.assertEqual(saved, content)
+        self.assertEqual(self.key_actions(), [])
+
+    def test_confirm_installs_script_and_creates_settings(self):
+        code, r = run_install("claude", self.target, "apply", "--confirm", self.key_action()["id"])
+        self.assertEqual(code, 0, r)
+        self.assertTrue((self.target / SCRIPT).is_file(), "script de la status line non installe")
+        self.assertIn(SCRIPT, json.loads(self.settings.read_text(encoding="utf-8"))["statusLine"]["command"])
+        self.assertEqual(self.key_actions(), [])
+
+    def test_other_script_replaced_and_stale_id_refused(self):
+        other = {"statusLine": {"type": "command", "command": "autre.ps1"}, "model": "x"}
+        self.settings.write_text(json.dumps(other), encoding="utf-8")
+        action = self.key_action()
+        self.assertEqual(action["etat"], "autre")
+        # settings.json modifie apres l'audit : l'identifiant est perime.
+        changed = json.dumps({**other, "theme": "y"})
+        self.settings.write_text(changed, encoding="utf-8")
+        r = run_text("claude", self.target, "apply", "--confirm", action["id"])
+        self.assertIn("perime", r.stderr)
+        self.assertEqual(self.settings.read_text(encoding="utf-8"), changed)
+        code, r = run_install("claude", self.target, "apply", "--confirm", self.key_action()["id"])
+        data = json.loads(self.settings.read_text(encoding="utf-8"))
+        self.assertEqual(list(data), ["statusLine", "model", "theme"])
+        self.assertIn(SCRIPT, data["statusLine"]["command"])
+        saved = (Path(r["sauvegarde"]) / "settings.json").read_text(encoding="utf-8")
+        self.assertEqual(saved, changed)
+
+    def test_unreadable_settings_offers_no_action(self):
+        self.settings.write_text("{ pas du json", encoding="utf-8")
+        self.assertEqual(self.key_actions(), [])
+        r = run_text("claude", self.target)
+        self.assertIn("statusLine illisible", r.stdout)
 
 
 class TestDependencies(unittest.TestCase):

@@ -124,9 +124,10 @@ dépôt l'emporte aussi sur un fichier modifié à la main, signalé en conflit 
 la version du dépôt. Un fichier ajouté à la main dans le dossier d'un outil du
 dépôt, ou un outil retiré du dépôt resté intact, est sauvegardé de la même
 façon, puis supprimé ; un outil retiré modifié localement est laissé en place.
-Le script ne modifie jamais le `settings.json` d'un agent hôte. Une status line
-est donc copiée mais reste inactive tant que sa clé `statusLine` n'est pas
-enregistrée dans ce fichier ([ci-dessous](#activer-une-status-line)).
+Le script n'écrit dans `~/.claude/settings.json` que la clé `statusLine`, et
+seulement après confirmation par l'utilisateur de l'identifiant proposé : une
+status line copiée par `apply --all` reste inactive tant que cette clé n'est
+pas enregistrée ([ci-dessous](#activer-une-status-line)).
 Procédure détaillée : [SETUP.md](./docs/SETUP.md).
 
 Sans le script, un outil s'installe par simple copie, avec les outils dont il
@@ -144,24 +145,24 @@ l'enregistrement de sa clé `statusLine`.
 
 Une status line est facultative. `install.py apply --all` copie son script avec
 les autres outils, mais Claude Code ne l'affiche qu'une fois la clé
-`statusLine` enregistrée dans `~/.claude/settings.json`, fichier que
-`install.py` ne modifie jamais.
+`statusLine` enregistrée dans `~/.claude/settings.json`, et `--all` n'écrit
+jamais cette clé.
 
-1. Copier le script et obtenir la clé à enregistrer :
+1. Lancer l'audit :
 
    ```powershell
-   python scripts/install.py apply --all --scope statusline --agent claude
+   python scripts/install.py --scope statusline --agent claude
    ```
 
-   Si la clé `statusLine` est absente ou désigne un autre script, la sortie le
-   signale et affiche le fragment JSON à enregistrer, avec le chemin absolu du
-   script sur la machine.
-2. Ajouter ce fragment au premier niveau de `~/.claude/settings.json`, sans
-   écraser le reste du fichier. Une clé `statusLine` existante désigne une autre
-   status line : ne la remplacer que si cette status line n'est plus souhaitée.
-3. Lancer l'audit `python scripts/install.py --scope statusline --agent
-   claude` : la clé ne doit plus être signalée. La status line apparaît au
-   rafraîchissement suivant, sans redémarrage.
+   Si la clé `statusLine` est absente ou désigne un autre script, la sortie
+   propose son enregistrement sous un identifiant, dans une section distincte.
+   Une clé déjà présente désigne alors une autre status line : ne la remplacer
+   que si cette status line n'est plus souhaitée.
+2. Lancer `python scripts/install.py apply --confirm <id>`, où `<id>` est
+   l'identifiant que propose l'audit. Le script installe la status line,
+   sauvegarde `settings.json` sous `~/.claude/.ia-tools-backup/`, puis n'écrit
+   dans `settings.json` que la clé `statusLine`, sans toucher aux autres clés.
+3. La status line apparaît au rafraîchissement suivant, sans redémarrage.
 
 Retirer la clé `statusLine` désactive la status line. Ce qu'elle affiche et ses
 paramètres sont décrits dans son

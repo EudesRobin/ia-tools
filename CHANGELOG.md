@@ -17,6 +17,10 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `install.py` : un outil supprimé ou renommé dans le dépôt est reconnu dans
   `{AGENT_DIR}` (classe `retire`). Intact, il est sauvegardé, puis supprimé par
   `apply` ; modifié localement, il est laissé en place et signalé.
+- `install.py` : `apply --confirm <id>` enregistre la clé `statusLine` de
+  `settings.json`, avec l'identifiant que propose l'audit quand cette clé est
+  absente ou désigne un autre script. Le fichier est sauvegardé, puis seule
+  cette clé est posée ; `--all` ne l'écrit jamais.
 
 ### 🔄 Modifications
 
@@ -43,6 +47,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 📝 Documentation
 
+- `usage-session` : `STATUSLINE.md` décrit l'enregistrement de la clé
+  `statusLine` par `install.py`, sur identifiant confirmé.
 - Vocabulaire : un contrôle « passe » ou est « en échec » ; « au vert » et
   « au rouge » ne s'emploient plus. `clean-android-tv`, `pull-request`,
   `release`, `setup-harness` et `audit-docs` sont alignés sur ce vocabulaire.

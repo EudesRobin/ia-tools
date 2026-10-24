@@ -53,11 +53,14 @@ Le rendu est la source apres substitution des placeholders {NOM_VARIABLE}
 (docs/SETUP.md section 1). La comparaison normalise les fins de ligne ; l'ecriture
 recopie les octets du rendu, ce qui preserve celles de l'arbre de travail.
 
-Garde-fou non negociable : le settings.json d'un agent hote et ses fichiers
-d'enregistrement de hooks ne sont jamais ecrits. Ce qui reste a merger est
-affiche, pas applique. Il en va de meme pour la cle statusLine d'une status
-line : l'audit lit settings.json, indique si la cle designe le script installe
-et affiche le fragment a merger.
+Garde-fou non negociable : les fichiers d'enregistrement de hooks ne sont
+jamais ecrits, et settings.json ne l'est que pour sa seule cle statusLine, sur
+identifiant confirme par l'utilisateur ; --all ne l'ecrit jamais. L'audit lit
+settings.json et propose, quand la cle est absente ou designe un autre script,
+une action distincte par status line du depot. 'apply --confirm <id>' installe
+alors la status line, sauvegarde settings.json, pose la cle en conservant les
+autres et leur ordre, puis relit le fichier. Un settings.json illisible n'est
+jamais ecrit.
 
 Un outil peut s'appuyer sur un autre outil du depot (CONVENTIONS.md 1.7) :
 la carte des dependances est le tableau de la section « Dependances entre
@@ -725,6 +728,7 @@ def examine(agent: str, args: argparse.Namespace, scopes: list[str]) -> dict:
         "outils_bloques": sorted({tool_of(rel) for rel in classes["conflit"]}),
         "ecrits": [],
         "supprimes": [],
+        "cle_enregistree": None,
         "echecs": [],
         "resolus": [],
         "sauvegarde": None,
@@ -748,9 +752,11 @@ def digest(raw: bytes | None) -> str:
 
 
 def build_actions(reports: dict[str, dict]) -> list[dict]:
-    """Une action par outil a ecrire, sous un identifiant court tire de l'etat
-    examine : il change des que la cible change, si bien qu'un identifiant
-    perime est refuse sans qu'aucun etat soit stocke."""
+    """Une action par outil a ecrire et, quand la cle statusLine est absente ou
+    designe un autre script, une par status line a enregistrer. Chacune porte
+    un identifiant court tire de l'etat examine : il change des que la cible
+    change, si bien qu'un identifiant perime est refuse sans qu'aucun etat soit
+    stocke."""
     actions = []
     for agent, r in reports.items():
         by_tool: dict[str, list[dict]] = {}
@@ -766,11 +772,21 @@ def build_actions(reports: dict[str, dict]) -> list[dict]:
                 + [f"{f['source']}:{f['status']}:{digest(f['local'])}" for f in changing]
             )
             actions.append({
-                "agent": agent, "outil": tool, "etat": state, "fichiers": len(changing),
+                "type": "outil", "agent": agent, "outil": tool, "etat": state,
+                "fichiers": len(changing),
                 "editions": [f["source"] for f in changing if f["status"] == "conflit"],
                 "suppressions": [f["source"] for f in changing if f["status"] in DELETED],
                 "key": key,
             })
+        sl = r["statusline"]
+        if sl and sl["etat"] in ("absente", "autre"):
+            current = digest(read_bytes(Path(sl["fichier"])))
+            for name, fragment in sl["fragments"].items():
+                actions.append({
+                    "type": "statusline", "agent": agent, "outil": name, "etat": sl["etat"],
+                    "fichier": sl["fichier"], "cle": fragment,
+                    "key": f"{agent}|statusLine|{name}|{current}",
+                })
     for length in (4, 6, 8, 40):
         ids = [hashlib.sha1(a["key"].encode("utf-8")).hexdigest()[:length] for a in actions]
         if len(set(ids)) == len(ids):
@@ -789,7 +805,34 @@ def parse_confirm(values: list[str], actions: list[dict]) -> tuple[set[str], str
         if ident not in known:
             return set(), f"identifiant inconnu ou perime : {ident} ; relancer l'audit"
         chosen.add(ident)
+    keys = [a["agent"] for a in actions if a["type"] == "statusline" and a["id"] in chosen]
+    if len(keys) != len(set(keys)):
+        return set(), "une seule status line par agent hote peut etre enregistree"
     return chosen, None
+
+
+def register_statusline(r: dict, action: dict, stamp: str) -> bool:
+    """Pose la cle statusLine dans settings.json, apres sauvegarde du fichier,
+    en conservant les autres cles et leur ordre, puis relit le fichier : vrai
+    seulement si la cle relue est celle attendue."""
+    settings = Path(action["fichier"])
+    raw = read_bytes(settings)
+    try:
+        data = json.loads(raw.decode("utf-8-sig")) if raw is not None else {}
+    except (ValueError, UnicodeDecodeError):
+        return False
+    if not isinstance(data, dict):
+        return False
+    if raw is not None:
+        if backup(r["target_root"], stamp, settings, raw) is None:
+            return False
+        r["sauvegarde"] = str(r["target_root"] / BACKUP_DIR / stamp)
+    data["statusLine"] = action["cle"]
+    try:
+        settings.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return json.loads(settings.read_text(encoding="utf-8")).get("statusLine") == action["cle"]
+    except (OSError, ValueError):
+        return False
 
 
 def apply_agent(agent: str, r: dict, actions: list[dict], chosen: set[str],
@@ -799,13 +842,16 @@ def apply_agent(agent: str, r: dict, actions: list[dict], chosen: set[str],
     locale d'un conflit ou d'un fichier supprime est d'abord sauvegardee ; une
     sauvegarde impossible laisse la cible intacte et compte comme un echec.
     Avec keep_conflicts (--apply), --all laisse de cote les outils en conflit
-    et ne supprime rien."""
+    et ne supprime rien. Une status line dont la cle est confirmee est installee,
+    puis enregistree."""
+    mine = [a for a in actions if a["agent"] == agent]
+    keys = [a for a in mine if a["type"] == "statusline" and a["id"] in chosen]
     tools = {
-        a["outil"] for a in actions
-        if a["agent"] == agent and (
+        a["outil"] for a in mine
+        if a["type"] == "outil" and (
             a["id"] in chosen or (write_all and not (keep_conflicts and a["editions"]))
         )
-    }
+    } | {a["outil"] for a in keys}
     written, removed, failed, resolved = [], [], [], []
     for f in r["per_file"]:
         source, dst, status = f["source"], f["dst"], f["status"]
@@ -831,6 +877,14 @@ def apply_agent(agent: str, r: dict, actions: list[dict], chosen: set[str],
     r["outils"] = tool_states(r["per_file"], failed, touched, set(resolved))
     unresolved = [s for s in r["classes"]["conflit"] if s not in resolved]
     r["outils_bloques"] = sorted({tool_of(s) for s in unresolved})
+
+    for action in keys:
+        if any(tool_of(s) == action["outil"] for s in failed):
+            continue
+        if register_statusline(r, action, stamp):
+            r["cle_enregistree"] = action["outil"]
+        else:
+            r["echecs"].append(f"{action['fichier']} (cle statusLine)")
 
 
 def command_options(args: argparse.Namespace) -> str:
@@ -873,15 +927,26 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
         )
         print(f"{agent:<8} {r['cible']} : {len(r['outils'])} outil(s) ; {detail or 'rien a examiner'}")
 
-    if actions:
+    tool_actions = [a for a in actions if a["type"] == "outil"]
+    keys = [a for a in actions if a["type"] == "statusline"]
+    if tool_actions:
         print("\na faire (--all, ou --confirm <id>,...) :")
-        for a in actions:
+        for a in tool_actions:
             label = STATE_LABELS[a["etat"]]
             print(f"  {a['id']}  {a['agent']:<8} {a['outil']}  {label} ({a['fichiers']} fichier(s))")
             for source in a["editions"]:
                 print(f"        edition locale, sauvegardee puis remplacee : {source}")
             for source in shown_deletions(a):
                 print(f"        supprime apres sauvegarde : {source}")
+    if keys:
+        print("\ncle statusLine, sur accord explicite de l'utilisateur, jamais incluse dans --all :")
+        for a in keys:
+            if a["etat"] == "absente":
+                label, verb = "cle absente", "ecrite"
+            else:
+                label, verb = "cle designant un autre script", "remplacee"
+            print(f"  {a['id']}  {a['agent']:<8} {a['outil']}  {label}")
+            print(f"        {verb} dans {a['fichier']}, sauvegarde au prealable")
 
     notes = []
     for agent, r in reports.items():
@@ -896,26 +961,24 @@ def print_summary(reports: dict[str, dict], actions: list[dict], args: argparse.
                 notes.append(f"{agent} : {r['notice']}")
             notes += [f"{agent} : {s} non pris en charge, rien d'examine" for s in r["ignores"]]
         sl = r["statusline"]
-        if sl and sl["etat"] != "enregistree":
-            if sl["etat"] == "illisible":
-                notes.append(f"{agent} : statusLine illisible, {sl['fichier']} n'est pas du JSON valide")
-            else:
-                label = "absente" if sl["etat"] == "absente" else "designe un autre script"
-                notes.append(
-                    f"{agent} : statusLine {label} dans {sl['fichier']}, jamais ecrite par "
-                    "ce script ; fragment a merger a la main, sans ecraser le reste :"
-                )
-                notes += [
-                    "    " + json.dumps({"statusLine": fragment})
-                    for fragment in sl["fragments"].values()
-                ]
+        if sl and sl["etat"] == "illisible":
+            notes.append(
+                f"{agent} : statusLine illisible, {sl['fichier']} n'est pas du JSON valide ; "
+                "rien n'y sera ecrit"
+            )
     if notes:
         print("\npour information :")
         for note in notes:
             print(f"  {note}")
 
-    if actions:
-        print(f"\ncommande : python scripts/install.py apply{command_options(args)} --all")
+    command = f"python scripts/install.py apply{command_options(args)}"
+    ident = keys[0]["id"] if len(keys) == 1 else "<id>"
+    if tool_actions:
+        print(f"\ncommande : {command} --all")
+        if keys:
+            print(f"cle statusLine, sur accord explicite : ajouter --confirm {ident}")
+    elif keys:
+        print(f"\ncommande, sur accord explicite : {command} --confirm {ident}")
     else:
         print("\nrien a installer ni a mettre a jour.")
 
@@ -1003,14 +1066,14 @@ def main() -> int:
             r["echecs"] = reports[agent]["echecs"]
 
     failures = sum(len(r["echecs"]) for r in reports.values())
-    conflicts = sum(len(a["editions"]) for a in remaining)
+    conflicts = sum(len(a["editions"]) for a in remaining if a["type"] == "outil")
     red = bool(conflicts or failures or validation == "echec")
 
     if args.json:
         keys = (
             "cible", "outils", "classes", "local_seul", "retires", "retires_modifies",
             "outils_bloques", "ecrits", "supprimes", "echecs", "resolus", "sauvegarde",
-            "statusline",
+            "statusline", "cle_enregistree",
         )
         print(
             json.dumps(
@@ -1044,6 +1107,8 @@ def main() -> int:
                 line += f", dont {len(r['resolus'])} edition(s) locale(s) remplacee(s)"
             if r["supprimes"]:
                 line += f" ; {len(r['supprimes'])} fichier(s) supprime(s)"
+            if r["cle_enregistree"]:
+                line += f" ; cle statusLine enregistree : {r['cle_enregistree']}"
             if r["sauvegarde"]:
                 line += f" ; sauvegarde : {r['sauvegarde']}"
             print(line)
@@ -1066,7 +1131,8 @@ def show_diff_summary(path: str, reports: dict[str, dict], actions: list[dict], 
                 continue
             found = True
             action = next(
-                (a for a in actions if a["agent"] == agent and a["outil"] == tool_of(wanted)),
+                (a for a in actions if a["type"] == "outil" and a["agent"] == agent
+                 and a["outil"] == tool_of(wanted)),
                 None,
             )
             ident = f", outil {action['id']}" if action else ""
