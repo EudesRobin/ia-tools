@@ -86,7 +86,7 @@ est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 3 : créer la branche de travail
 - [ ] Phase 4 : committer les modifications
 - [ ] Phase 5 : rédiger le titre et la description de la PR
-- [ ] Phase 6 : obtenir l'accord de l'utilisateur, puis pousser la branche et publier la PR
+- [ ] Phase 6 : pousser la branche et publier la PR
 - [ ] Phase 7 : vérifier la PR publiée
 
 La [phase 7](#7-vérifier-la-pr-publiée) est une vérification : elle ne passe à
@@ -148,7 +148,7 @@ Relever dans sa sortie :
 
 `pr` désigne une PR `OPEN` → la livraison est une **mise à jour** : ne pas créer
 de seconde PR, et employer `gh pr edit` à la
-[phase 6](#6-obtenir-laccord-puis-publier). Aucune modification, aucun commit à
+[phase 6](#6-pousser-et-publier). Aucune modification, aucun commit à
 pousser et aucun commit en avance sur la base, sans description de PR à
 reprendre → signaler qu'il n'y a rien à livrer et s'arrêter.
 `distants : aucun` → la livraison complète, qui exige un dépôt distant, est
@@ -260,17 +260,18 @@ langue fixée par le projet, à défaut dans celle des commits.
 `<git_dir>/PR_BODY.md` : placés hors de l'arbre de travail, ces fichiers ne
 sont jamais committés.
 
-### 6. Obtenir l'accord, puis publier
+### 6. Pousser et publier
 
-Présenter à l'utilisateur, avant toute commande qui écrit sur le dépôt distant :
-la branche de base, la branche de travail, le titre, la description complète, et
-l'état prévu — PR prête par défaut, brouillon sur demande. **Ne rien pousser ni
-publier sans son accord explicite** : un push et une PR sont visibles de tous
-les lecteurs du dépôt.
+La demande de l'utilisateur de pousser la branche, d'ouvrir ou de mettre à jour
+la PR vaut accord : pousser et publier sans présenter au préalable le titre ni
+la description, que l'utilisateur relit sur GitHub. La PR est prête par défaut,
+en brouillon sur demande. Une livraison que l'utilisateur n'a pas demandée,
+mais que l'agent propose, exige l'accord explicite de l'utilisateur avant toute
+commande qui écrit sur le dépôt distant : un push et une PR sont visibles de
+tous les lecteurs du dépôt.
 
-Après accord, pousser la branche, puis créer la PR. Le titre est lu dans son
-fichier par une substitution, dont le résultat n'est pas réinterprété par le
-shell :
+Pousser la branche, puis créer la PR. Le titre est lu dans son fichier par une
+substitution, dont le résultat n'est pas réinterprété par le shell :
 
 ```text
 git push -u origin <branche>
@@ -296,14 +297,14 @@ les présenter à l'utilisateur. Ne jamais forcer le push.
 gh pr view --json url,title,body,baseRefName,headRefName,isDraft
 ```
 
-Comparer le résultat à ce que l'utilisateur a validé : titre, description,
-base, état. Vérifier qu'aucune attribution d'outil d'IA n'y figure. Un écart
-dont la correction se borne à rétablir le contenu validé → le corriger par
-`gh pr edit`, sans nouvel accord, puis reprendre à la
-[phase 7](#7-vérifier-la-pr-publiée). Tout autre changement → reprendre à la
-[phase 6](#6-obtenir-laccord-puis-publier).
-Indiquer à l'utilisateur l'URL de la PR. Les fichiers de travail restent dans
-le dossier git, non versionnés, et sont réécrits à la livraison suivante.
+Comparer le résultat au contenu préparé : titre et description lus dans
+`<git_dir>/PR_TITLE.txt` et `<git_dir>/PR_BODY.md`, base, état. Vérifier
+qu'aucune attribution d'outil d'IA n'y figure. Un écart dont la correction se
+borne à rétablir le contenu préparé → le corriger par `gh pr edit`, puis
+reprendre à la [phase 7](#7-vérifier-la-pr-publiée). Toute autre correction →
+reprendre à la [phase 6](#6-pousser-et-publier). N'indiquer à l'utilisateur que
+l'URL de la PR, sans en reproduire le contenu. Les fichiers de travail restent
+dans le dossier git, non versionnés, et sont réécrits à la livraison suivante.
 
 ### 8. Merger localement
 
@@ -366,8 +367,10 @@ Phase de la livraison locale seulement, dans un dépôt sans dépôt distant.
 - Ne jamais committer ni pousser directement sur la branche par défaut ou sur
   une branche protégée. Seule exception : le commit de merge de la
   [phase 8](#8-merger-localement), en livraison locale.
-- Obtenir l'accord explicite de l'utilisateur avant tout `git push`, toute
-  création et toute modification de PR, hors la correction prévue à la
+- Ne lancer `git push`, ne créer ou ne modifier une PR que sur demande de
+  l'utilisateur, ou après son accord explicite quand l'agent propose la
+  livraison ; la demande vaut accord et dispense de présenter au préalable le
+  contenu de la PR. Seule exception : la correction prévue à la
   [phase 7](#7-vérifier-la-pr-publiée).
 - Ne jamais lancer `gh auth token`, `gh auth status --show-token`,
   `git remote -v`, ni aucune commande qui affiche un jeton d'accès ou l'URL
