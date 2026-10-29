@@ -180,11 +180,11 @@ avant toute écriture.
    `X.Y.Z` par `Edit`, dans le même commit que le journal.
 3. Lire `{AGENT_DIR}/skills/pull-request/SKILL.md` et mener la livraison
    complète que cette skill décrit : la skill crée la branche de travail avant
-   le commit — la clôture
-   n'est jamais committée sur la branche par défaut —, committe le journal et
-   les fichiers de version, puis pousse et ouvre la PR après accord de
-   l'utilisateur. Avec `distant : aucun`, mener à la place la livraison locale
-   de cette skill, qui merge la branche de travail sur la branche par défaut.
+   le commit — la clôture n'est jamais committée sur la branche par défaut —,
+   committe le journal et les fichiers de version, puis pousse et ouvre la PR,
+   la demande de publier une version valant demande de PR. Avec
+   `distant : aucun`, mener à la place la livraison locale de cette skill, qui
+   merge la branche de travail sur la branche par défaut.
 
 La phase s'arrête à la PR publiée : indiquer à l'utilisateur que la procédure
 reprend une fois la PR mergée. Sans dépôt distant, poursuivre directement à la

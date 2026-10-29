@@ -8,6 +8,14 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🔄 Modifications
+
+- `pull-request` : la demande de pousser la branche, d'ouvrir ou de mettre à
+  jour une PR vaut accord ; la skill publie la PR sans présenter au préalable
+  son titre ni sa description, et n'indique que son URL.
+- `release` : la PR de clôture est ouverte sans accord supplémentaire, la
+  demande de publier une version valant demande de PR.
+
 ## [2.0.0] - 2026-10-24
 
 ### 💥 Action requise
