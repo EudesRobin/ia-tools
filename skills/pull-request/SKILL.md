@@ -277,13 +277,15 @@ substitution, dont le résultat n'est pas réinterprété par le shell :
 git push -u origin <branche>
 
 # bash
-gh pr create --base <base> --head <branche> --title "$(cat '<git_dir>/PR_TITLE.txt')" --body-file '<git_dir>/PR_BODY.md'
+gh pr create --base <base> --head <branche> --assignee '@me' --title "$(cat '<git_dir>/PR_TITLE.txt')" --body-file '<git_dir>/PR_BODY.md'
 # PowerShell
-gh pr create --base <base> --head <branche> --title (Get-Content -Raw '<git_dir>/PR_TITLE.txt').Trim() --body-file '<git_dir>/PR_BODY.md'
+gh pr create --base <base> --head <branche> --assignee '@me' --title (Get-Content -Raw '<git_dir>/PR_TITLE.txt').Trim() --body-file '<git_dir>/PR_BODY.md'
 ```
 
-Ajouter `--draft` pour un brouillon. Pour une PR existante : `git push`, puis
-`gh pr edit <numéro>` avec les mêmes options `--title` et `--body-file`.
+La PR est assignée à l'utilisateur authentifié dans `gh` (`'@me'`, entre
+guillemets pour PowerShell). Ajouter `--draft` pour un brouillon. Pour une PR
+existante : `git push`, puis `gh pr edit <numéro>` avec les mêmes options
+`--title` et `--body-file`.
 
 Un push refusé parce que la branche distante a avancé → `git pull --rebase`,
 puis présenter le résultat à l'utilisateur avant de pousser à nouveau. Un
@@ -294,14 +296,16 @@ les présenter à l'utilisateur. Ne jamais forcer le push.
 ### 7. Vérifier la PR publiée
 
 ```text
-gh pr view --json url,title,body,baseRefName,headRefName,isDraft
+gh pr view --json url,title,body,baseRefName,headRefName,isDraft,assignees
 ```
 
 Comparer le résultat au contenu préparé : titre et description lus dans
-`<git_dir>/PR_TITLE.txt` et `<git_dir>/PR_BODY.md`, base, état. Vérifier
-qu'aucune attribution d'outil d'IA n'y figure. Un écart dont la correction se
-borne à rétablir le contenu préparé → le corriger par `gh pr edit`, puis
-reprendre à la [phase 7](#7-vérifier-la-pr-publiée). Toute autre correction →
+`<git_dir>/PR_TITLE.txt` et `<git_dir>/PR_BODY.md`, base, état. Vérifier que la
+PR est assignée à l'utilisateur et qu'aucune attribution d'outil d'IA n'y
+figure. Une assignation manquante → `gh pr edit --add-assignee '@me'`. Un écart
+dont la correction se borne à rétablir le contenu préparé → le corriger par
+`gh pr edit`. Dans les deux cas, reprendre ensuite à la
+[phase 7](#7-vérifier-la-pr-publiée). Toute autre correction →
 reprendre à la [phase 6](#6-pousser-et-publier). N'indiquer à l'utilisateur que
 l'URL de la PR, sans en reproduire le contenu. Les fichiers de travail restent
 dans le dossier git, non versionnés, et sont réécrits à la livraison suivante.

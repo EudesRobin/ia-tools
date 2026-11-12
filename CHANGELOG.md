@@ -8,6 +8,11 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🔄 Modifications
+
+- `pull-request` : la PR créée est assignée à l'utilisateur authentifié dans
+  `gh`, et la vérification de la PR publiée contrôle cette assignation.
+
 ## [2.1.0] - 2026-10-29
 
 ### 🔄 Modifications
