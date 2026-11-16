@@ -23,7 +23,7 @@ d'environnement (git ou gh absent, gh non authentifie, sortie de gh illisible,
 liste des PR inaccessible, branche par defaut indeterminee, hors d'un depot
 git).
 
-Python >= 3.10, bibliotheque standard seule.
+Python >= 3.11, bibliotheque standard seule.
 """
 
 from __future__ import annotations

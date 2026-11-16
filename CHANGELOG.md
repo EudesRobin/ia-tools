@@ -8,6 +8,16 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🔄 Modifications
+
+- `clean-android-tv`, `pull-request`, `release` et `scripts/install.py` :
+  Python 3.11 au minimum, au lieu de 3.10, arrivé en fin de vie.
+
+### 🧹 Maintenance
+
+- Intégration continue sous Python 3.11, version minimale qu'exigent les
+  versions récentes de `zizmor`.
+
 ## [2.2.0] - 2026-11-12
 
 ### 🔄 Modifications

@@ -98,7 +98,7 @@ Dans ce cas d'usage, la phase de vérification est la troisième : elle ne passe
 - **Débogage ADB activé sur le téléviseur**, poste et téléviseur sur le même
   réseau local. La procédure d'activation, et le cas des téléviseurs sans option
   de débogage réseau, sont dans [reference-adb.md, § 1](reference-adb.md#1-activer-le-débogage-sur-le-téléviseur).
-- **Python 3.10 ou une version ultérieure** pour [adb_tv.py](adb_tv.py) : `python --version`.
+- **Python 3.11 ou une version ultérieure** pour [adb_tv.py](adb_tv.py) : `python --version`.
   Absent, et sans accord pour l'installer : lancer à la main les commandes de
   reference-adb.md que cite chaque phase.
 
