@@ -73,7 +73,7 @@ restée `[~]` ; le suivi de la liste ci-dessus reprend à la fin de la livraison
 
 ## Prérequis (à vérifier, ne rien installer sans accord)
 
-- **Python 3.10 ou une version ultérieure**, pour
+- **Python 3.11 ou une version ultérieure**, pour
   [journal_version.py](journal_version.py) : `python --version`.
 - **Git** : `git --version`.
 - **GitHub CLI** authentifié, pour un projet GitHub seulement : `gh auth status`.

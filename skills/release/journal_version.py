@@ -39,7 +39,7 @@ impossible).
 Les variables JOURNAL_VERSION_FAKE_GIT et JOURNAL_VERSION_FAKE_GH designent, pour
 les tests seulement, un faux git et un faux gh ecrits en Python.
 
-Python >= 3.10, bibliotheque standard seule.
+Python >= 3.11, bibliotheque standard seule.
 """
 
 from __future__ import annotations

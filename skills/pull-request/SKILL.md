@@ -95,7 +95,7 @@ nommé (`[x] Phase 7 : vérifier la PR publiée — conforme, <URL>`).
 
 ## Prérequis (à vérifier, ne rien installer sans accord)
 
-- **Python 3.10 ou une version ultérieure**, pour
+- **Python 3.11 ou une version ultérieure**, pour
   [etat_depot.py](etat_depot.py) : `python --version`.
 - **git** : `git --version`. Absent sous Windows → `winget install Git.Git`.
 - **GitHub CLI**, pour la livraison complète et le post-merge :

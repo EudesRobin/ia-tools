@@ -7,7 +7,7 @@ locale est sauvegardée, puis remplacée par la version du dépôt (§2).
 
 Enregistré dans la table de routage : [DOC_MAP.md](DOC_MAP.md).
 
-> **Prérequis système** (Python ≥ 3.10, Git, `adb`, PowerShell, bibliothèque
+> **Prérequis système** (Python ≥ 3.11, Git, `adb`, PowerShell, bibliothèque
 > `pyyaml`) — dépendances logicielles que supposent installées certaines skills,
 > la status line `usage-session` et l'outillage du dépôt : voir
 > [PREREQUIS.md](PREREQUIS.md). Python et Git sont nécessaires à

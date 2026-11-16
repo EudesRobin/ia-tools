@@ -21,7 +21,7 @@ gestionnaire de paquets sur un autre système.
 
 | Outil              | Requis par                                  | Vérifier                         | Installer (Windows)                          |
 |--------------------|---------------------------------------------|----------------------------------|----------------------------------------------|
-| Python ≥ 3.10 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution), `clean-android-tv` (`adb_tv.py`), `pull-request` (`etat_depot.py`), `release` (`journal_version.py`) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
+| Python ≥ 3.11 (PATH) | `scripts/install.py` (installation), `scripts/validate.py` (contribution), `clean-android-tv` (`adb_tv.py`), `pull-request` (`etat_depot.py`), `release` (`journal_version.py`) | `python --version` | `winget install Python.Python.3.14` (dernière 3.x) |
 | Git (PATH)         | clone du dépôt, `scripts/install.py` (historique des révisions), `pull-request`, `release` | `git --version` | `winget install Git.Git` |
 | GitHub CLI (`gh`)  | `pull-request` (PR, nettoyage post-merge), `release` (intégration continue, Release) | `gh --version`, `gh auth status` | `winget install GitHub.cli`                  |
 | Bibliothèques Python | `scripts/validate.py`, `zizmor` (modification d'un workflow, intégration continue) | `pip show <nom>`                 | voir [Bibliothèques Python](#bibliothèques-python) |
@@ -44,10 +44,11 @@ gestionnaire de paquets sur un autre système.
 
 ### Python
 
-La syntaxe des scripts exige la version 3.10 au minimum ; la dernière version
-3.x convient. L'identifiant winget contient le numéro de version : lancer
-`winget search Python.Python` pour trouver la version mineure la plus récente,
-ou, à défaut, employer `Python.Python.3.14`. Cocher
+La version 3.11 est le minimum pris en charge : c'est celle que teste
+l'intégration continue ; la dernière version 3.x convient. L'identifiant
+winget contient le numéro de version : lancer `winget search Python.Python`
+pour trouver la version mineure la plus récente, ou, à défaut, employer
+`Python.Python.3.14`. Cocher
 `Add python.exe to PATH` en cas d'installation manuelle : les scripts
 supposent `python` accessible sans chemin absolu.
 
