@@ -15,9 +15,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ### 🧹 Maintenance
 
-- Intégration continue : validation sous Python 3.11 ; `zizmor`, dont les
-  versions récentes exigent au moins Python 3.11, s'exécute sous la dernière
-  version de Python.
+- Intégration continue sous Python 3.11, version minimale qu'exigent les
+  versions récentes de `zizmor`.
 
 ## [2.2.0] - 2026-11-12
 
