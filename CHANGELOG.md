@@ -13,6 +13,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 - `clean-android-tv`, `pull-request`, `release` et `scripts/install.py` :
   Python 3.11 au minimum, au lieu de 3.10, arrivé en fin de vie.
 
+### 🐛 Corrections
+
+- `pull-request` : sous Windows et macOS, un template de PR n'est plus signalé
+  deux fois sous deux casses différentes ; sous Linux, un template dont le nom
+  ne suit pas la casse attendue est désormais détecté.
+
 ### 🧹 Maintenance
 
 - Intégration continue sous Python 3.11, version minimale qu'exigent les

@@ -137,7 +137,26 @@ def parse_porcelain(text: str) -> tuple[int, int, int, list[str]]:
 
 
 def find_files(root: Path, names: tuple[str, ...]) -> list[str]:
-    return [n for n in names if (root / n).is_file()]
+    """Fichiers presents parmi les candidats, sous leur nom reel sur le disque.
+
+    Le nom de chaque fichier du dossier est compare a celui du candidat sans
+    tenir compte de la casse, comme le fait GitHub : sur un systeme de fichiers
+    insensible a la casse, un meme fichier n'est pas compte deux fois, et un nom
+    qui ne suit pas la casse attendue est trouve meme sur un systeme sensible a
+    la casse.
+    """
+    found: list[str] = []
+    for candidate in names:
+        rel = PurePosixPath(candidate)
+        folder = root / rel.parent
+        if not folder.is_dir():
+            continue
+        for entry in sorted(folder.iterdir()):
+            path = (rel.parent / entry.name).as_posix()
+            if (entry.name.lower() == rel.name.lower() and entry.is_file()
+                    and path not in found):
+                found.append(path)
+    return found
 
 
 def find_globs(root: Path, patterns: tuple[str, ...]) -> list[str]:
