@@ -1,0 +1,49 @@
+name: Proposition
+description: Proposer un nouvel outil, ou une nouvelle fonctionnalité pour un outil existant.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Besoin
+      description: La tâche à couvrir, et la manière dont elle est menée aujourd'hui, par exemple manuellement dans plusieurs sessions.
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type de proposition
+      options:
+        - Nouvelle skill
+        - Nouvel agent
+        - Nouveau hook
+        - Nouvelle status line
+        - Nouvelle fonctionnalité d'un outil existant
+        - Nouvelle fonctionnalité de scripts/install.py
+    validations:
+      required: true
+  - type: input
+    id: outil-existant
+    attributes:
+      label: Outil existant concerné
+      placeholder: "pull-request, audit-docs…"
+  - type: textarea
+    id: declencheurs
+    attributes:
+      label: Déclenchement de l'outil ou de la fonctionnalité proposés
+      description: Pour une skill ou un agent, quelques prompts qu'un utilisateur adresserait à l'agent hôte ; pour un hook, l'événement qui doit le déclencher.
+  - type: dropdown
+    id: agents-hotes
+    attributes:
+      label: Agents hôtes visés
+      options:
+        - Claude Code et Copilot CLI
+        - Claude Code seulement
+        - Copilot CLI seulement
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Autres solutions envisagées
+      description: Outil existant, réglage de l'agent hôte, script autonome…
