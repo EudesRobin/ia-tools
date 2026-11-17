@@ -1,0 +1,78 @@
+name: Bug
+description: Signaler un outil ou le script d'installation dont le comportement réel diffère de ce qui est attendu, ou un document inexact.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ne coller ni jeton d'accès, ni mot de passe, ni identifiant de connexion, ni chemin contenant un nom d'utilisateur : les remplacer par `<masqué>` ou `<utilisateur>`.
+  - type: dropdown
+    id: element
+    attributes:
+      label: Élément concerné
+      options:
+        - Skill
+        - Agent
+        - Hook
+        - Status line
+        - scripts/install.py
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: nom
+    attributes:
+      label: Nom de l'outil ou du document
+      placeholder: "clean-android-tv, audit-outil, docs/SETUP.md…"
+    validations:
+      required: true
+  - type: dropdown
+    id: agent-hote
+    attributes:
+      label: Agent hôte
+      options:
+        - Claude Code
+        - Copilot CLI
+        - Les deux
+        - Sans objet
+    validations:
+      required: true
+  - type: input
+    id: version-agent-hote
+    attributes:
+      label: Version de l'agent hôte
+      placeholder: "sortie de claude --version ou de copilot --version"
+  - type: input
+    id: version-ia-tools
+    attributes:
+      label: Version d'ia-tools
+      description: Tag de la version installée, ou commit du clone employé pour l'installation (`git rev-parse --short HEAD`).
+    validations:
+      required: true
+  - type: textarea
+    id: environnement
+    attributes:
+      label: Environnement
+      description: Système d'exploitation, versions de Python et de PowerShell ; le cas échéant, appareil visé (modèle et version d'Android pour clean-android-tv).
+    validations:
+      required: true
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt adressé à l'agent hôte
+      description: La requête qui a déclenché l'outil, ou la commande lancée.
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Comportement attendu
+      description: Pour un document, ce que le passage en cause devrait indiquer.
+    validations:
+      required: true
+  - type: textarea
+    id: observe
+    attributes:
+      label: Comportement observé
+      description: Sortie obtenue, message d'erreur, extrait de la session ou, pour un document, passage inexact.
+      render: text
+    validations:
+      required: true
