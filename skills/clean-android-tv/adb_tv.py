@@ -18,7 +18,7 @@ Codes de sortie : 0 aucun ecart constate ; 1 ecart constate ou commande en
 echec ; 2 anomalie d'environnement (adb absent, appareil non connecte, fichier
 illisible).
 
-Python >= 3.10, bibliotheque standard seule.
+Python >= 3.11, bibliotheque standard seule.
 """
 
 from __future__ import annotations

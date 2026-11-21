@@ -90,7 +90,7 @@ ia-tools/
 | Prérequis | Nécessaire pour |
 |---|---|
 | Un agent hôte : Claude Code ou Copilot CLI | utiliser les outils installés |
-| Python ≥ 3.10 | lancer `scripts/install.py`, le script `adb_tv.py` de la skill `clean-android-tv`, le script `etat_depot.py` de la skill `pull-request` et le script `journal_version.py` de la skill `release` |
+| Python ≥ 3.11 | lancer `scripts/install.py`, le script `adb_tv.py` de la skill `clean-android-tv`, le script `etat_depot.py` de la skill `pull-request` et le script `journal_version.py` de la skill `release` |
 | Git (`git`), et le dépôt obtenu par `git clone` | reconnaître une installation obsolète ou un outil retiré, que `scripts/install.py` ne distingue pas d'une édition locale sans l'historique git ; les skills `pull-request` et `release` |
 | `adb` (platform-tools) | la skill `clean-android-tv` |
 | GitHub CLI (`gh`), authentifié | la skill `pull-request`, pour pousser la branche et ouvrir une PR, puis nettoyer le dépôt local en post-merge ; la skill `release`, pour vérifier l'intégration continue, puis créer et vérifier la Release |

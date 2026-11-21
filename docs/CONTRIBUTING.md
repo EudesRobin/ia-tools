@@ -42,6 +42,13 @@ git config core.hooksPath .githooks
   appliquer délibérément.
 - **Skill `pull-request`.** Installée, elle mène la livraison — commit, branche,
   push, PR — en appliquant ces règles. Sans elle, les appliquer à la main.
+- **Template de PR.** La description d'une PR suit
+  [pull_request_template.md](../.github/pull_request_template.md) : chaque
+  section est conservée, et une case n'est cochée que si le point a été
+  effectivement vérifié. Ce template et les formulaires d'issue de
+  `.github/ISSUE_TEMPLATE/` suivent, comme les documents, le registre
+  ([CONVENTIONS.md](CONVENTIONS.md) §1.9) et le vocabulaire
+  ([VOCABULARY.md](VOCABULARY.md)).
 - **Journal des modifications.** Une PR qui modifie un outil ou
   `scripts/install.py` ajoute une entrée au journal des modifications
   ([§4.2](#42-journal-des-modifications)).

@@ -181,6 +181,22 @@ class EtatDepotTest(unittest.TestCase):
         self.assertEqual(self.field(out, "templates_pr"),
                          ".github/PULL_REQUEST_TEMPLATE/bug.md, .github/PULL_REQUEST_TEMPLATE/feature.md")
 
+    def test_template_listed_once_under_its_own_name(self):
+        path = self.repo / ".github" / "pull_request_template.md"
+        path.parent.mkdir(parents=True)
+        path.write_text("x", encoding="utf-8")
+        code, out = self.run_script()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "templates_pr"), ".github/pull_request_template.md")
+
+    def test_template_with_other_case_found_once(self):
+        path = self.repo / ".github" / "Pull_Request_Template.md"
+        path.parent.mkdir(parents=True)
+        path.write_text("x", encoding="utf-8")
+        code, out = self.run_script()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "templates_pr"), ".github/Pull_Request_Template.md")
+
     def test_sample_hook_is_not_a_hook(self):
         (self.repo / ".git" / "hooks" / "commit-msg.sample").write_text("x", encoding="utf-8")
         code, out = self.run_script()
