@@ -147,6 +147,7 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(self.field(out, "section_non_publiee"), "Non publié")
         self.assertEqual(self.field(out, "entrees"), "2")
         self.assertEqual(self.field(out, "base"), "main")
+        self.assertEqual(self.field(out, "publication"), "main (identique a la base)")
         self.assertEqual(self.field(out, "git_dir"), (self.repo / ".git").as_posix())
         self.assertEqual(self.field(out, "proposition"), "1.5.0 (mineur depuis 1.4.1)")
         self.assertEqual(self.field(out, "liens"), "comparaison")
@@ -266,6 +267,77 @@ class JournalVersionTest(unittest.TestCase):
         # Cas construit pour echouer : reprise sur main sans pull, journal local encore plein.
         self.set_repo(FR, tags=["1.4.1"], shared=CLOSED)
         self.assertTrue(self.field(self.run_script()[1], "etape").startswith("tag (1.5.0"))
+
+    # ------------------------------------- branche d'integration distincte
+
+    def set_two(self, changelog, develop, main, tags=("1.4.1",), **over):
+        """Branche par defaut develop, branche de publication main."""
+        self.set_repo(changelog, tags=list(tags), **{
+            "git symbolic-ref --short refs/remotes/origin/HEAD": ok("origin/develop\n"),
+            "git rev-parse --verify --quiet refs/remotes/origin/main": ok("m1\n"),
+            "git show origin/develop:CHANGELOG.md": ok(develop),
+            "git show origin/main:CHANGELOG.md": ok(main),
+            **over})
+
+    def test_two_branches_state(self):
+        self.set_two(FR, develop=FR, main=FR)
+        code, out = self.run_script()
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "base"), "develop")
+        self.assertEqual(self.field(out, "publication"), "main (a confirmer par les regles du projet)")
+        self.assertEqual(self.field(out, "etape"), "nouvelle")
+
+    def test_two_branches_without_main_keep_single_branch(self):
+        # Branche par defaut develop sans main ni master : branche unique.
+        self.set_repo(FR, tags=["1.4.1"], **{
+            "git symbolic-ref --short refs/remotes/origin/HEAD": ok("origin/develop\n"),
+            "git show origin/develop:CHANGELOG.md": ok(CLOSED)})
+        code, out = self.run_script()
+        self.assertEqual(self.field(out, "publication"), "develop (identique a la base)")
+        self.assertEqual(self.field(out, "etape"), "tag (1.5.0, close sur origin/develop)")
+
+    def test_two_branches_step_publication(self):
+        # Cas construit pour echouer : close sur develop, absente de main ; le tag
+        # ne doit pas etre propose avant la PR de publication.
+        self.set_two(CLOSED, develop=CLOSED, main=FR)
+        self.assertEqual(self.field(self.run_script()[1], "etape"),
+                         "publication (1.5.0, close sur origin/develop, absente de origin/main)")
+
+    def test_two_branches_step_tag_after_publication(self):
+        self.set_two(CLOSED, develop=CLOSED, main=CLOSED)
+        self.assertEqual(self.field(self.run_script()[1], "etape"), "tag (1.5.0, close sur origin/main)")
+
+    def test_two_branches_step_waits_for_merge_on_base(self):
+        self.set_two(CLOSED, develop=FR, main=FR)
+        self.assertEqual(self.field(self.run_script()[1], "etape"),
+                         "attente_merge (1.5.0, close localement, absente de origin/develop)")
+
+    def test_publication_option(self):
+        self.set_two(CLOSED, develop=CLOSED, main=CLOSED, **{
+            "git show origin/stable:CHANGELOG.md": ok(FR)})
+        code, out = self.run_script("--publication", "stable")
+        self.assertEqual(self.field(out, "publication"), "stable")
+        self.assertEqual(self.field(out, "etape"),
+                         "publication (1.5.0, close sur origin/develop, absente de origin/stable)")
+
+    def test_two_branches_check_on_publication_branch(self):
+        empty = CLOSED.replace("### 🚀 Nouveautés\n\n- Outil A.\n\n### 🐛 Corrections\n\n- Correction B.\n\n## [1.4.1]",
+                               "## [1.4.1]", 1)
+        runs = [{"name": "CI", "status": "completed", "conclusion": "success"}]
+        fixtures = {"git rev-parse HEAD": ok("h1\n"),
+                    "git rev-parse refs/remotes/origin/main": ok("h1\n"),
+                    "gh run list --commit h1 --json name,status,conclusion": ok(json.dumps(runs))}
+        # Cas construit pour echouer : verification lancee depuis la branche d'integration.
+        self.set_two(empty, develop=empty, main=empty,
+                     **{"git branch --show-current": ok("develop\n"), **fixtures})
+        code, out = self.run_script("--check", "1.5.0")
+        self.assertEqual(code, 1, out)
+        self.assertIn("branche courante differente de main", out)
+        self.set_two(empty, develop=empty, main=empty,
+                     **{"git branch --show-current": ok("main\n"), **fixtures})
+        code, out = self.run_script("--check", "1.5.0")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "verdict"), "pret")
 
     # ------------------------------------------------------------- cloture
 
@@ -489,6 +561,23 @@ class JournalVersionTest(unittest.TestCase):
         self.assertEqual(self.field(self.run_script("--release", "1.4.1")[1], "notes"), "differentes du journal")
         self.tag_fixtures(ancestor=False)
         self.assertTrue(self.field(self.run_script("--release", "1.4.1")[1], "sur_base").startswith("non"))
+
+    def test_local_two_branches(self):
+        # Depot sans distant : --base develop, branche de publication master.
+        self.set_local(CLOSED, tags=["1.4.1"], **{
+            "git show develop:CHANGELOG.md": ok(CLOSED), "git show master:CHANGELOG.md": ok(FR)})
+        code, out = self.run_script("--base", "develop")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "publication"), "master (a confirmer par les regles du projet)")
+        self.assertEqual(self.field(out, "etape"),
+                         "publication (1.5.0, close sur develop, absente de master)")
+        # Cas construit pour echouer : tag pose sur develop, absent de master.
+        self.set_local(FR, tags=["1.4.1"], **{
+            "git rev-list -n 1 1.4.1": ok("t1\n"), "git cat-file -t 1.4.1": ok("tag\n"),
+            "git merge-base --is-ancestor t1 master": fail(),
+            "git tag -l --format=%(contents) 1.4.1": ok("### 🐛 Corrections\n\n- Correction C.\n")})
+        out = self.run_script("--base", "develop", "--release", "1.4.1")[1]
+        self.assertEqual(self.field(out, "sur_base"), "non (absent de master)")
 
     def test_check_blocks_uncommitted_changes(self):
         # Cas construit pour echouer : cloture ecrite dans la copie de travail, jamais committee.

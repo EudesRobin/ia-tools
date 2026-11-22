@@ -4,11 +4,13 @@ description: >-
   Publier une version d'un projet GitHub ou d'un dépôt git sans dépôt
   distant : choisir le numéro selon le versionnage sémantique, clore la section
   non publiée du journal des modifications, la livrer par une pull request ou
-  par un merge local, puis poser le tag annoté après le merge et vérifier la
-  Release, ou le tag sans dépôt distant. À utiliser quand l'utilisateur demande
-  de publier une version, de faire ou de préparer une nouvelle release, de
-  poser un tag de version, de mettre à jour le changelog pour une version, ou
-  de reprendre une publication après le merge de sa PR.
+  par un merge local, ouvrir la PR de publication de la branche d'intégration
+  vers la branche de publication quand le projet les distingue, puis poser le
+  tag annoté après le merge et vérifier la Release, ou le tag sans dépôt
+  distant. À utiliser quand l'utilisateur demande de publier une version, de
+  faire ou de préparer une nouvelle release, de poser un tag de version, de
+  mettre à jour le changelog pour une version, ou de reprendre une publication
+  après le merge de sa PR.
 allowed-tools:
   - Read
   - Grep
@@ -21,6 +23,7 @@ allowed-tools:
   - Bash(git fetch --tags origin)
   - Bash(git switch:*)
   - Bash(git pull --ff-only)
+  - Bash(gh pr view:*)
 ---
 
 # Publier une version
@@ -33,15 +36,24 @@ sémantique ; les règles de version du projet l'emportent sur la table de la
 [phase 2](#2-proposer-le-numéro). La livraison est confiée à la skill
 `pull-request`.
 
+Le tag est posé sur la **branche de publication**. C'est la branche par défaut,
+sauf dans un projet qui distingue une **branche d'intégration** — branche par
+défaut, cible des PR de travail, `develop` par exemple — d'une branche de
+publication qui n'avance qu'à la publication d'une version, `main` par
+exemple. Dans ce cas, la clôture est livrée sur la branche d'intégration, puis
+la [phase 4](#4-ouvrir-la-pr-de-publication) ouvre la **PR de publication**
+de la branche d'intégration vers la branche de publication. La branche
+d'intégration est conservée.
+
 Dans un dépôt sans dépôt distant (`distant : aucun`), la même procédure
 s'applique sans GitHub : la clôture est livrée par un merge local, le tag
 porte les notes de la version et n'est pas poussé, et c'est le tag, faute de
-Release, que vérifie la [phase 6](#6-vérifier-la-release).
+Release, que vérifie la [phase 7](#7-vérifier-la-release).
 
 ## Suivi de progression — impératif
 
-La publication est une tâche en six phases, interrompue le temps que
-l'utilisateur merge la PR. Créer la liste ci-dessous **avant la
+La publication est une tâche en sept phases, interrompue le temps que
+l'utilisateur merge chaque PR. Créer la liste ci-dessous **avant la
 [phase 1](#1-établir-létat-et-létape)**, et la ré-afficher en entier à chaque
 changement d'état, avec les marqueurs `[ ]` non commencée, `[~]` en cours, `[x]`
 terminée, `[-]` abandonnée ; une étape abandonnée porte une raison courte sur la
@@ -54,18 +66,21 @@ est écrit dans la réponse. Aucun des deux suivis n'est un repli.
 - [ ] Phase 1 : établir l'état du journal, des tags et l'étape de la publication
 - [ ] Phase 2 : proposer le numéro de version et obtenir l'accord
 - [ ] Phase 3 : clore la version et la livrer (PR, ou merge local)
-- [ ] Phase 4 : après le merge, vérifier la branche par défaut
-- [ ] Phase 5 : obtenir l'accord, puis poser le tag et le pousser s'il existe un dépôt distant
-- [ ] Phase 6 : vérifier la Release, ou le tag sans dépôt distant
+- [ ] Phase 4 : après le merge, ouvrir la PR de publication
+- [ ] Phase 5 : après le merge, vérifier la branche de publication
+- [ ] Phase 6 : obtenir l'accord, puis poser le tag et le pousser s'il existe un dépôt distant
+- [ ] Phase 7 : vérifier la Release, ou le tag sans dépôt distant
 
-Les phases 4 et 6 sont des vérifications : chacune n'est marquée `[x]` qu'avec
-sa preuve nommée — `[x] Phase 4 : … — l'intégration continue passe, <sha>`
+Les phases 5 et 7 sont des vérifications : chacune n'est marquée `[x]` qu'avec
+sa preuve nommée — `[x] Phase 5 : … — l'intégration continue passe, <sha>`
 d'après `--check`,
-`[x] Phase 6 : vérifier la Release — publiée, <URL>` d'après `--release`.
+`[x] Phase 7 : vérifier la Release — publiée, <URL>` d'après `--release`.
 Sans dépôt distant, ces preuves deviennent
 `— sans intégration continue (dépôt sans dépôt distant), <sha>` et
 `— tag annoté, notes conformes, <sha>`, et la publication n'est pas
-interrompue : la phase 3 s'achève par le merge local.
+interrompue : la phase 3 s'achève par le merge local. Quand la branche de
+publication est la branche par défaut, la phase 4 passe à
+`[-] sans objet (branche unique)`.
 
 Pendant la [phase 3](#3-clore-la-version-et-la-livrer), la liste de la skill
 `pull-request`, quand elle en tient une, s'affiche sous la ligne de la phase 3,
@@ -107,7 +122,9 @@ Un chemin qui contient une espace s'écrit entre guillemets ; l'appel passe
 alors par une demande de confirmation. `--file <journal>` désigne le journal
 quand le script ne le trouve pas de lui-même ; `--base <branche>` fixe la
 branche par défaut quand `origin/HEAD` ne la donne pas — ou, sans dépôt
-distant, quand ni `main` ni `master` n'existe ; `--tag-prefix v`
+distant, quand ni `main` ni `master` n'existe ; `--publication <branche>`
+fixe la branche de publication quand celle que donne le script ne correspond
+pas aux règles du projet ; `--tag-prefix v`
 ou `--tag-prefix none` fixe le préfixe des tags quand `prefixe_tag` est
 indéterminé ; `--date AAAA-MM-JJ` fixe la date de clôture, aujourd'hui par
 défaut.
@@ -142,14 +159,19 @@ le présenter à l'utilisateur avant d'agir :
 |---|---|
 | `nouvelle` | [phase 2](#2-proposer-le-numéro) |
 | `attente_merge (X.Y.Z, …)` | la clôture est faite dans la copie de travail mais absente de la branche par défaut distante : vérifier que sa PR est ouverte — à défaut, la livrer à la [phase 3](#3-clore-la-version-et-la-livrer) — puis s'arrêter jusqu'au merge. Sans dépôt distant : la clôture n'est pas encore mergée sur la branche par défaut → la livrer à la [phase 3](#3-clore-la-version-et-la-livrer) |
-| `tag (X.Y.Z, …)` | phases 1 à 3 à `[x]`, reprendre à la [phase 4](#4-vérifier-la-branche-par-défaut-après-le-merge) |
-| `release (<tag>, …)` | phases 1 à 5 à `[x]`, reprendre à la [phase 6](#6-vérifier-la-release) |
+| `publication (X.Y.Z, …)` | la clôture est mergée sur la branche d'intégration mais absente de la branche de publication : phases 1 à 3 à `[x]`, reprendre à la [phase 4](#4-ouvrir-la-pr-de-publication) |
+| `tag (X.Y.Z, …)` | phases 1 à 4 à `[x]` — la phase 4 à `[-]` sur une branche unique —, reprendre à la [phase 5](#5-vérifier-la-branche-de-publication-après-le-merge) |
+| `release (<tag>, …)` | phases 1 à 6 à `[x]`, reprendre à la [phase 7](#7-vérifier-la-release) |
 | `rien` | signaler qu'il n'y a rien à publier, et s'arrêter |
 
 Relever en outre `distant`, `prefixe_tag`, `proposition`, `rubriques_inconnues`,
-`liens`, `workflow_release`, `fichiers_version`, `base` et `git_dir`.
-`base : indeterminee` → demander la branche par défaut à l'utilisateur, puis
-passer `--base` à chaque appel suivant du script.
+`liens`, `workflow_release`, `fichiers_version`, `base`, `publication` et
+`git_dir`. `base : indeterminee` → demander la branche par défaut à
+l'utilisateur, puis passer `--base` à chaque appel suivant du script.
+`publication` portant la mention « a confirmer par les regles du projet » →
+la branche de publication est celle que désignent ces règles, à défaut celle
+que donne le script ; si elle diffère de celle que donne le script, passer
+`--publication <branche>` à chaque appel suivant du script.
 
 ### 2. Proposer le numéro
 
@@ -188,12 +210,53 @@ avant toute écriture.
 
 La phase s'arrête à la PR publiée : indiquer à l'utilisateur que la procédure
 reprend une fois la PR mergée. Sans dépôt distant, poursuivre directement à la
-[phase 4](#4-vérifier-la-branche-par-défaut-après-le-merge).
+[phase 4](#4-ouvrir-la-pr-de-publication).
 
-### 4. Vérifier la branche par défaut après le merge
+### 4. Ouvrir la PR de publication
+
+Phase sans objet quand `publication` est la branche par défaut : elle passe à
+`[-] sans objet (branche unique)`.
+
+Après le merge de la clôture, relancer `git fetch --tags origin` — sans dépôt
+distant, l'omettre — puis le script : `etape` doit valoir
+`publication (X.Y.Z, …)`. Ouvrir alors la PR de
+la branche d'intégration (`<base>`) vers la branche de publication
+(`<publication>`), sans créer de branche de travail ni de commit. Le titre suit
+la convention du sujet de commit — `chore: version X.Y.Z` à défaut d'une règle
+du projet — ; la description suit les règles de la phase 5 de la skill
+`pull-request` (template du projet, sections conservées, cases cochées
+seulement si le point a été vérifié), à partir des notes de la version. Écrire
+le titre dans `<git_dir>/PR_TITLE.txt` et la description dans
+`<git_dir>/PR_BODY.md`, puis :
 
 ```text
-git switch <base>
+# bash
+gh pr create --base <publication> --head <base> --assignee '@me' --title "$(cat '<git_dir>/PR_TITLE.txt')" --body-file '<git_dir>/PR_BODY.md'
+# PowerShell
+gh pr create --base <publication> --head <base> --assignee '@me' --title (Get-Content -Raw '<git_dir>/PR_TITLE.txt').Trim() --body-file '<git_dir>/PR_BODY.md'
+```
+
+La demande de publier une version vaut demande de cette PR. Une PR ouverte de
+`<base>` vers `<publication>` existe déjà → la reprendre par `gh pr edit`, sans
+en créer une seconde. Vérifier la PR publiée comme à la phase 7 de la skill
+`pull-request` :
+
+```text
+gh pr view <base> --json url,title,body,baseRefName,headRefName,isDraft,assignees
+```
+
+La phase s'arrête à la PR vérifiée : indiquer à l'utilisateur l'URL de la PR,
+et lui préciser que celle-ci se merge par un commit de merge et que la branche
+d'intégration est conservée. La procédure reprend une fois la PR mergée.
+
+Sans dépôt distant, merger à la place la branche d'intégration sur la branche
+de publication par un commit de merge, comme à la phase 8 de la skill
+`pull-request`, sans supprimer la branche d'intégration.
+
+### 5. Vérifier la branche de publication après le merge
+
+```text
+git switch <publication>
 git pull --ff-only
 python {AGENT_DIR}/skills/release/journal_version.py --check X.Y.Z
 ```
@@ -201,25 +264,25 @@ python {AGENT_DIR}/skills/release/journal_version.py --check X.Y.Z
 Sans dépôt distant, omettre `git pull --ff-only` : `--check` ne compare pas
 HEAD à `origin` et affiche `ci : sans objet (depot local)`.
 
-`verdict : pret` → [phase 5](#5-poser-le-tag), avec le `sha` relevé.
+`verdict : pret` → [phase 6](#6-poser-le-tag), avec le `sha` relevé.
 `verdict : bloque (…)` :
 
 - `ci : aucune execution`, ou `ci` avec un nombre non nul d'exécutions
   `en cours` → attendre la demande de l'utilisateur pour relancer `--check`.
-  Pour un projet sans intégration continue sur la branche par défaut, la
-  publication ne passe à la phase 5 qu'avec l'accord explicite de
-  l'utilisateur, la preuve de la phase 4 devenant
+  Pour un projet sans intégration continue sur la branche de publication, la
+  publication ne passe à la phase 6 qu'avec l'accord explicite de
+  l'utilisateur, la preuve de la phase 5 devenant
   `— sans intégration continue, accord de l'utilisateur, <sha>` ;
-- branche courante différente de la branche par défaut, ou HEAD différent de
-  `origin/<base>` → reprendre `git switch <base>`, puis `git pull --ff-only`
-  s'il existe un dépôt distant ;
+- branche courante différente de la branche de publication, ou HEAD différent
+  de `origin/<publication>` → reprendre `git switch <publication>`, puis
+  `git pull --ff-only` s'il existe un dépôt distant ;
 - `modifications non committees` → le journal lu ne serait pas celui de HEAD :
   s'arrêter et présenter les fichiers en cause ;
 - `ci` avec un nombre non nul d'`echec`, `ci : indeterminee (…)`, version
   absente du journal, tag existant, entrées ajoutées depuis la clôture, branche
   par défaut indéterminée → s'arrêter et présenter le motif.
 
-### 5. Poser le tag
+### 6. Poser le tag
 
 Présenter le tag (`<prefixe_tag>X.Y.Z`, sans préfixe si `prefixe_tag : aucun`)
 et le commit visé (`sha` de `--check`), en précisant que le tag est immuable
@@ -242,7 +305,7 @@ python {AGENT_DIR}/skills/release/journal_version.py --notes X.Y.Z --title <tag>
 git tag -a <tag> <sha> --cleanup=verbatim -F <git_dir>/RELEASE_NOTES.md
 ```
 
-### 6. Vérifier la Release
+### 7. Vérifier la Release
 
 ```text
 python {AGENT_DIR}/skills/release/journal_version.py --release <tag>
@@ -282,8 +345,11 @@ Avec un dépôt distant :
 
 ## Règles
 
-- Tag **annoté**, posé sur le commit vérifié par `--check`, sur la branche par
-  défaut après le merge, jamais sur une branche de travail.
+- Tag **annoté**, posé sur le commit vérifié par `--check`, sur la branche de
+  publication après le merge, jamais sur une branche de travail ni sur une
+  branche d'intégration distincte.
+- Ne jamais supprimer la branche d'intégration après le merge de la PR de
+  publication.
 - Un tag de version posé n'est jamais déplacé ni supprimé : une erreur se
   corrige par une nouvelle version.
 - Obtenir l'accord explicite de l'utilisateur sur le numéro, avant tout tag,
@@ -304,6 +370,10 @@ Avec un dépôt distant :
 - Un dépôt qui publie plusieurs paquets, chacun avec son journal et ses tags,
   n'est pas couvert.
 - Pour une version `0.y.z`, un changement incompatible incrémente `MINEUR`.
+- Une correction urgente publiée depuis une branche tirée de la branche de
+  publication, puis reportée sur la branche d'intégration (*hotfix*), n'est
+  pas couverte : une telle correction passe par la branche d'intégration et
+  donne lieu à une version `CORRECTIF`.
 - `allowed-tools` n'est appliqué que par Claude Code, où `git tag`, `git push`
   et `gh release create` restent soumis à une demande de confirmation, comme
   les commandes de la skill `pull-request` absentes des règles

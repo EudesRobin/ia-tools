@@ -7,21 +7,28 @@ fichiers de conventions et les templates de PR, et n'affiche qu'une ligne
 contenu d'un fichier : un fichier sensible modifie est signale par son nom.
 
 Usage :
-    python etat_depot.py [--github | --post-merge] [--git <executable>] [--gh <executable>]
+    python etat_depot.py [--github | --post-merge] [--base <branche>]
+                         [--git <executable>] [--gh <executable>]
 
 --github ajoute les verifications propres a la livraison complete : gh
 present et authentifie, depot GitHub, branche par defaut, PR de la branche.
 
+--base fixe la branche cible de la PR, quand elle differe de la branche par
+defaut ; incompatible avec --post-merge.
+
 --post-merge releve, apres le merge d'une PR, l'etat du worktree principal,
-les branches locales dont une PR est mergee, la concordance de leur head avec
-celui de la PR, et l'etat de leur worktree. Une branche n'est supprimable que
-si son head est identique a celui de la PR mergee : le critere vaut aussi pour
-un merge par squash ou par rebase.
+les branches protegees du depot GitHub, les branches locales dont une PR est
+mergee, la concordance de leur head avec celui de la PR, et l'etat de leur
+worktree. Une branche n'est supprimable que si son head est identique a celui
+de la PR mergee : le critere vaut aussi pour un merge par squash ou par
+rebase. La branche par defaut et les branches protegees ne sont jamais
+classees : une branche d'integration mergee par une PR de publication est
+conservee.
 
 Codes de sortie : 0 etat releve ; 1 erreur d'usage ; 2 anomalie
 d'environnement (git ou gh absent, gh non authentifie, sortie de gh illisible,
-liste des PR inaccessible, branche par defaut indeterminee, hors d'un depot
-git).
+liste des PR ou des branches protegees inaccessible, branche par defaut
+indeterminee, hors d'un depot git).
 
 Python >= 3.11, bibliotheque standard seule.
 """
@@ -235,6 +242,16 @@ def github_state(gh: Runner) -> tuple[list[tuple[str, str]], str | None]:
     return lines, base
 
 
+def protected_branches(gh: Runner, name: str) -> list[str]:
+    """Branches protegees du depot GitHub ; illisibles -> anomalie
+    d'environnement, plutot qu'une branche longue proposee a la suppression."""
+    code, out, err = gh.run("api", f"repos/{name}/branches?protected=true", "--paginate",
+                            "--jq", ".[].name")
+    if code != 0:
+        raise EnvError(f"gh api branches protegees : code {code} ({first_line(err)})")
+    return sorted(line.strip() for line in out.splitlines() if line.strip())
+
+
 def parse_worktrees(text: str) -> list[dict]:
     """Worktrees de git worktree list --porcelain, le principal en premier :
     chemin, branche (None si HEAD detachee), verrouille, prunable. Le bloc
@@ -338,6 +355,8 @@ def post_merge_state(git: Runner, gh: Runner) -> list[tuple[str, str]]:
     lines.append(("worktree_courant", "principal" if root == main["path"] else "lie"))
     lines.append(("depot_github", name))
     lines.append(("base", base))
+    protected = protected_branches(gh, name)
+    lines.append(("protegees", ", ".join(protected) or "aucune"))
     lines.append(("branche", main["branch"] or "(HEAD detachee)"))
     staged, unstaged, untracked, _ = status_counts(git, main["path"])
     lines.append(("modifications", f"{staged} indexee(s), {unstaged} non indexee(s), {untracked} non suivie(s)"))
@@ -353,7 +372,7 @@ def post_merge_state(git: Runner, gh: Runner) -> list[tuple[str, str]]:
     unmerged: list[str] = []
     for line in out.splitlines():
         branch, _, sha = line.strip().partition(" ")
-        if not branch or branch == base:
+        if not branch or branch == base or branch in protected:
             continue
         prs = merged.get(branch)
         if not prs:
@@ -372,7 +391,7 @@ def first_line(text: str) -> str:
     return (text.strip().splitlines() or [""])[0][:160]
 
 
-def collect(git: Runner, gh: Runner | None) -> list[tuple[str, str]]:
+def collect(git: Runner, gh: Runner | None, explicit_base: str | None = None) -> list[tuple[str, str]]:
     git_dir_raw = git.value("rev-parse", "--absolute-git-dir")
     root_raw = git.value("rev-parse", "--show-toplevel")
     if not git_dir_raw or not root_raw:
@@ -390,7 +409,9 @@ def collect(git: Runner, gh: Runner | None) -> list[tuple[str, str]]:
     if gh is not None:
         gh_lines, base = github_state(gh)
         source = "depot GitHub"
-    if base is None:
+    if explicit_base:
+        base, source = explicit_base, "option --base"
+    elif base is None:
         base, source = default_branch_local(git, remotes)
     lines.append(("base", f"{base} ({source})" if base else source))
 
@@ -452,13 +473,16 @@ def main(argv: list[str] | None = None) -> int:
                       help="ajouter gh : authentification, depot, PR de la branche")
     mode.add_argument("--post-merge", action="store_true",
                       help="apres le merge : branches locales mergees et worktrees")
+    p.add_argument("--base", help="branche cible de la PR (defaut : branche par defaut)")
     p.add_argument("--git", default="git", help="executable git (defaut : git du PATH)")
     p.add_argument("--gh", default="gh", help="executable gh (defaut : gh du PATH)")
     args = p.parse_args(argv)
+    if args.base and args.post_merge:
+        p.error("--base ne s'emploie pas avec --post-merge")
     try:
         git = Runner(args.git, "git")
         gh = Runner(args.gh, "gh") if args.github or args.post_merge else None
-        lines = post_merge_state(git, gh) if args.post_merge else collect(git, gh)
+        lines = post_merge_state(git, gh) if args.post_merge else collect(git, gh, args.base)
     except EnvError as exc:
         print(f"erreur : {exc}", file=sys.stderr)
         return EXIT_ENV

@@ -27,10 +27,17 @@ git config core.hooksPath .githooks
 
 ## 2. Commits et pull requests
 
-- **Branche protégée.** `main` n'accepte aucun push direct : toute modification
-  passe par une branche et une PR. Les checks `CI / validation`, `CI / zizmor`
-  et `CI / commits` sont requis, et la branche doit être à jour avec `main`
-  avant le merge.
+- **Deux branches protégées.** `develop` est la branche par défaut et la
+  branche d'intégration : toute PR de travail la vise, y compris celles de
+  Dependabot et les corrections urgentes. `main` est la branche de publication :
+  elle n'avance que par la PR de publication de `develop` vers `main`, mergée
+  par un commit de merge lors de la publication d'une version
+  ([§4.3](#43-procédure)) ; `develop` est conservée. Aucune des deux n'accepte
+  de push direct. Les checks `CI / validation`, `CI / zizmor` et
+  `CI / commits` sont requis sur les deux branches ; une PR vers `develop` doit
+  en outre être à jour avec `develop` avant le merge. `main` n'impose pas cette
+  mise à jour : son commit de merge n'est jamais reporté sur `develop`, si bien
+  que l'exiger bloquerait la PR de publication suivante.
 - **Aucune attribution d'outil d'IA**, ni dans un message de commit, ni dans le
   titre ou la description d'une PR : voir [CONVENTIONS.md](CONVENTIONS.md) §1.5,
   qui fait autorité.
@@ -62,8 +69,8 @@ La liste des contrôles de `scripts/validate.py` figure dans son docstring, qui
 fait autorité. Ils sont lancés par trois mécanismes : le hook `validate-tool` en
 fin de tour d'une session ouverte dans le dépôt
 ([HOOK.md](../hooks/validate-tool/HOOK.md)), le hook git `pre-commit` à chaque
-commit, et l'intégration continue à chaque push sur `main`, à chaque PR et à la
-demande (`workflow_dispatch`).
+commit, et l'intégration continue à chaque push sur `develop` ou sur `main`, à
+chaque PR et à la demande (`workflow_dispatch`).
 
 L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 
@@ -99,10 +106,11 @@ Ces exigences s'appliquent délibérément.
 
 ## 4. Publier une version
 
-Une version du dépôt est un **tag** git annoté, posé sur un commit de `main`, et
-une **Release** GitHub associée à ce tag. Le numéro de version figure dans le
-tag et dans le journal des modifications, [CHANGELOG.md](../CHANGELOG.md), dont
-la section consacrée à cette version fournit les notes de la Release. La skill
+Une version du dépôt est un **tag** git annoté, posé sur un commit de la
+branche de publication `main`, et une **Release** GitHub associée à ce tag. Le
+numéro de version figure dans le tag et dans le journal des modifications,
+[CHANGELOG.md](../CHANGELOG.md), dont la section consacrée à cette version
+fournit les notes de la Release. La skill
 `release`, si elle est installée, mène la procédure du [§4.3](#43-procédure).
 
 ### 4.1 Numérotation
@@ -151,15 +159,18 @@ les rubriques suivantes, dans cet ordre :
 
 ### 4.3 Procédure
 
-1. **Clore la version** dans la PR qui la termine : renommer `## [Non publié]`
-   en `## [X.Y.Z] - AAAA-MM-JJ`, ouvrir au-dessus une section `## [Non publié]`
-   vide, et mettre à jour les liens de comparaison en fin de fichier. Vérifier
-   que `python scripts/changelog.py --version X.Y.Z` affiche les notes
-   attendues.
-2. **Poser le tag après le merge, sur `main`**, jamais sur une branche de
-   travail : le tag désigne l'état de `main` que les utilisateurs installent.
-   Vérifier au préalable que l'intégration continue passe sur le commit à
-   taguer, dans l'onglet *Actions* du dépôt GitHub.
+1. **Clore la version** dans une PR vers `develop` : renommer
+   `## [Non publié]` en `## [X.Y.Z] - AAAA-MM-JJ`, ouvrir au-dessus une section
+   `## [Non publié]` vide, et mettre à jour les liens de comparaison en fin de
+   fichier. Vérifier que `python scripts/changelog.py --version X.Y.Z` affiche
+   les notes attendues.
+2. **Ouvrir la PR de publication** de `develop` vers `main`, une fois la
+   clôture mergée, et la merger par un commit de merge. La branche `develop`
+   est conservée.
+3. **Poser le tag après le merge, sur `main`**, jamais sur `develop` ni sur une
+   branche de travail : le tag désigne l'état de `main` que les utilisateurs
+   installent. Vérifier au préalable que l'intégration continue passe sur le
+   commit à taguer, dans l'onglet *Actions* du dépôt GitHub.
 
    ```powershell
    git switch main
@@ -168,7 +179,7 @@ les rubriques suivantes, dans cet ordre :
    git push origin <version>
    ```
 
-3. **Vérifier la Release.** Le workflow `release` s'assure que le commit du tag
+4. **Vérifier la Release.** Le workflow `release` s'assure que le commit du tag
    est sur `main` et que l'intégration continue passe sur ce commit, puis crée
    la Release avec la section du journal consacrée à cette version. S'il
    échoue, en corriger la cause, puis le relancer depuis l'onglet *Actions*,

@@ -34,7 +34,10 @@ python {AGENT_DIR}/skills/pull-request/etat_depot.py --post-merge
 ```
 
 `branche`, `modifications` et `dernier_commit` décrivent le worktree principal,
-où s'exécute le retour sur la branche par défaut. Relever :
+où s'exécute le retour sur la branche par défaut. `protegees` cite les
+branches protégées du dépôt GitHub, par exemple une branche d'intégration
+mergée par une PR de publication : le script ne les classe jamais, et elles ne
+sont pas supprimées. Relever :
 
 - `branche : (HEAD detachee)` → s'arrêter et signaler le HEAD détaché à
   l'utilisateur : un changement de branche abandonnerait les commits qui ne
@@ -144,6 +147,7 @@ post-merge.
   que sur demande explicite de l'utilisateur, après qu'il en a vu les commits
   locaux (`git log <pr_head>..<branche>` quand le head de la PR est présent
   localement).
-- Ne jamais supprimer la branche par défaut, ni une branche distante.
+- Ne jamais supprimer la branche par défaut, une branche protégée, ni une
+  branche distante.
 - Ne pas faire de rebase des autres branches de travail sur la base mise à
   jour : une branche déjà poussée exigerait un push forcé.

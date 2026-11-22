@@ -1,15 +1,16 @@
-# Controle du depot a chaque push sur main, a chaque pull request et a la
-# demande (workflow_dispatch) :
+# Controle du depot a chaque push sur develop ou sur main, a chaque pull
+# request et a la demande (workflow_dispatch) :
 # validateur des sources puis tests du validateur (AGENTS.md, Definition of Done),
 # analyse de securite des workflows par zizmor et, sur une pull request,
 # controle des messages de commit, du titre, de la description et de l'entree
 # du journal des modifications.
-# Les noms de jobs sont ceux des checks requis par la protection de main.
+# Les noms de jobs sont ceux des checks requis par la protection de develop et
+# de main.
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [develop, main]
   pull_request:
     types: [opened, synchronize, reopened, edited]  # edited : titre ou description modifies
   workflow_dispatch:

@@ -150,6 +150,26 @@ class EtatDepotTest(unittest.TestCase):
         self.assertTrue(self.field(out, "a_pousser").startswith("sans objet"))
         self.assertEqual(self.field(out, "avance_sur_base"), "1 (sur master)")
 
+    def test_explicit_base_overrides_default_branch(self):
+        # Cas construit pour echouer : PR vers main demandee, branche par defaut develop.
+        self.fixtures(self.base_fixtures(**{
+            "gh repo view --json nameWithOwner,defaultBranchRef":
+                ok(json.dumps({"nameWithOwner": "org/depot", "defaultBranchRef": {"name": "develop"}})),
+            "git rev-parse --verify --quiet refs/remotes/origin/develop": ok("ddd000\n"),
+            "git rev-list --count origin/develop..HEAD": ok("5\n"),
+        }))
+        code, out = self.run_script("--github")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "base"), "develop (depot GitHub)")
+        self.assertEqual(self.field(out, "avance_sur_base"), "5 (sur origin/develop)")
+        code, out = self.run_script("--github", "--base", "main")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "base"), "main (option --base)")
+        self.assertEqual(self.field(out, "avance_sur_base"), "2 (sur origin/main)")
+
+    def test_base_excludes_post_merge(self):
+        self.assertEqual(self.run_script("--post-merge", "--base", "main")[0], 1)
+
     def test_not_a_repository_is_environment_error(self):
         self.fixtures(self.base_fixtures(**{
             "git rev-parse --absolute-git-dir": fail("fatal: not a git repository", 128),
@@ -276,6 +296,7 @@ class EtatDepotTest(unittest.TestCase):
 
     FOR_EACH_REF = "git for-each-ref refs/heads --format=%(refname:lstrip=2) %(objectname)"
     PR_LIST = "gh pr list --state merged --limit 100 --json number,headRefName,headRefOid"
+    PROTECTED = "gh api repos/org/depot/branches?protected=true --paginate --jq .[].name"
 
     def post_merge_fixtures(self, **over):
         main = self.repo.as_posix()
@@ -297,6 +318,7 @@ class EtatDepotTest(unittest.TestCase):
                 {"number": 40, "headRefName": "feat/c", "headRefOid": "cccPR40ffff"},
             ])),
             "git cat-file -e cccPR40ffff^{commit}": fail(),
+            self.PROTECTED: ok("main\n"),
         })
         f.update(over)
         return f
@@ -320,6 +342,33 @@ class EtatDepotTest(unittest.TestCase):
         self.assertEqual(self.field(out, "non_mergees"), "feat/d")
         self.assertNotIn("base_extraite", out)
         self.assertLess(len(out.splitlines()), 20, "sortie trop longue")
+
+    def test_post_merge_keeps_protected_integration_branch(self):
+        # Cas construit pour echouer : develop, mergee dans main par la PR de
+        # publication, a le head de la PR ; branche protegee, elle n'est pas classee.
+        self.fixtures(self.post_merge_fixtures(**{
+            "gh repo view --json nameWithOwner,defaultBranchRef":
+                ok(json.dumps({"nameWithOwner": "org/depot", "defaultBranchRef": {"name": "develop"}})),
+            self.FOR_EACH_REF: ok("feat/a aaa111\ndevelop ddd000\nmain mmm000\n"),
+            self.PR_LIST: ok(json.dumps([
+                {"number": 60, "headRefName": "develop", "headRefOid": "ddd000"},
+                {"number": 42, "headRefName": "feat/a", "headRefOid": "aaa111"},
+            ])),
+            self.PROTECTED: ok("develop\nmain\n"),
+        }))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 0, out)
+        self.assertEqual(self.field(out, "base"), "develop")
+        self.assertEqual(self.field(out, "protegees"), "develop, main")
+        self.assertEqual(self.fields(out, "mergee"), ["feat/a #42 head=identique worktree=aucun"])
+        self.assertEqual(self.field(out, "non_mergees"), "aucune")
+
+    def test_post_merge_protected_list_failure_is_environment_error(self):
+        self.fixtures(self.post_merge_fixtures(**{self.PROTECTED: fail("HTTP 403\n")}))
+        code, out = self.run_script("--post-merge")
+        self.assertEqual(code, 2, out)
+        self.assertIn("branches protegees", out)
+        self.assertNotIn("mergee", out)
 
     def test_post_merge_diverging_head_never_deletable(self):
         # Cas construit pour echouer : le head local porte un commit absent de la PR mergee.

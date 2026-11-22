@@ -221,7 +221,9 @@ aucun fichier : ils se lisent par l'API GitHub, que cet agent n'appelle pas.
 
 `<owner>/<repo>` se déduit d'une source publique du dépôt, badge ou lien du
 `README`, que le rapport cite ; jamais de la configuration git. `<branche>` est
-la branche par défaut que nomment les conventions. Sans source publique, les
+la branche par défaut que nomment les conventions ; quand elles distinguent une
+branche de publication de la branche par défaut, les deux premières commandes
+sont listées pour chacune des deux. Sans source publique, les
 placeholders restent dans les commandes. Ne jamais demander, lire ni recopier
 un jeton d'accès, ni l'URL complète d'un dépôt distant.
 

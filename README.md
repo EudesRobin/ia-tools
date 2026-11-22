@@ -16,8 +16,8 @@ chaque version sont décrits dans le [journal des modifications](./CHANGELOG.md)
 | Skill | Ce qu'elle fait |
 |---|---|
 | [`clean-android-tv`](./skills/clean-android-tv/SKILL.md) | Rend un téléviseur ou un boîtier Android TV plus réactif par adb : libère la mémoire vive en désactivant les applications préinstallées inutilisées, de façon réversible, et vérifie qu'une intervention antérieure tient toujours. Embarque `reference-adb.md`, `paquets.md` et `adb_tv.py`, script de relevés en lecture seule. |
-| [`pull-request`](./skills/pull-request/SKILL.md) | Crée la branche de travail, y committe les modifications, la pousse, puis ouvre ou met à jour la *pull request* GitHub par `gh` ; dans un dépôt sans dépôt distant, merge la branche de travail sur la branche par défaut. Applique les conventions et le template de PR du projet. Après le merge de la PR, nettoie le dépôt local : branche par défaut mise à jour, worktrees retirés, branches mergées supprimées. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet ne déclare ni conventions ni template de PR ; `post-merge.md`, déroulé du nettoyage post-merge ; `etat_depot.py`, script en lecture seule qui relève l'état du dépôt. |
-| [`release`](./skills/release/SKILL.md) | Publie une version d'un projet GitHub ou d'un dépôt sans dépôt distant : propose le numéro de version selon le versionnage sémantique, à partir du journal des modifications au format Keep a Changelog, clôt la version dans le journal et livre cette clôture par une *pull request* ou par un merge local, puis pose le tag annoté après le merge et vérifie la Release ou, dans un dépôt sans dépôt distant, le tag. Embarque `journal_version.py`, script qui relève l'état du journal et des tags, clôt la version et en extrait les notes. |
+| [`pull-request`](./skills/pull-request/SKILL.md) | Crée la branche de travail, y committe les modifications, la pousse, puis ouvre ou met à jour la *pull request* GitHub par `gh` ; dans un dépôt sans dépôt distant, merge la branche de travail sur la branche par défaut. Applique les conventions et le template de PR du projet. Après le merge de la PR, nettoie le dépôt local : branche par défaut mise à jour, worktrees retirés, branches mergées supprimées, branches protégées conservées. Embarque `conventions-defaut.md` et `template-pr.md`, appliqués quand le projet ne déclare ni conventions ni template de PR ; `post-merge.md`, déroulé du nettoyage post-merge ; `etat_depot.py`, script en lecture seule qui relève l'état du dépôt. |
+| [`release`](./skills/release/SKILL.md) | Publie une version d'un projet GitHub ou d'un dépôt sans dépôt distant : propose le numéro de version selon le versionnage sémantique, à partir du journal des modifications au format Keep a Changelog, clôt la version dans le journal et livre cette clôture par une *pull request* ou par un merge local, ouvre la PR de publication de la branche d'intégration vers la branche de publication quand le projet les distingue, puis pose le tag annoté après le merge et vérifie la Release ou, dans un dépôt sans dépôt distant, le tag. Embarque `journal_version.py`, script qui relève l'état du journal et des tags, clôt la version et en extrait les notes. |
 | [`setup-harness`](./skills/setup-harness/SKILL.md) | Ajoute la section « Harnais » — lancer / tester / vérifier — dans le fichier d'instructions d'un projet tiers (`AGENTS.md`, à défaut celui de l'agent hôte). |
 
 ### Agents
@@ -105,6 +105,10 @@ commandes absentes du PATH pour les outils examinés. Commandes de vérification
 et d'installation : [PREREQUIS.md](./docs/PREREQUIS.md).
 
 ## Installation
+
+Un clone extrait la branche par défaut, `develop`, qui porte les changements
+pas encore publiés. La dernière version publiée est celle de la branche
+`main`, à extraire par `git switch main` avant l'installation.
 
 ### Par le script
 

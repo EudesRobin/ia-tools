@@ -10,16 +10,22 @@ locaux et distants, et GitHub par gh, puis, selon le mode :
                        comparaison et verifie la section close ;
   --notes X.Y.Z        affiche le corps de la section X.Y.Z, ou l'ecrit en
                        UTF-8 dans le fichier --output ;
-  --check X.Y.Z        verifie, avant le tag, la branche par defaut, la
+  --check X.Y.Z        verifie, avant le tag, la branche de publication, la
                        presence de la version, l'absence du tag et
                        l'integration continue du commit ;
   --release TAG        releve le workflow de release du commit tague et la
                        Release GitHub.
 
+La branche de publication porte les tags. C'est la branche par defaut, sauf
+quand celle-ci n'est ni main ni master et que main (a defaut master) existe :
+la branche par defaut est alors une branche d'integration (develop), et la
+version close y attend la PR de publication vers la branche de publication
+(etape publication).
+
 Sans aucun depot distant, la reference est la branche par defaut locale (main,
 a defaut master) et les tags locaux : --check ne compare pas HEAD a origin et
 ne lit pas l'integration continue, et --release verifie le tag local (annote,
-present sur la branche par defaut, message egal aux notes de la version,
+present sur la branche de publication, message egal aux notes de la version,
 precedees ou non du tag en titre). Des depots distants sans origin sont
 refuses (code 1). Dans les deux cas, --check bloque sur une modification non
 committee d'un fichier suivi : le journal lu doit etre celui de HEAD.
@@ -29,7 +35,7 @@ Usage :
                               | --notes X.Y.Z [--title <titre>] [--output <fichier>]
                               | --check X.Y.Z | --release TAG]
                               [--file <journal>] [--base <branche>]
-                              [--tag-prefix v|none]
+                              [--publication <branche>] [--tag-prefix v|none]
 
 Codes de sortie : 0 etat releve ou operation faite ; 1 erreur d'usage,
 operation refusee ou verification en echec ; 2 anomalie d'environnement (git
@@ -237,10 +243,11 @@ class Journal:
 
 
 class Repo:
-    """Depot git courant : racine, journal, tags et branche par defaut."""
+    """Depot git courant : racine, journal, tags, branche par defaut et
+    branche de publication."""
 
     def __init__(self, git: Runner, gh: Runner, explicit_file: str | None, base: str | None,
-                 tag_prefix: str | None = None):
+                 tag_prefix: str | None = None, publication: str | None = None):
         self.git, self.gh = git, gh
         self.tag_prefix = tag_prefix
         root = git.value("rev-parse", "--show-toplevel")
@@ -258,6 +265,7 @@ class Repo:
             raise Refused(f"depots distants sans origin ({', '.join(remotes)}) : cas non couvert")
         self.local = not remotes
         self.base = base or self._base()
+        self.publication, self.publication_source = self._publication(publication)
         self._remote_tags: set[str] | None | bool = False
 
     def _find(self, explicit: str | None) -> Path:
@@ -295,6 +303,22 @@ class Repo:
                 return name
         return None
 
+    def _publication(self, explicit: str | None) -> tuple[str | None, str]:
+        """Branche de publication et origine de sa determination."""
+        if explicit:
+            return explicit, "option"
+        if self.base is None or self.base in ("main", "master"):
+            return self.base, "identique a la base"
+        prefix = "refs/heads" if self.local else "refs/remotes/origin"
+        for name in ("main", "master"):
+            if self.git.value("rev-parse", "--verify", "--quiet", f"{prefix}/{name}"):
+                return name, "a confirmer par les regles du projet"
+        return self.base, "identique a la base"
+
+    def separate_publication(self) -> bool:
+        """Vrai si la branche de publication differe de la branche par defaut."""
+        return bool(self.publication) and self.publication != self.base
+
     def local_tags(self) -> list[str]:
         out = self.git.value("tag", "--list", "--sort=-v:refname") or ""
         return [t.strip() for t in out.splitlines() if TAG_RE.match(t.strip())]
@@ -331,17 +355,24 @@ class Repo:
                 return m.group(1)
         return None
 
-    def base_ref(self) -> str | None:
-        """Reference partagee : origin/<base>, ou <base> dans un depot local."""
-        if not self.base:
+    def shared_ref(self, branch: str | None) -> str | None:
+        """Reference partagee d'une branche : origin/<branche>, ou <branche>
+        dans un depot local."""
+        if not branch:
             return None
-        return self.base if self.local else f"origin/{self.base}"
+        return branch if self.local else f"origin/{branch}"
 
-    def base_journal(self) -> Journal | None:
-        """Journal de la reference partagee (origin/<base> apres un git fetch)."""
-        if not self.base_ref() or not self.rel:
+    def base_ref(self) -> str | None:
+        return self.shared_ref(self.base)
+
+    def publication_ref(self) -> str | None:
+        return self.shared_ref(self.publication)
+
+    def journal_at(self, ref: str | None) -> Journal | None:
+        """Journal d'une reference partagee (origin/<branche> apres un git fetch)."""
+        if not ref or not self.rel:
             return None
-        text = self.git.value("show", f"{self.base_ref()}:{self.rel}")
+        text = self.git.value("show", f"{ref}:{self.rel}")
         return Journal(text) if text is not None else None
 
     def release_url(self, tag: str) -> str | None | bool:
@@ -404,12 +435,16 @@ def version_files(root: Path) -> list[str]:
 
 
 def step(repo: Repo) -> str:
-    """Etape de la publication, d'apres origin/<base>, les tags distants et la
-    Release ; dans un depot local, d'apres <base> et les tags locaux."""
+    """Etape de la publication, d'apres origin/<base>, origin/<publication>,
+    les tags distants et la Release ; dans un depot local, d'apres les branches
+    locales et les tags locaux."""
     journal = repo.journal
-    shared = repo.base_journal()
-    reference = shared or journal
-    where = repo.base_ref() if shared else "journal local"
+    shared = repo.journal_at(repo.base_ref())
+    integrated = shared or journal
+    base_where = repo.base_ref() if shared else "journal local"
+    published = repo.journal_at(repo.publication_ref()) if repo.separate_publication() else None
+    reference = published or integrated
+    where = repo.publication_ref() if published else base_where
     remote = repo.remote_tags()
     prefix = repo.prefix() or ""
     # Tags distants : un tag pose localement mais non pousse n'est pas publie.
@@ -425,9 +460,15 @@ def step(repo: Repo) -> str:
             url = repo.release_url(tag)
             if url is None:
                 return f"release ({tag}, tag pose, Release absente)"
+    if published:
+        # Version close sur la branche d'integration, pas encore publiee.
+        merged = integrated.versions()[0] if integrated.versions() else None
+        if merged and (last is None or version_key(merged["num"]) > version_key(last["num"])):
+            return f"publication ({merged['num']}, close sur {base_where}, absente de {where})"
+        last = merged or last
     local_last = journal.versions()[0] if journal.versions() else None
     if local_last and (last is None or version_key(local_last["num"]) > version_key(last["num"])):
-        return f"attente_merge ({local_last['num']}, close localement, absente de {where})"
+        return f"attente_merge ({local_last['num']}, close localement, absente de {base_where})"
     if Journal.entries(journal.unreleased()):
         return "nouvelle"
     return "rien"
@@ -440,6 +481,9 @@ def state(repo: Repo) -> list[tuple[str, str]]:
     lines.append(("git_dir", Path(git_dir).as_posix() if git_dir else "indetermine"))
     lines.append(("distant", "aucun (depot local)" if repo.local else "origin"))
     lines.append(("base", repo.base or "indeterminee"))
+    lines.append(("publication", f"{repo.publication} ({repo.publication_source})"
+                  if repo.publication and repo.publication_source != "option"
+                  else repo.publication or "indeterminee"))
     pending = journal.unreleased()
     lines.append(("section_non_publiee", pending["name"] if pending else "absente"))
 
@@ -578,10 +622,11 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
     blockers: list[str] = []
     branch = repo.git.value("branch", "--show-current") or "(HEAD detachee)"
     lines.append(("branche", branch))
-    if repo.base is None:
+    target = repo.publication
+    if target is None:
         blockers.append("branche par defaut indeterminee (--base)")
-    elif branch != repo.base:
-        blockers.append(f"branche courante differente de {repo.base}")
+    elif branch != target:
+        blockers.append(f"branche courante differente de {target}")
     sha = repo.git.value("rev-parse", "HEAD") or ""
     lines.append(("sha", sha))
     # Le journal lu est celui de la copie de travail : il doit etre celui de HEAD.
@@ -591,9 +636,9 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
         shown = ", ".join(pending[:5]) + (f", +{len(pending) - 5}" if len(pending) > 5 else "")
         blockers.append(f"modifications non committees : {shown}")
     if not repo.local:
-        remote_sha = repo.git.value("rev-parse", f"refs/remotes/origin/{repo.base}") if repo.base else None
+        remote_sha = repo.git.value("rev-parse", f"refs/remotes/origin/{target}") if target else None
         if sha != remote_sha:
-            blockers.append(f"HEAD differe de origin/{repo.base} (git pull --ff-only)")
+            blockers.append(f"HEAD differe de origin/{target} (git pull --ff-only)")
     if repo.journal.find(version) is None:
         blockers.append(f"version {version} absente de {repo.rel}")
     after = Journal.entries(repo.journal.unreleased())
@@ -613,12 +658,14 @@ def check(repo: Repo, version: str) -> tuple[list[tuple[str, str]], bool]:
 
 
 def local_tag(repo: Repo, tag: str, sha: str) -> tuple[list[tuple[str, str]], bool]:
-    """Depot sans distant : tag annote, sur la branche par defaut, message egal aux notes."""
+    """Depot sans distant : tag annote, sur la branche de publication, message
+    egal aux notes."""
     lines: list[tuple[str, str]] = []
     annotated = repo.git.value("cat-file", "-t", tag) == "tag"
     lines.append(("annote", "oui" if annotated else "non (tag leger)"))
-    on_base = bool(repo.base) and repo.git.run("merge-base", "--is-ancestor", sha, repo.base)[0] == 0
-    lines.append(("sur_base", "oui" if on_base else f"non (absent de {repo.base or 'base indeterminee'})"))
+    target = repo.publication
+    on_base = bool(target) and repo.git.run("merge-base", "--is-ancestor", sha, target)[0] == 0
+    lines.append(("sur_base", "oui" if on_base else f"non (absent de {target or 'base indeterminee'})"))
     m = TAG_RE.match(tag)
     try:
         notes = repo.journal.notes(m["num"]) if m else ""
@@ -670,7 +717,7 @@ def main(argv: list[str] | None = None) -> int:
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--close", metavar="X.Y.Z", help="clore la section non publiee")
     mode.add_argument("--notes", metavar="X.Y.Z", help="notes d'une version")
-    mode.add_argument("--check", metavar="X.Y.Z", help="verifier la branche par defaut avant le tag")
+    mode.add_argument("--check", metavar="X.Y.Z", help="verifier la branche de publication avant le tag")
     mode.add_argument("--release", metavar="TAG", help="workflow de release et Release d'un tag")
     p.add_argument("--date", default=datetime.date.today().isoformat(),
                    help="date de la version close (defaut : aujourd'hui)")
@@ -678,6 +725,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--title", help="avec --notes : premiere ligne ecrite avant les notes (sujet d'un tag)")
     p.add_argument("--file", help="journal, relatif a la racine du depot (defaut : recherche)")
     p.add_argument("--base", help="branche par defaut (defaut : origin/HEAD ; depot local : main, a defaut master)")
+    p.add_argument("--publication", help="branche de publication, ou sont poses les tags (defaut : main, "
+                                         "a defaut master, quand la branche par defaut en differe ; "
+                                         "sinon la branche par defaut)")
     p.add_argument("--tag-prefix", choices=("v", "none"),
                    help="prefixe des tags quand il est indetermine (v ou none)")
     args = p.parse_args(argv)
@@ -689,7 +739,8 @@ def main(argv: list[str] | None = None) -> int:
     code = EXIT_OK
     try:
         prefix = {"v": "v", "none": ""}.get(args.tag_prefix)
-        repo = Repo(Runner("git"), Runner("gh", required=False), args.file, args.base, prefix)
+        repo = Repo(Runner("git"), Runner("gh", required=False), args.file, args.base, prefix,
+                    args.publication)
         if args.notes:
             body = repo.journal.notes(args.notes)
             if args.title:
