@@ -115,6 +115,7 @@ lecture seule, et n'affiche qu'une ligne `clé : valeur` par information.
 ```text
 python {AGENT_DIR}/skills/pull-request/etat_depot.py            # commit seul
 python {AGENT_DIR}/skills/pull-request/etat_depot.py --github   # livraison complète
+python {AGENT_DIR}/skills/pull-request/etat_depot.py --github --base <branche>   # PR vers une autre branche
 python {AGENT_DIR}/skills/pull-request/etat_depot.py --post-merge   # post-merge
 ```
 
@@ -128,7 +129,8 @@ par une demande de confirmation.
 
 Codes de sortie : `0` état relevé ; `1` erreur d'usage ; `2` anomalie
 d'environnement — git ou gh absent, gh non authentifié, sortie de gh
-illisible, liste des PR inaccessible, branche par défaut indéterminée avec
+illisible, liste des PR ou des branches protégées inaccessible, branche par
+défaut indéterminée avec
 `--github` ou `--post-merge`, dossier hors d'un dépôt git —, à corriger avant
 de relancer le script.
 
@@ -177,6 +179,12 @@ retenue pour chaque point (commit, branche, PR ou merge).
 par défaut est celle que désignent ces règles, à défaut celle que donne le
 script. `base : indeterminee` → celle que désignent ces règles, à défaut la
 demander à l'utilisateur.
+
+La PR vise la branche par défaut, sauf quand l'utilisateur nomme une autre
+branche cible (« PR vers `main` ») ou que les règles du projet en désignent une
+pour le type de changement livré. Dans ce cas, relancer `etat_depot.py` avec
+`--base <branche>` : `avance_sur_base` et les phases 5 et 6 portent alors sur
+cette branche.
 
 Avec `distants : aucun`, une règle du projet qui fait du merge sur la branche
 par défaut la suite normale d'un commit fait traiter la demande comme une

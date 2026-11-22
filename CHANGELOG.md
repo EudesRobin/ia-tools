@@ -12,6 +12,20 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 - `clean-android-tv`, `pull-request`, `release` et `scripts/install.py` :
   Python 3.11 au minimum, au lieu de 3.10, arrivé en fin de vie.
+- `release` : un projet dont la branche par défaut est une branche
+  d'intégration (`develop`) distincte de la branche de publication (`main`)
+  est pris en charge. La clôture de la version est livrée sur la branche
+  d'intégration, une nouvelle phase ouvre la PR de publication vers la branche
+  de publication, et le tag est posé sur celle-ci. Le script
+  `journal_version.py` relève la branche de publication (`publication`, option
+  `--publication`) et la nouvelle étape `publication`.
+- `pull-request` : une PR peut viser une autre branche que la branche par
+  défaut (`etat_depot.py --base`). En post-merge, les branches protégées ne
+  sont plus proposées à la suppression ; une branche d'intégration mergée par
+  une PR de publication est ainsi conservée.
+- `audit-github` : quand les conventions distinguent une branche de
+  publication de la branche par défaut, la protection de chacune des deux est
+  vérifiée.
 
 ### 🐛 Corrections
 
@@ -23,6 +37,9 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 - Intégration continue sous Python 3.11, version minimale qu'exigent les
   versions récentes de `zizmor`.
+- Développement sur la branche `develop`, branche par défaut ; `main` n'avance
+  qu'à la publication d'une version, par la PR de publication de `develop`
+  vers `main`.
 
 ## [2.2.0] - 2026-11-12
 
