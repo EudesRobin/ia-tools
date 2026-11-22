@@ -8,6 +8,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🧹 Maintenance
+
+- Intégration continue lancée au push sur `main`, et non plus sur `develop` :
+  une PR vers `develop`, à jour avec `develop` avant son merge, est déjà
+  contrôlée.
+
 ## [2.3.0] - 2026-11-22
 
 ### 🔄 Modifications
