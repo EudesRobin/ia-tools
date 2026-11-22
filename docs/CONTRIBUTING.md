@@ -34,10 +34,12 @@ git config core.hooksPath .githooks
   par un commit de merge lors de la publication d'une version
   ([§4.3](#43-procédure)) ; `develop` est conservée. Aucune des deux n'accepte
   de push direct. Les checks `CI / validation`, `CI / zizmor` et
-  `CI / commits` sont requis sur les deux branches ; une PR vers `develop` doit
-  en outre être à jour avec `develop` avant le merge. `main` n'impose pas cette
-  mise à jour : son commit de merge n'est jamais reporté sur `develop`, si bien
-  que l'exiger bloquerait la PR de publication suivante.
+  `CI / commits` sont requis sur les deux branches, et `CI / source` l'est en
+  outre sur `main`, qui refuse ainsi une PR venue d'une autre branche que
+  `develop` de ce dépôt. Une PR vers `develop` doit aussi être à jour avec
+  `develop` avant le merge. `main` n'impose pas cette mise à jour : son commit
+  de merge n'est jamais reporté sur `develop`, si bien que l'exiger bloquerait
+  la PR de publication suivante.
 - **Aucune attribution d'outil d'IA**, ni dans un message de commit, ni dans le
   titre ou la description d'une PR : voir [CONVENTIONS.md](CONVENTIONS.md) §1.5,
   qui fait autorité.
@@ -79,7 +81,10 @@ L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 - sur une PR, le contrôle du message de chaque commit, de
   l'absence d'attribution d'IA dans le titre et la description, et de la
   présence d'une entrée dans le journal des modifications
-  ([§4.2](#42-journal-des-modifications)).
+  ([§4.2](#42-journal-des-modifications)) ;
+- sur une PR vers `main`, le contrôle `CI / source` de la branche de la PR,
+  qui doit être `develop` de ce dépôt, et non d'un fork
+  ([§2](#2-commits-et-pull-requests)).
 
 Dans l'intégration continue, chaque écart relevé par `scripts/validate.py` est
 aussi émis en annotation GitHub, affichée sur le diff de la PR quand l'écart

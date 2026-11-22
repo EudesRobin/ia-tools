@@ -39,7 +39,8 @@ la numérotation des versions et la liste des rubriques sont décrites dans
   versions récentes de `zizmor`.
 - Développement sur la branche `develop`, branche par défaut ; `main` n'avance
   qu'à la publication d'une version, par la PR de publication de `develop`
-  vers `main`.
+  vers `main`. Le check `CI / source` refuse une PR vers `main` venue d'une
+  autre branche que `develop` de ce dépôt.
 
 ## [2.2.0] - 2026-11-12
 

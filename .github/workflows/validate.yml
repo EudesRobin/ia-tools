@@ -3,7 +3,8 @@
 # validateur des sources puis tests du validateur (AGENTS.md, Definition of Done),
 # analyse de securite des workflows par zizmor et, sur une pull request,
 # controle des messages de commit, du titre, de la description et de l'entree
-# du journal des modifications.
+# du journal des modifications ; sur une pull request vers main, controle que
+# sa branche de head est develop (docs/CONTRIBUTING.md section 2).
 # Les noms de jobs sont ceux des checks requis par la protection de develop et
 # de main.
 name: CI
@@ -103,3 +104,23 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: python scripts/changelog.py --require-entry "$BASE_SHA..$HEAD_SHA"
+
+  # main n'avance que par la PR de publication de develop : toute autre branche
+  # de head, ou une branche develop venue d'un fork, est refusee.
+  source:
+    name: source
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Valeurs fournies par l'auteur de la pull request : passees par
+      # l'environnement, jamais interpolees dans le script ni reecrites dans
+      # une commande de workflow.
+      - env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          if [ "$HEAD_REF" != "develop" ] || [ "$HEAD_REPO" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::une pull request vers main doit venir de la branche develop de ce depot"
+            exit 1
+          fi
