@@ -1,5 +1,5 @@
-# Controle du depot a chaque push sur develop ou sur main, a chaque pull
-# request et a la demande (workflow_dispatch) :
+# Controle du depot a chaque push sur main, a chaque pull request et a la
+# demande (workflow_dispatch) :
 # validateur des sources puis tests du validateur (AGENTS.md, Definition of Done),
 # analyse de securite des workflows par zizmor et, sur une pull request,
 # controle des messages de commit, du titre, de la description et de l'entree
@@ -7,11 +7,14 @@
 # sa branche de head est develop (docs/CONTRIBUTING.md section 2).
 # Les noms de jobs sont ceux des checks requis par la protection de develop et
 # de main.
+# Pas de push sur develop : une pull request vers develop doit etre a jour
+# avant le merge, et son execution a deja controle le code merge. Le push sur
+# main reste : la release lit l'integration continue du commit tague.
 name: CI
 
 on:
   push:
-    branches: [develop, main]
+    branches: [main]
   pull_request:
     types: [opened, synchronize, reopened, edited]  # edited : titre ou description modifies
   workflow_dispatch:

@@ -71,8 +71,10 @@ La liste des contrôles de `scripts/validate.py` figure dans son docstring, qui
 fait autorité. Ils sont lancés par trois mécanismes : le hook `validate-tool` en
 fin de tour d'une session ouverte dans le dépôt
 ([HOOK.md](../hooks/validate-tool/HOOK.md)), le hook git `pre-commit` à chaque
-commit, et l'intégration continue à chaque push sur `develop` ou sur `main`, à
-chaque PR et à la demande (`workflow_dispatch`).
+commit, et l'intégration continue à chaque push sur `main`, à chaque PR et à la
+demande (`workflow_dispatch`). Un push sur `develop` ne la relance pas : une PR
+vers `develop` doit être à jour avec `develop` avant le merge, et l'intégration
+continue lancée sur cette PR a déjà contrôlé le code mergé.
 
 L'intégration continue (`.github/workflows/validate.yml`) lance en outre :
 
