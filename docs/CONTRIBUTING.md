@@ -53,8 +53,12 @@ git config core.hooksPath .githooks
   push, PR — en appliquant ces règles. Sans elle, les appliquer à la main.
 - **Template de PR.** La description d'une PR suit
   [pull_request_template.md](../.github/pull_request_template.md) : chaque
-  section est conservée, et une case n'est cochée que si le point a été
-  effectivement vérifié. Ce template et les formulaires d'issue de
+  section est conservée. Dans « Vérification », une case dont le point est
+  sans objet pour la modification est retirée, comme celle de `zizmor` pour une
+  modification qui ne touche aucun workflow ; la case de `scripts/validate.py`
+  vaut pour toute modification et demeure. Une case conservée n'est cochée que
+  si son point a été effectivement vérifié, et une case vide est expliquée dans
+  « Détail ». Ce template et les formulaires d'issue de
   `.github/ISSUE_TEMPLATE/` suivent, comme les documents, le registre
   ([CONVENTIONS.md](CONVENTIONS.md) §1.9) et le vocabulaire
   ([VOCABULARY.md](VOCABULARY.md)).
