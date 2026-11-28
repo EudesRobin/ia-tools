@@ -8,6 +8,12 @@ la numérotation des versions et la liste des rubriques sont décrites dans
 
 ## [Non publié]
 
+### 🔄 Modifications
+
+- `pull-request` : une case de vérification sans objet est retirée de la
+  description de la PR quand le template ou les conventions du projet le
+  prévoient.
+
 ### 🧹 Maintenance
 
 - Intégration continue lancée au push sur `main`, et non plus sur `develop` :

@@ -248,7 +248,10 @@ employer.
 - **Template trouvé** — impératif : en conserver toutes les sections et leur
   ordre, les remplir à partir des commits et du diff de la branche. Une section
   sans objet porte « Sans objet » ; elle n'est pas supprimée. Une case à cocher
-  n'est cochée que si le point a été effectivement vérifié.
+  dont le point est sans objet est retirée si le template ou les conventions du
+  projet le prévoient ; sinon elle reste vide, et la description indique
+  que son point est sans objet. Une case n'est cochée que si le point a été
+  effectivement vérifié.
 - **Aucun template** — employer [template-pr.md](template-pr.md), template
   indicatif à adapter. Proposer à l'utilisateur de le versionner dans le
   projet sous `.github/pull_request_template.md` ; après accord, l'écrire et le
